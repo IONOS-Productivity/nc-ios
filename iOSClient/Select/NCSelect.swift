@@ -4,6 +4,7 @@
 //
 //  Created by Marino Faggiana on 06/11/2018.
 //  Copyright © 2018 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -68,6 +69,7 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
     private var dataSource = NCDataSource()
     internal var richWorkspaceText: String?
     internal var headerMenu: NCSectionFirstHeader?
+    private let enableRichWorkspace: Bool = false
     private var autoUploadFileName = ""
     private var autoUploadDirectory = ""
     private var backgroundImageView = UIImageView()
@@ -83,7 +85,7 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
         navigationController?.presentationController?.delegate = self
         navigationController?.navigationBar.tintColor = NCBrandColor.shared.iconImageColor
 
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
         selectCommandViewSelect?.separatorView.backgroundColor = .separator
 
         activeAccount = NCManageDatabase.shared.getActiveAccount()
@@ -99,9 +101,10 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
         // Footer
         collectionView.register(UINib(nibName: "NCSectionFooter", bundle: nil), forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: "sectionFooter")
         collectionView.alwaysBounceVertical = true
-        collectionView.backgroundColor = .systemBackground
+        collectionView.backgroundColor = NCBrandColor.shared.appBackgroundColor
 
         buttonCancel.title = NSLocalizedString("_cancel_", comment: "")
+		buttonCancel.tintColor = UIColor(named: "SelectToolbar/CancelTint")
         bottomContraint?.constant = window?.rootViewController?.view.safeAreaInsets.bottom ?? 0
 
         // Type of command view
@@ -380,7 +383,8 @@ extension NCSelect: UICollectionViewDataSource {
 
         // image Favorite
         if metadata.favorite {
-            cell.imageFavorite.image = NCImageCache.images.favorite
+            cell.imageFavorite.image = UIImage(resource: .FileFolderCell.star)
+            
         }
 
         cell.imageSelect.isHidden = true
@@ -539,8 +543,10 @@ extension NCSelect {
             loadFolder()
         }
 
-        let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", activeAccount.account, serverUrl))
-        richWorkspaceText = directory?.richWorkspace
+        if enableRichWorkspace {
+            let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", activeAccount.account, serverUrl))
+            richWorkspaceText = directory?.richWorkspace
+        }
 
         DispatchQueue.main.async {
             self.collectionView.reloadData()
@@ -566,54 +572,33 @@ extension NCSelect {
 class NCSelectCommandView: UIView {
 
     @IBOutlet weak var separatorView: UIView!
-    @IBOutlet weak var createFolderButton: UIButton?
-    @IBOutlet weak var selectButton: UIButton?
-    @IBOutlet weak var copyButton: UIButton?
-    @IBOutlet weak var moveButton: UIButton?
+    @IBOutlet weak var createFolderButton: PrimaryButton?
+    @IBOutlet weak var selectButton: PrimaryButton?
+    @IBOutlet weak var copyButton: PrimaryButton?
+    @IBOutlet weak var moveButton: PrimaryButton?
     @IBOutlet weak var overwriteSwitch: UISwitch?
     @IBOutlet weak var overwriteLabel: UILabel?
     @IBOutlet weak var separatorHeightConstraint: NSLayoutConstraint!
 
     var selectView: NCSelect?
-    private let gradient: CAGradientLayer = CAGradientLayer()
 
     override func awakeFromNib() {
-
+        super.awakeFromNib()
         separatorHeightConstraint.constant = 0.5
         separatorView.backgroundColor = .separator
 
-        overwriteSwitch?.onTintColor = NCBrandColor.shared.brandElement
         overwriteLabel?.text = NSLocalizedString("_overwrite_", comment: "")
 
-        selectButton?.layer.cornerRadius = 15
-        selectButton?.layer.masksToBounds = true
-        selectButton?.setTitle(NSLocalizedString("_select_", comment: ""), for: .normal)
-        selectButton?.backgroundColor = NCBrandColor.shared.brandElement
-        selectButton?.setTitleColor(UIColor(white: 1, alpha: 0.3), for: .highlighted)
-        selectButton?.setTitleColor(NCBrandColor.shared.brandText, for: .normal)
-
-        createFolderButton?.layer.cornerRadius = 15
-        createFolderButton?.layer.masksToBounds = true
-        createFolderButton?.setTitle(NSLocalizedString("_create_folder_", comment: ""), for: .normal)
-        createFolderButton?.backgroundColor = NCBrandColor.shared.brandElement
-        createFolderButton?.setTitleColor(UIColor(white: 1, alpha: 0.3), for: .highlighted)
-        createFolderButton?.setTitleColor(NCBrandColor.shared.brandText, for: .normal)
-
-        copyButton?.layer.cornerRadius = 15
-        copyButton?.layer.masksToBounds = true
-        copyButton?.setTitle(NSLocalizedString("_copy_", comment: ""), for: .normal)
-        copyButton?.backgroundColor = NCBrandColor.shared.brandElement
-        copyButton?.setTitleColor(UIColor(white: 1, alpha: 0.3), for: .highlighted)
-        copyButton?.setTitleColor(NCBrandColor.shared.brandText, for: .normal)
-
-        moveButton?.layer.cornerRadius = 15
-        moveButton?.layer.masksToBounds = true
-        moveButton?.setTitle(NSLocalizedString("_move_", comment: ""), for: .normal)
-        moveButton?.backgroundColor = NCBrandColor.shared.brandElement
-        moveButton?.setTitleColor(UIColor(white: 1, alpha: 0.3), for: .highlighted)
-        moveButton?.setTitleColor(NCBrandColor.shared.brandText, for: .normal)
+		setupButton(button: selectButton, titleKey: "_select_")
+		setupButton(button: createFolderButton, titleKey: "_create_folder_")
+		setupButton(button: copyButton, titleKey: "_copy_")
+		setupButton(button: moveButton, titleKey: "_move_")
     }
 
+	private func setupButton(button: UIButton?, titleKey: String) {
+		button?.setTitle(NSLocalizedString(titleKey, comment: ""), for: .normal)
+	}
+	
     @IBAction func createFolderButtonPressed(_ sender: UIButton) {
         selectView?.createFolderButtonPressed(sender)
     }

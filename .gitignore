@@ -45,3 +45,8 @@ Package.resolved
 *.generated.swift
 /.env-vars
 .gitlab-ci.yml
+
+## CI artifacts
+BuildForSimulator/
+ipaDerivedData/
+build/

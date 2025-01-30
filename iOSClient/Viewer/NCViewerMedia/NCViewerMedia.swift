@@ -89,6 +89,7 @@ class NCViewerMedia: UIViewController {
         scrollView.delegate = self
         scrollView.maximumZoomScale = 4
         scrollView.minimumZoomScale = 1
+        scrollView.backgroundColor = NCBrandColor.shared.appBackgroundColor
 
         view.addGestureRecognizer(doubleTapGestureRecognizer)
 
@@ -173,7 +174,7 @@ class NCViewerMedia: UIViewController {
                                     request.cancel()
                                 }
                             }
-                            if let view = self.tabBarController?.view {
+                            if let view = self.view {
                                 hud.show(in: view)
                             }
                             NCNetworking.shared.download(metadata: metadata, withNotificationProgressTask: false) {

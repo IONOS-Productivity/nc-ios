@@ -26,25 +26,26 @@ import UIKit
 let userAgent: String = {
     let appVersion: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     // Original Nextcloud useragent "Mozilla/5.0 (iOS) Nextcloud-iOS/\(appVersion)"
-    return "Mozilla/5.0 (iOS) Nextcloud-iOS/\(appVersion)"
+    return "Mozilla/5.0 (iOS) IONOS HiDrive Next/\(appVersion)"
 }()
 
 @objc class NCBrandOptions: NSObject {
     @objc static let shared: NCBrandOptions = {
-        let instance = NCBrandOptions()
+        let instance = NCBrandOptionsIONOS()
         return instance
     }()
 
     var brand: String = "Nextcloud"
-    var textCopyrightNextcloudiOS: String = "Nextcloud Hydrogen for iOS %@ © 2024"
+    var textCopyrightNextcloudiOS: String = "HiDrive Next iOS %@ © 2024"
     var textCopyrightNextcloudServer: String = "Nextcloud Server %@"
     var loginBaseUrl: String = "https://cloud.nextcloud.com"
     @objc var pushNotificationServerProxy: String = "https://push-notifications.nextcloud.com"
     var linkLoginHost: String = "https://nextcloud.com/install"
     var linkloginPreferredProviders: String = "https://nextcloud.com/signup-ios"
     var webLoginAutenticationProtocol: String = "nc://"                                                // example "abc://"
-    var privacy: String = "https://nextcloud.com/privacy"
-    var sourceCode: String = "https://github.com/nextcloud/ios"
+    var privacy: String = "https://wl.hidrive.com/easy/ios/privacy.html"
+    var acknowloedgements: String = "https://wl.hidrive.com/easy/0171"
+    var sourceCode: String = "https://wl.hidrive.com/easy/0181"
     var mobileconfig: String = "/remote.php/dav/provisioning/apple-provisioning.mobileconfig"
     var appStoreUrl: String = "https://apps.apple.com/in/app/nextcloud/id1125420102"
 
@@ -123,7 +124,7 @@ let userAgent: String = {
 
 class NCBrandColor: NSObject {
     static let shared: NCBrandColor = {
-        let instance = NCBrandColor()
+        let instance = NCBrandColorIONOS()
         return instance
     }()
 
@@ -142,6 +143,34 @@ class NCBrandColor: NSObject {
     var themingColor: String = ""
     var themingColorElement: String = ""
     var themingColorText: String = ""
+
+	var menuIconColor: UIColor {
+		iconImageColor
+	}
+	
+	var menuFolderIconColor: UIColor {
+		iconImageColor
+	}
+    
+    var appBackgroundColor: UIColor {
+        .systemBackground
+    }
+    
+    var formBackgroundColor: UIColor {
+        .systemBackground
+    }
+    
+    var formRowBackgroundColor: UIColor {
+        .secondarySystemGroupedBackground
+    }
+    
+    var formSeparatorColor: UIColor {
+        .separator
+    }
+    
+    var switchColor: UIColor {
+        brandElement
+    }
 
     let iconImageColor: UIColor = .label
     let iconImageColor2: UIColor = .secondaryLabel

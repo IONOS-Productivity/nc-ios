@@ -4,6 +4,7 @@
 //
 //  Created by Milen on 01.03.24.
 //  Copyright © 2024 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -25,14 +26,14 @@ import UIKit
 import Foundation
 import NextcloudKit
 
-extension NCCollectionViewCommon: NCCollectionViewCommonSelectTabBarDelegate {
+extension NCCollectionViewCommon: NCCollectionViewCommonSelectToolbarDelegate {
     func selectAll() {
         if !selectOcId.isEmpty, dataSource.getMetadataSourceForAllSections().count == selectOcId.count {
             selectOcId = []
         } else {
             selectOcId = dataSource.getMetadataSourceForAllSections().compactMap({ $0.ocId })
         }
-        tabBarSelect.update(selectOcId: selectOcId, metadatas: getSelectedMetadatas(), userId: appDelegate.userId)
+        commonSelectToolbar.update(selectOcId: selectOcId, metadatas: getSelectedMetadatas(), userId: appDelegate.userId)
         collectionView.reloadData()
     }
 
@@ -40,6 +41,7 @@ extension NCCollectionViewCommon: NCCollectionViewCommonSelectTabBarDelegate {
         var alertStyle = UIAlertController.Style.actionSheet
         if UIDevice.current.userInterfaceIdiom == .pad { alertStyle = .alert }
         let alertController = UIAlertController(title: NSLocalizedString("_confirm_delete_selected_", comment: ""), message: nil, preferredStyle: alertStyle)
+        alertController.view.backgroundColor = NCBrandColor.shared.appBackgroundColor
         let metadatas = getSelectedMetadatas()
         let canDeleteServer = metadatas.allSatisfy { !$0.lock }
 
@@ -87,14 +89,13 @@ extension NCCollectionViewCommon: NCCollectionViewCommonSelectTabBarDelegate {
 
     func move() {
         let metadatas = getSelectedMetadatas()
-
-        NCActionCenter.shared.openSelectView(items: metadatas, controller: self.tabBarController as? NCMainTabBarController)
+        NCActionCenter.shared.openSelectView(items: metadatas, controller: self.mainTabBarController)
         setEditMode(false)
     }
 
     func share() {
         let metadatas = getSelectedMetadatas()
-        NCActionCenter.shared.openActivityViewController(selectedMetadata: metadatas, controller: self.tabBarController as? NCMainTabBarController)
+        NCActionCenter.shared.openActivityViewController(selectedMetadata: metadatas, mainTabBarController: self.mainTabBarController)
         setEditMode(false)
     }
 
@@ -149,5 +150,13 @@ extension NCCollectionViewCommon: NCCollectionViewCommonSelectTabBarDelegate {
         navigationItem.hidesBackButton = editMode
         searchController(enabled: !editMode)
         collectionView.reloadData()
+    }
+    
+    func toolbarWillAppear() {
+        self.tabBarController?.tabBar.isHidden = true
+    }
+    
+    func toolbarWillDisappear() {
+        self.tabBarController?.tabBar.isHidden = false
     }
 }

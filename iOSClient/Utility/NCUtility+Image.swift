@@ -4,6 +4,7 @@
 //
 //  Created by Marino Faggiana on 06/11/23.
 //  Copyright © 2023 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -47,7 +48,7 @@ extension NCUtility {
             case NKCommon.TypeIconFile.txt.rawValue: image = UIImage(systemName: "doc.text", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
             case NKCommon.TypeIconFile.url.rawValue: image = UIImage(systemName: "network", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
             case NKCommon.TypeIconFile.xls.rawValue: image = UIImage(systemName: "tablecells", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.spreadsheetIconColor]))
-            default: image = UIImage(systemName: "doc", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
+            default: image = UIImage(resource: .fileUnsupported)
             }
         }
 
@@ -82,27 +83,10 @@ extension NCUtility {
         }
     }
 
-    func loadUserImage(for user: String, displayName: String?, userBaseUrl: NCUserBaseUrl) -> UIImage {
-        let fileName = userBaseUrl.userBaseUrl + "-" + user + ".png"
-        let localFilePath = utilityFileSystem.directoryUserData + "/" + fileName
-
-        if var localImage = UIImage(contentsOfFile: localFilePath) {
-            let rect = CGRect(x: 0, y: 0, width: 30, height: 30)
-            UIGraphicsBeginImageContextWithOptions(rect.size, false, 3.0)
-            UIBezierPath(roundedRect: rect, cornerRadius: rect.size.height).addClip()
-            localImage.draw(in: rect)
-            localImage = UIGraphicsGetImageFromCurrentImageContext() ?? localImage
-            UIGraphicsEndImageContext()
-            return localImage
-        } else if let loadedAvatar = NCManageDatabase.shared.getImageAvatarLoaded(fileName: fileName) {
-            return loadedAvatar
-        } else if let displayName = displayName, !displayName.isEmpty, let avatarImg = createAvatar(displayName: displayName, size: 30) {
-            return avatarImg
-        } else {
-            return loadImage(named: "person.crop.circle", colors: [NCBrandColor.shared.iconImageColor])
-        }
-    }
-
+	var userImage: UIImage {
+		UIImage(resource: .userButtonIcon)
+	}
+	
     func imageFromVideo(url: URL, at time: TimeInterval) -> UIImage? {
         let asset = AVURLAsset(url: url)
         let assetIG = AVAssetImageGenerator(asset: asset)

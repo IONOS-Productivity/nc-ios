@@ -54,7 +54,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         } else {
             cell.filePreviewImageView?.contentMode = .scaleAspectFit
         }
-        cell.fileAvatarImageView?.contentMode = .center
+        cell.fileAvatarImageView?.contentMode = .scaleAspectFit
         /// THUMBNAIL
         if !metadata.directory {
             if metadata.hasPreviewBorder {
@@ -195,6 +195,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             } else {
                 cell.fileInfoLabel?.text = metadata.subline
             }
+            cell.fileSubinfoLabel?.text = nil
             cell.fileSubinfoLabel?.isHidden = true
         } else {
             cell.fileSubinfoLabel?.isHidden = false
@@ -254,7 +255,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
         // image Favorite
         if metadata.favorite {
-            cell.fileFavoriteImage?.image = NCImageCache.images.favorite
+            cell.fileFavoriteImage?.image = UIImage(resource: .FileFolderCell.star)
             a11yValues.append(NSLocalizedString("_favorite_short_", comment: ""))
         }
 
@@ -343,8 +344,8 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         cell.setAccessibility(label: metadata.fileNameView + ", " + (cell.fileInfoLabel?.text ?? "") + (cell.fileSubinfoLabel?.text ?? ""), value: a11yValues.joined(separator: ", "))
 
         // Color string find in search
-        cell.fileTitleLabel?.textColor = NCBrandColor.shared.textColor
-        cell.fileTitleLabel?.font = .systemFont(ofSize: 15)
+        cell.fileTitleLabel?.textColor = UIColor(resource: .ListCell.title)
+        cell.fileTitleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
 
         if isSearchingMode, let literalSearch = self.literalSearch, let title = cell.fileTitleLabel?.text {
             let longestWordRange = (title.lowercased() as NSString).range(of: literalSearch)

@@ -4,6 +4,7 @@
 //
 //  Created by Marino Faggiana on 28/12/22.
 //  Copyright © 2022 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -365,7 +366,8 @@ struct UploadScanDocumentView: View {
                                     .renderingMode(.template)
                                     .resizable()
                                     .scaledToFit()
-                                    .foregroundColor(Color(NCBrandColor.shared.brandElement))
+                                    .foregroundColor(Color(.Share.commonIconTint))
+                                
                             }
                         }
                         .contentShape(Rectangle())
@@ -414,41 +416,43 @@ struct UploadScanDocumentView: View {
                         }
                         HStack {
                             Toggle(NSLocalizedString("_text_recognition_", comment: ""), isOn: $isTextRecognition)
-                                .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.brandElement)))
+                                .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.switchColor)))
                                 .onChange(of: isTextRecognition) { newValue in
                                     NCKeychain().textRecognitionStatus = newValue
                                 }
                         }
                     }
-                    .complexModifier { view in
-                        view.listRowSeparator(.hidden)
-                    }
+                    .applyGlobalFormSectionStyle()
+                    .listRowSeparator(.hidden)
 
-                    VStack(spacing: 20) {
-                        Toggle(NSLocalizedString("_delete_all_scanned_images_", comment: ""), isOn: $removeAllFiles)
-                            .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.brandElement)))
-                            .onChange(of: removeAllFiles) { newValue in
-                                NCKeychain().deleteAllScanImages = newValue
-                            }
-                        Button(NSLocalizedString("_save_", comment: "")) {
-                            let fileName = uploadScanDocument.fileName(fileName)
-                            if !fileName.isEmpty {
-                                uploadScanDocument.showHUD.toggle()
-                                uploadScanDocument.save(fileName: fileName, password: password, isTextRecognition: isTextRecognition, removeAllFiles: removeAllFiles, quality: quality) { openConflictViewController, error in
+                    Section {
+                        VStack(spacing: 20) {
+                            Toggle(NSLocalizedString("_delete_all_scanned_images_", comment: ""), isOn: $removeAllFiles)
+                                .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.switchColor)))
+                                .onChange(of: removeAllFiles) { newValue in
+                                    NCKeychain().deleteAllScanImages = newValue
+                                }
+                            Button(NSLocalizedString("_save_", comment: "")) {
+                                let fileName = uploadScanDocument.fileName(fileName)
+                                if !fileName.isEmpty {
                                     uploadScanDocument.showHUD.toggle()
-                                    if error {
-                                        print("error")
-                                    } else if openConflictViewController {
-                                        isPresentedUploadConflict = true
-                                    } else {
-                                        NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDismissScanDocument)
+                                    uploadScanDocument.save(fileName: fileName, password: password, isTextRecognition: isTextRecognition, removeAllFiles: removeAllFiles, quality: quality) { openConflictViewController, error in
+                                        uploadScanDocument.showHUD.toggle()
+                                        if error {
+                                            print("error")
+                                        } else if openConflictViewController {
+                                            isPresentedUploadConflict = true
+                                        } else {
+                                            NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDismissScanDocument)
+                                        }
                                     }
                                 }
                             }
+                            .disabled(fileName.isEmpty || !footer.isEmpty)
+                            .buttonStyle(.primary)
                         }
-                        .buttonStyle(ButtonRounded(disabled: fileName.isEmpty || !footer.isEmpty))
-                        .disabled(fileName.isEmpty || !footer.isEmpty)
                     }
+                    .applyGlobalFormSectionStyle()
 
                     Section(header: Text(NSLocalizedString("_quality_image_title_", comment: ""))) {
                         VStack {
@@ -462,16 +466,15 @@ struct UploadScanDocumentView: View {
                         PDFKitRepresentedView(quality: $quality, isTextRecognition: $isTextRecognition, uploadScanDocument: uploadScanDocument)
                             .frame(maxWidth: .infinity, minHeight: geo.size.height / 2)
                     }
-                    .complexModifier { view in
-                        view.listRowSeparator(.hidden)
-                    }
+                    .applyGlobalFormSectionStyle()
+                    .listRowSeparator(.hidden)
                 }
                 HUDView(showHUD: $uploadScanDocument.showHUD, textLabel: NSLocalizedString("_wait_", comment: ""), image: "doc.badge.arrow.up")
                     .offset(y: uploadScanDocument.showHUD ? 5 : -200)
                     .animation(.easeOut, value: uploadScanDocument.showHUD)
             }
         }
-        .background(Color(UIColor.systemGroupedBackground))
+        .applyGlobalFormStyle()
         .sheet(isPresented: $isPresentedSelect) {
             NCSelectViewControllerRepresentable(delegate: uploadScanDocument)
         }

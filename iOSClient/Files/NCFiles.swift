@@ -4,6 +4,7 @@
 //
 //  Created by Marino Faggiana on 26/09/2020.
 //  Copyright © 2020 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -34,7 +35,6 @@ class NCFiles: NCCollectionViewCommon {
 
         titleCurrentFolder = NCBrandOptions.shared.brand
         layoutKey = NCGlobal.shared.layoutViewFiles
-        enableSearchBar = true
         headerRichWorkspaceDisable = false
         headerMenuTransferView = true
         emptyImage = NCImageCache.images.folder
@@ -45,6 +45,8 @@ class NCFiles: NCCollectionViewCommon {
     // MARK: - View Life Cycle
 
     override func viewDidLoad() {
+        enableSearchBar = !isOpenedFromSearchResults()
+        
         super.viewDidLoad()
 
         if isRoot {
@@ -85,7 +87,9 @@ class NCFiles: NCCollectionViewCommon {
         if dataSource.metadatas.isEmpty {
             reloadDataSource(withQueryDB: true)
         }
-        reloadDataSourceNetwork(withQueryDB: true)
+        if !isSearchingMode {
+            reloadDataSourceNetwork(withQueryDB: true)
+        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -282,17 +286,10 @@ class NCFiles: NCCollectionViewCommon {
             }
         }
     }
-
-    // MARK: - NCAccountSettingsModelDelegate
-
-    override func accountSettingsDidDismiss(tableAccount: tableAccount?) {
-        if NCManageDatabase.shared.getAllAccount().isEmpty {
-            appDelegate.openLogin(selector: NCGlobal.shared.introLogin, openLoginWeb: false)
-        } else if let account = tableAccount?.account, account != appDelegate.account {
-            appDelegate.changeAccount(account, userProfile: nil) { }
-        } else if isRoot {
-            titleCurrentFolder = getNavigationTitle()
-            navigationItem.title = titleCurrentFolder
-        }
+    
+    private func isOpenedFromSearchResults() -> Bool {
+        return self.navigationController?.viewControllers.contains(where: { viewController in
+            return (viewController as? NCCollectionViewCommon)?.isSearchingMode ?? false
+        }) ?? false
     }
 }

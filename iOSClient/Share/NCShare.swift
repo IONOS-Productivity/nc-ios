@@ -5,6 +5,7 @@
 //  Created by Marino Faggiana on 17/07/2019.
 //  Copyright © 2019 Marino Faggiana. All rights reserved.
 //  Copyright © 2022 Henrik Storch. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //  Author Henrik Storch <henrik.storch@nextcloud.com>
@@ -66,7 +67,9 @@ class NCShare: UIViewController, NCShareNetworkingDelegate, NCSharePagingContent
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        
+        btnContact.imageView?.contentMode = .scaleAspectFit
 
         viewContainerConstraint.constant = height
         searchFieldTopConstraint.constant = 0
@@ -77,7 +80,7 @@ class NCShare: UIViewController, NCShareNetworkingDelegate, NCSharePagingContent
         tableView.dataSource = self
         tableView.delegate = self
         tableView.allowsSelection = false
-        tableView.backgroundColor = .systemBackground
+        tableView.backgroundColor = NCBrandColor.shared.appBackgroundColor
         tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 10, right: 0)
 
         tableView.register(UINib(nibName: "NCShareLinkCell", bundle: nil), forCellReuseIdentifier: "cellLink")
@@ -110,6 +113,11 @@ class NCShare: UIViewController, NCShareNetworkingDelegate, NCSharePagingContent
         searchField.searchTextField.font = .systemFont(ofSize: 14)
         searchField.delegate = self
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarAppearance()
+    }
 
     func makeNewLinkShare() {
         guard
@@ -137,10 +145,7 @@ class NCShare: UIViewController, NCShareNetworkingDelegate, NCSharePagingContent
         searchFieldTopConstraint.constant = 45
         sharedWithYouByView.isHidden = false
         sharedWithYouByLabel.text = NSLocalizedString("_shared_with_you_by_", comment: "") + " " + metadata.ownerDisplayName
-        sharedWithYouByImage.image = utility.loadUserImage(
-            for: metadata.ownerId,
-            displayName: metadata.ownerDisplayName,
-            userBaseUrl: appDelegate)
+        sharedWithYouByImage.image = utility.userImage
         sharedWithYouByLabel.accessibilityHint = NSLocalizedString("_show_profile_", comment: "")
 
         let shareAction = UITapGestureRecognizer(target: self, action: #selector(openShareProfile))
@@ -248,13 +253,15 @@ class NCShare: UIViewController, NCShareNetworkingDelegate, NCSharePagingContent
         let blurEffectView = UIVisualEffectView(effect: blurEffect)
         blurEffectView.frame = CGRect(x: 0, y: 0, width: 500, height: 20)
 
-        appearance.backgroundColor = .systemBackground
+        appearance.backgroundColor = UIColor(resource: .Share.SearchUserCell.Background.normal)
+        appearance.selectionBackgroundColor = UIColor(resource: .Share.SearchUserCell.Background.pressed)
         appearance.cornerRadius = 10
         appearance.shadowColor = .black
         appearance.shadowOpacity = 0.2
         appearance.shadowRadius = 30
         appearance.animationduration = 0.25
-        appearance.textColor = .darkGray
+        appearance.textColor = UIColor(resource: .Share.SearchUserCell.title)
+		appearance.selectedTextColor = UIColor(resource: .Share.SearchUserCell.title)
 
         for sharee in sharees {
             var label = sharee.label
@@ -292,6 +299,12 @@ class NCShare: UIViewController, NCShareNetworkingDelegate, NCSharePagingContent
         }
 
         dropDown.show()
+    }
+    
+    func showOKAlert(title: String?, message: String?) {
+        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default, handler: { _ in }))
+        return present(alertController, animated: true)
     }
 }
 

@@ -31,24 +31,17 @@ extension UINavigationController {
         return self.visibleViewController!.topMostViewController()
     }
 
-    func setNavigationBarAppearance() {
-
+    func setNavigationBarAppearance(backround: UIColor = NCBrandColor.shared.appBackgroundColor) {
         navigationBar.tintColor = NCBrandColor.shared.iconImageColor
-
+        
         let standardAppearance = UINavigationBarAppearance()
-        standardAppearance.configureWithDefaultBackground()
-
+        standardAppearance.configureWithOpaqueBackground()
+        standardAppearance.backgroundColor = backround
         standardAppearance.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor: NCBrandColor.shared.textColor]
         standardAppearance.titleTextAttributes = [NSAttributedString.Key.foregroundColor: NCBrandColor.shared.textColor]
+        standardAppearance.shadowColor = .clear
         navigationBar.standardAppearance = standardAppearance
-
-        let scrollEdgeAppearance = UINavigationBarAppearance()
-        scrollEdgeAppearance.configureWithDefaultBackground()
-
-        scrollEdgeAppearance.backgroundColor = .systemBackground
-        scrollEdgeAppearance.shadowColor = .clear
-        scrollEdgeAppearance.shadowImage = UIImage()
-        navigationBar.scrollEdgeAppearance = scrollEdgeAppearance
+        navigationBar.scrollEdgeAppearance = standardAppearance
     }
 
     func setGroupAppearance() {
@@ -70,10 +63,5 @@ extension UINavigationController {
         scrollEdgeAppearance.shadowColor = .clear
         scrollEdgeAppearance.shadowImage = UIImage()
         navigationBar.scrollEdgeAppearance = scrollEdgeAppearance
-    }
-
-    func setMediaAppreance() {
-
-        setNavigationBarHidden(true, animated: false)
     }
 }
