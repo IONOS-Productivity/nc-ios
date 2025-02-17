@@ -31,6 +31,8 @@ import Queuer
 import EasyTipView
 import SwiftUI
 
+// Some changed comment
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     var tipView: EasyTipView?
@@ -113,9 +115,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         _ = NCActionCenter.shared
         _ = NCNetworkingProcess.shared
 
+		someFunctionToCheckChangedBranchBranding()
+		
         return true
     }
 
+	func someFunctionToCheckChangedBranchBranding() {
+		debugPrint("Changes print")
+	}
+	
     func applicationWillTerminate(_ application: UIApplication) {
         if self.notificationSettings?.authorizationStatus != .denied && UIApplication.shared.backgroundRefreshStatus == .available {
             let content = UNMutableNotificationContent()
