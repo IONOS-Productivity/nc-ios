@@ -17,6 +17,8 @@
 		370D26AF248A3D7A00121797 /* NCCellProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370D26AE248A3D7A00121797 /* NCCellProtocol.swift */; };
 		371B5A2E23D0B04500FAFAE9 /* NCMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B5A2D23D0B04500FAFAE9 /* NCMenu.swift */; };
 		3781B9B023DB2B7E006B4B1D /* AppDelegate+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3781B9AF23DB2B7E006B4B1D /* AppDelegate+Menu.swift */; };
+		429600DB2D63647F00A370B5 /* SomeTestScreenViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429600D92D63647F00A370B5 /* SomeTestScreenViewController.swift */; };
+		429600DC2D63647F00A370B5 /* SomeTestScreenViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 429600DA2D63647F00A370B5 /* SomeTestScreenViewController.xib */; };
 		8491B1CD273BBA82001C8C5B /* UIViewController+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8491B1CC273BBA82001C8C5B /* UIViewController+Menu.swift */; };
 		AA3C85E82D36B08C00F74F12 /* UITestBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3C85E72D36B08C00F74F12 /* UITestBackend.swift */; };
 		AA3C85EB2D36BBFB00F74F12 /* OCSResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3C85EA2D36BBF400F74F12 /* OCSResponse.swift */; };
@@ -1195,6 +1197,8 @@
 		370D26AE248A3D7A00121797 /* NCCellProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCCellProtocol.swift; sourceTree = "<group>"; };
 		371B5A2D23D0B04500FAFAE9 /* NCMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMenu.swift; sourceTree = "<group>"; };
 		3781B9AF23DB2B7E006B4B1D /* AppDelegate+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+Menu.swift"; sourceTree = "<group>"; };
+		429600D92D63647F00A370B5 /* SomeTestScreenViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SomeTestScreenViewController.swift; sourceTree = "<group>"; };
+		429600DA2D63647F00A370B5 /* SomeTestScreenViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SomeTestScreenViewController.xib; sourceTree = "<group>"; };
 		8491B1CC273BBA82001C8C5B /* UIViewController+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Menu.swift"; sourceTree = "<group>"; };
 		AA3C85E72D36B08C00F74F12 /* UITestBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestBackend.swift; sourceTree = "<group>"; };
 		AA3C85EA2D36BBF400F74F12 /* OCSResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCSResponse.swift; sourceTree = "<group>"; };
@@ -2013,31 +2017,19 @@
 			path = Menu;
 			sourceTree = "<group>";
 		};
-		AA3C85E92D36BBDE00F74F12 /* UITestBackend */ = {
+		429600D82D63645900A370B5 /* TestScreen */ = {
 			isa = PBXGroup;
 			children = (
-				AA3C85EC2D36BC8400F74F12 /* Responses */,
-				AA3C85E72D36B08C00F74F12 /* UITestBackend.swift */,
+				429600D92D63647F00A370B5 /* SomeTestScreenViewController.swift */,
+				429600DA2D63647F00A370B5 /* SomeTestScreenViewController.xib */,
 			);
-			path = UITestBackend;
+			path = TestScreen;
 			sourceTree = "<group>";
 		};
-		AA3C85EC2D36BC8400F74F12 /* Responses */ = {
+		AF8ED1FA2757821000B8DBC4 /* NextcloudUnitTests */ = {
 			isa = PBXGroup;
 			children = (
-				AAA7BC2D2D3E39EC008F1A22 /* CapabilitiesResponse.swift */,
-				AA3C85F12D394B3600F74F12 /* DownloadLimitResponse.swift */,
-				AAA7BC2F2D3E3B83008F1A22 /* DownloadLimitCapabilityResponse.swift */,
-				AA3C85ED2D36BCCB00F74F12 /* SharesResponse.swift */,
-				AA3C85EA2D36BBF400F74F12 /* OCSResponse.swift */,
-			);
-			path = Responses;
-			sourceTree = "<group>";
-		};
-		AA52EB442D42AC500089C348 /* NextcloudUnitTests */ = {
-			isa = PBXGroup;
-			children = (
-				AA52EB452D42AC5A0089C348 /* Placeholder.swift */,
+				AF8ED1FB2757821000B8DBC4 /* NextcloudUnitTests.swift */,
 			);
 			path = NextcloudUnitTests;
 			sourceTree = "<group>";
@@ -3196,6 +3188,7 @@
 				F794E13E2BBC0F70003693D7 /* SceneDelegate.swift */,
 				F77DD6A72C5CC093009448FB /* NCSession.swift */,
 				F7A8FD512C5E2557006C9CF8 /* NCAccount.swift */,
+				429600D82D63645900A370B5 /* TestScreen */,
 				F7401C142C75E6F300649E87 /* NCCapabilities.swift */,
 				F76B649B2ADFFAED00014640 /* NCImageCache.swift */,
 				F702F2CE25EE5B5C008F8E80 /* NCGlobal.swift */,
@@ -3848,6 +3841,7 @@
 				F761856D29E98543006EB3B0 /* NCIntroCollectionViewCell.xib in Resources */,
 				F78ACD4621903D010088454D /* NCGridCell.xib in Resources */,
 				F7F4F10827ECDBDB008676F9 /* Inconsolata-ExtraLight.ttf in Resources */,
+				429600DC2D63647F00A370B5 /* SomeTestScreenViewController.xib in Resources */,
 				F72685E727C78E490019EF5E /* InfoPlist.strings in Resources */,
 				F769453C22E9CFFF000A798A /* NCShareUserCell.xib in Resources */,
 				F7F4F10927ECDBDB008676F9 /* Inconsolata-Bold.ttf in Resources */,
@@ -4701,6 +4695,7 @@
 				F3BB46522A39EC4900461F6E /* NCMoreAppSuggestionsCell.swift in Sources */,
 				F704B5E52430AA8000632F5F /* NCCreateFormUploadConflict.swift in Sources */,
 				F765608F23BF813600765969 /* NCContentPresenter.swift in Sources */,
+				429600DB2D63647F00A370B5 /* SomeTestScreenViewController.swift in Sources */,
 				F7327E352B73AEDE00A462C7 /* NCNetworking+LivePhoto.swift in Sources */,
 				F76687072B7D067400779E3F /* NCAudioRecorderViewController.swift in Sources */,
 				AA8E03DA2D2ED83300E7E89C /* TransientShare.swift in Sources */,

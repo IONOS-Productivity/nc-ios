@@ -86,7 +86,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
                                          copyLogToDocumentDirectory: true)
             NextcloudKit.shared.nkCommonInstance.writeLog("[INFO] Start session with level \(NCKeychain().logLevel) " + versionNextcloudiOS)
         }
-
+        someNewMethodToTest()
         /// Push Notification & display notification
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             self.notificationSettings = settings
@@ -441,6 +441,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
         let applicationHandle = NCApplicationHandle()
         return applicationHandle.applicationOpenUserActivity(userActivity)
+    }
+    
+    func someNewMethodToTest() {
+        print("some text")
     }
 }
 
