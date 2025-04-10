@@ -5,6 +5,7 @@
 //  Created by Aditya Tyagi on 08/03/24.
 //  Created by Marino Faggiana on 30/05/24.
 //  Copyright © 2024 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Aditya Tyagi <adityagi02@yahoo.com>
 //
@@ -57,11 +58,11 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     /// State variable for storing the footer title, usually used for cache deletion.
     @Published var footerTitle: String = ""
     /// Root View Controller
-    @Published var controller: NCMainTabBarController?
+    @Published var viewController: UIViewController?
 
     /// Initializes the view model with default values.
-    init(controller: NCMainTabBarController?) {
-        self.controller = controller
+    init(viewController: UIViewController?) {
+        self.viewController = viewController
         onViewAppear()
     }
 
@@ -145,7 +146,7 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
             ufs.removeTemporaryDirectory()
             ufs.createDirectoryStandard()
 
-            NCAutoUpload.shared.alignPhotoLibrary(viewController: self.controller)
+            NCAutoUpload.shared.alignPhotoLibrary(viewController: self.viewController)
             NCImageCache.shared.createMediaCache(account: self.appDelegate.account, withCacheSize: true)
 
             NCActivityIndicator.shared.stop()
@@ -186,7 +187,7 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
         // Instantiate NCViewerQuickLook with the log file URL, editing disabled, and no metadata
         let viewerQuickLook = NCViewerQuickLook(with: NSURL(fileURLWithPath: NextcloudKit.shared.nkCommonInstance.filenamePathLog) as URL, isEditingEnabled: false, metadata: nil)
         // Present the NCViewerQuickLook view controller
-        controller?.present(viewerQuickLook, animated: true, completion: nil)
+        viewController?.present(viewerQuickLook, animated: true, completion: nil)
     }
 
     /// Clears the log file.

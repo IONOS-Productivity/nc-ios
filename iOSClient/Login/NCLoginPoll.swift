@@ -4,6 +4,7 @@
 //
 //  Created by Milen on 21.05.24.
 //  Copyright © 2024 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -23,68 +24,99 @@
 
 import NextcloudKit
 import SwiftUI
+import SafariServices
 
 struct NCLoginPoll: View {
     let loginFlowV2Token: String
     let loginFlowV2Endpoint: String
     let loginFlowV2Login: String
-
+    
     var cancelButtonDisabled = false
-
+    
+    var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+    
     @ObservedObject private var loginManager = LoginManager()
     @Environment(\.dismiss) private var dismiss
-
+    
     var body: some View {
-        VStack {
-            Text(NSLocalizedString("_poll_desc_", comment: ""))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white)
-                .padding()
-
-            ProgressView()
-                .scaleEffect(1.5)
-                .tint(.white)
-                .padding()
-
-            HStack {
-                Button(NSLocalizedString("_cancel_", comment: "")) {
-                    dismiss()
-                }
-                .disabled(loginManager.isLoading || cancelButtonDisabled)
-                .buttonStyle(.bordered)
-                .tint(.white)
-
-                Button(NSLocalizedString("_retry_", comment: "")) {
-                    loginManager.openLoginInBrowser()
-                }
-                .buttonStyle(.borderedProminent)
-                .foregroundStyle(Color(NCBrandColor.shared.customer))
-                .tint(.white)
+        GeometryReader { geometry in
+            let size = geometry.size
+            let welcomeLabelWidthRatio = isIPad ? 0.6 : 0.78
+            let descriptionFont = Font.system(size: isIPad ? 36.0 : 16.0)
+            
+            VStack {
+                Image(.logo)
+                    .resizable()
+                    .aspectRatio(159/22, contentMode: .fit)
+                    .frame(width: size.width * 0.45)
+                    .padding(.top, size.height * 0.12)
+                Text(NSLocalizedString("_poll_desc_", comment: ""))
+                    .font(descriptionFont)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white)
+                    .frame(width: size.width * welcomeLabelWidthRatio)
+                    .padding(.top, size.height * 0.1)
+                
+                Spacer()
+                CircleItemSpinner()
+                    .tint(.white)
+                Spacer()
+                
+                HStack(spacing: 15) {
+                    Button(NSLocalizedString("_cancel_", comment: "")) {
+                        dismiss()
+                    }
+                    .disabled(loginManager.isLoading || cancelButtonDisabled)
+                    .buttonStyle(ButtonStyleSecondary(maxWidth: .infinity))
+                    
+                    Button(NSLocalizedString("_retry_", comment: "")) {
+                        loginManager.openLoginInBrowser()
+                    }
+                    .buttonStyle(ButtonStylePrimary(maxWidth: .infinity))
+                    
+				}
+                .frame(width: size.width * (isIPad ? 0.60 : 0.80))
+				.padding(.bottom, size.height * 0.15)
+                .environment(\.colorScheme, .dark)
             }
-            .padding()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                Image(.gradientBackground)
+                    .resizable()
+                    .ignoresSafeArea()
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onChange(of: loginManager.pollFinished) { value in
-            if value {
-                let window = UIApplication.shared.firstWindow
-
-                if window?.rootViewController is NCMainTabBarController {
-                    window?.rootViewController?.dismiss(animated: true, completion: nil)
-                } else {
-                    if let mainTabBarController = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController() as? NCMainTabBarController {
-                        mainTabBarController.modalPresentationStyle = .fullScreen
-                        mainTabBarController.view.alpha = 0
-                        window?.rootViewController = mainTabBarController
-                        window?.makeKeyAndVisible()
-                        UIView.animate(withDuration: 0.5) {
-                            mainTabBarController.view.alpha = 1
+                if value {
+                    let window = UIApplication.shared.firstWindow
+                    
+                    if window?.rootViewController is NCMainTabBarController {
+                        window?.rootViewController?.dismiss(animated: true, completion: nil)
+                    } else {
+                        if let mainTabBarController = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController() as? NCMainTabBarController {
+                            mainTabBarController.modalPresentationStyle = .fullScreen
+                            mainTabBarController.view.alpha = 0
+                            window?.rootViewController = mainTabBarController
+                            window?.makeKeyAndVisible()
+							
+							if let scene = window?.windowScene {
+								SceneManager.shared.register(scene: scene, withRootViewController: mainTabBarController)
+							}
+							
+                            UIView.animate(withDuration: 0.5) {
+                                mainTabBarController.view.alpha = 1
+                            }
                         }
                     }
                 }
-            }
         }
-        .background(Color(NCBrandColor.shared.customer))
         .onAppear {
+			if #available(iOS 16.0, *) {
+				SFSafariViewController.DataStore.default.clearWebsiteData()
+			}
+			
             loginManager.configure(loginFlowV2Token: loginFlowV2Token, loginFlowV2Endpoint: loginFlowV2Endpoint, loginFlowV2Login: loginFlowV2Login)
 
             if !isRunningForPreviews {
@@ -92,11 +124,19 @@ struct NCLoginPoll: View {
             }
         }
         .interactiveDismissDisabled()
+        .fullScreenCover(item: $loginManager.browserURL, content: { url in
+            SafariView(url: url) {
+                loginManager.browserURL = nil
+                loginManager.poll()
+            }
+            .ignoresSafeArea()
+        })
     }
 }
 
+
 #Preview {
-    NCLoginPoll(loginFlowV2Token: "", loginFlowV2Endpoint: "", loginFlowV2Login: "")
+	NCLoginPoll(loginFlowV2Token: "", loginFlowV2Endpoint: "", loginFlowV2Login: "")
 }
 
 private class LoginManager: ObservableObject {
@@ -108,6 +148,7 @@ private class LoginManager: ObservableObject {
 
     @Published var pollFinished = false
     @Published var isLoading = false
+    @Published var browserURL: URL?
 
     init() {
         NotificationCenter.default.addObserver(self, selector: #selector(applicationDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
@@ -124,7 +165,10 @@ private class LoginManager: ObservableObject {
     }
 
     func poll() {
-        NextcloudKit.shared.getLoginFlowV2Poll(token: self.loginFlowV2Token, endpoint: self.loginFlowV2Endpoint) { server, loginName, appPassword, _, error in
+        let loginOptions = NKRequestOptions(customUserAgent: userAgent)
+        NextcloudKit.shared.getLoginFlowV2Poll(token: self.loginFlowV2Token, 
+                                               endpoint: self.loginFlowV2Endpoint,
+                                               options: loginOptions) { server, loginName, appPassword, _, error in
             if error == .success, let urlBase = server, let user = loginName, let appPassword {
                 self.isLoading = true
                 self.appDelegate.createAccount(urlBase: urlBase, user: user, password: appPassword) { error in
@@ -137,6 +181,43 @@ private class LoginManager: ObservableObject {
     }
 
     func openLoginInBrowser() {
-        UIApplication.shared.open(URL(string: loginFlowV2Login)!)
+        browserURL = URL(string: loginFlowV2Login)
+    }
+}
+
+private struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+    let onFinished: () -> Void
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let safariVC = SFSafariViewController(url: url)
+        safariVC.delegate = context.coordinator
+        return safariVC
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, SFSafariViewControllerDelegate {
+        let parent: SafariView
+
+        init(_ parent: SafariView) {
+            self.parent = parent
+        }
+
+        func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
+            controller.dismiss(animated: true) { [weak self] in
+                self?.parent.onFinished()
+            }
+        }
+    }
+}
+
+extension URL: Identifiable {
+    public var id: String {
+        return self.absoluteString
     }
 }

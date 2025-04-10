@@ -39,14 +39,6 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
               let cell = (cell as? NCCellProtocol) else { return }
         let existsIcon = utilityFileSystem.fileProviderStoragePreviewIconExists(metadata.ocId, etag: metadata.etag)
 
-        func downloadAvatar(fileName: String, user: String, dispalyName: String?) {
-            if let image = NCManageDatabase.shared.getImageAvatarLoaded(fileName: fileName) {
-                cell.fileAvatarImageView?.contentMode = .scaleAspectFill
-                cell.fileAvatarImageView?.image = image
-            } else {
-                NCNetworking.shared.downloadAvatar(user: user, dispalyName: dispalyName, fileName: fileName, cell: cell, view: collectionView)
-            }
-        }
         /// CONTENT MODE
         cell.filePreviewImageView?.layer.borderWidth = 0
         if existsIcon {
@@ -54,7 +46,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         } else {
             cell.filePreviewImageView?.contentMode = .scaleAspectFit
         }
-        cell.fileAvatarImageView?.contentMode = .center
+        cell.fileAvatarImageView?.contentMode = .scaleAspectFit
         /// THUMBNAIL
         if !metadata.directory {
             if metadata.hasPreviewBorder {
@@ -112,7 +104,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
                 if !metadata.iconUrl.isEmpty {
                     if let ownerId = getAvatarFromIconUrl(metadata: metadata) {
                         let fileName = metadata.userBaseUrl + "-" + ownerId + ".png"
-                        downloadAvatar(fileName: fileName, user: ownerId, dispalyName: nil)
+						cell.fileAvatarImageView?.image = utility.userImage
                     }
                 }
             }
@@ -122,7 +114,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
            metadata.ownerId != appDelegate.userId,
            appDelegate.account == metadata.account {
             let fileName = metadata.userBaseUrl + "-" + metadata.ownerId + ".png"
-            downloadAvatar(fileName: fileName, user: metadata.ownerId, dispalyName: metadata.ownerDisplayName)
+			cell.fileAvatarImageView?.image = utility.userImage
         }
     }
 
@@ -195,6 +187,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             } else {
                 cell.fileInfoLabel?.text = metadata.subline
             }
+            cell.fileSubinfoLabel?.text = nil
             cell.fileSubinfoLabel?.isHidden = true
         } else {
             cell.fileSubinfoLabel?.isHidden = false
@@ -254,7 +247,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
         // image Favorite
         if metadata.favorite {
-            cell.fileFavoriteImage?.image = NCImageCache.images.favorite
+            cell.fileFavoriteImage?.image = UIImage(resource: .FileFolderCell.star)
             a11yValues.append(NSLocalizedString("_favorite_short_", comment: ""))
         }
 
@@ -343,8 +336,8 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         cell.setAccessibility(label: metadata.fileNameView + ", " + (cell.fileInfoLabel?.text ?? "") + (cell.fileSubinfoLabel?.text ?? ""), value: a11yValues.joined(separator: ", "))
 
         // Color string find in search
-        cell.fileTitleLabel?.textColor = NCBrandColor.shared.textColor
-        cell.fileTitleLabel?.font = .systemFont(ofSize: 15)
+        cell.fileTitleLabel?.textColor = UIColor(resource: .ListCell.title)
+        cell.fileTitleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
 
         if isSearchingMode, let literalSearch = self.literalSearch, let title = cell.fileTitleLabel?.text {
             let longestWordRange = (title.lowercased() as NSString).range(of: literalSearch)

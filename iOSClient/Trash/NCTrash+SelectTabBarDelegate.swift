@@ -50,7 +50,7 @@ extension NCTrash: NCTrashSelectTabBarDelegate {
         } else {
             selectOcId = self.datasource.compactMap({ $0.fileId })
         }
-        tabBarSelect.update(selectOcId: selectOcId)
+        selectionToolbar.update(selectOcId: selectOcId)
         collectionView.reloadData()
     }
 
@@ -68,7 +68,7 @@ extension NCTrash: NCTrashSelectTabBarDelegate {
         isEditMode = editMode
         selectOcId.removeAll()
 
-        setNavigationRightItems()
+        updateSelectionToolbar()
 
         navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
         navigationItem.hidesBackButton = editMode

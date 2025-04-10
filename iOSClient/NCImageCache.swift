@@ -4,6 +4,7 @@
 //
 //  Created by Marino Faggiana on 18/10/23.
 //  Copyright © 2021 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -244,8 +245,8 @@ class NCImageCache: NSObject {
         static var folderAutomaticUpload = UIImage()
         static var folder = UIImage()
 
-        static var checkedYes = UIImage()
-        static var checkedNo = UIImage()
+		static var checkedYes: UIImage? = UIImage()
+		static var checkedNo: UIImage? = UIImage()
 
         static var buttonMore = UIImage()
         static var buttonStop = UIImage()
@@ -266,19 +267,20 @@ class NCImageCache: NSObject {
 
         images.file = utility.loadImage(named: "doc", colors: [NCBrandColor.shared.iconImageColor2])
 
-        images.shared = utility.loadImage(named: "person.fill.badge.plus", colors: NCBrandColor.shared.iconImageMultiColors)
-        images.canShare = utility.loadImage(named: "person.fill.badge.plus", colors: NCBrandColor.shared.iconImageMultiColors)
-        images.shareByLink = utility.loadImage(named: "link", colors: [NCBrandColor.shared.iconImageColor])
+        let canShareImage = UIImage(resource: .Share.canShare).withTintColor(NCBrandColor.shared.brandElement)
+        images.shared = canShareImage
+        images.canShare = canShareImage
+        images.shareByLink = UIImage(resource: .Share.shared)
 
-        images.favorite = utility.loadImage(named: "star.fill", colors: [NCBrandColor.shared.yellowFavorite])
-        images.livePhoto = utility.loadImage(named: "livephoto", colors: [NCBrandColor.shared.iconImageColor])
-        images.offlineFlag = utility.loadImage(named: "arrow.down.circle.fill", colors: [.systemGreen])
-        images.local = utility.loadImage(named: "checkmark.circle.fill", colors: [.systemGreen])
+        images.favorite = NCImagesRepository.favorite
+        images.livePhoto = NCImagesRepository.livePhoto
+        images.offlineFlag = UIImage(resource: .offlineFlag)
+        images.local = UIImage(resource: .local)
 
-        images.checkedYes = utility.loadImage(named: "checkmark.circle.fill", colors: [NCBrandColor.shared.brandElement])
-        images.checkedNo = utility.loadImage(named: "circle", colors: [NCBrandColor.shared.brandElement])
+        images.checkedYes = UIImage(named: "FileSelection/list_item_selected")
+        images.checkedNo =  UIImage(named: "FileSelection/list_item_deselected")
 
-        images.buttonMore = utility.loadImage(named: "ellipsis", colors: [NCBrandColor.shared.iconImageColor])
+        images.buttonMore = UIImage(resource: .more).withTintColor(NCBrandColor.shared.brandElement)
         images.buttonStop = utility.loadImage(named: "stop.circle", colors: [NCBrandColor.shared.iconImageColor])
         images.buttonMoreLock = utility.loadImage(named: "lock.fill", colors: [NCBrandColor.shared.iconImageColor])
 
@@ -291,13 +293,14 @@ class NCImageCache: NSObject {
         self.brandElementColor = brandElement
         let utility = NCUtility()
 
+        let folderGroup = UIImage(resource: .folderGroup)
         images.folderEncrypted = UIImage(named: "folderEncrypted")!.image(color: brandElement)
-        images.folderSharedWithMe = UIImage(named: "folder_shared_with_me")!.image(color: brandElement)
-        images.folderPublic = UIImage(named: "folder_public")!.image(color: brandElement)
-        images.folderGroup = UIImage(named: "folder_group")!.image(color: brandElement)
+        images.folderSharedWithMe = folderGroup
+        images.folderPublic = folderGroup
+        images.folderGroup = folderGroup
         images.folderExternal = UIImage(named: "folder_external")!.image(color: brandElement)
-        images.folderAutomaticUpload = UIImage(named: "folderAutomaticUpload")!.image(color: brandElement)
-        images.folder = UIImage(named: "folder")!.image(color: brandElement)
+        images.folderAutomaticUpload = UIImage(resource: .folderAutomaticUpload)
+        images.folder = UIImage(resource: .folder)
 
         images.iconContacts = utility.loadImage(named: "person.crop.rectangle.stack", colors: [NCBrandColor.shared.iconImageColor])
         images.iconTalk = UIImage(named: "talk-template")!.image(color: brandElement)

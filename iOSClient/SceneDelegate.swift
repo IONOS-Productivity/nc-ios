@@ -4,6 +4,7 @@
 //
 //  Created by Marino Faggiana on 25/03/24.
 //  Copyright © 2024 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -31,11 +32,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     private let appDelegate = UIApplication.shared.delegate as? AppDelegate
     private var privacyProtectionWindow: UIWindow?
+    
+    let sceneIdentifier: String = UUID().uuidString
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene),
               let appDelegate else { return }
         self.window = UIWindow(windowScene: windowScene)
+		setupUIAppearance()
 
         if NCManageDatabase.shared.getActiveAccount() != nil {
             if let controller = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController() as? NCMainTabBarController {
@@ -58,6 +62,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         appDelegate.startTimerErrorNetworking(scene: scene)
     }
 
+	private func setupUIAppearance() {
+		NCMainTabBar.setupAppearance()
+	}
+	
     func sceneDidDisconnect(_ scene: UIScene) {
         print("[DEBUG] Scene did disconnect")
     }
@@ -77,6 +85,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         hidePrivacyProtectionWindow()
         if let window = SceneManager.shared.getWindow(scene: scene), let controller = SceneManager.shared.getController(scene: scene) {
             window.rootViewController = controller
+            
+            DataProtectionAgreementManager.shared.showAgreement(viewController: controller)
+            
             if NCKeychain().presentPasscode {
                 NCPasscode.shared.presentPasscode(viewController: controller, delegate: self) {
                     NCPasscode.shared.enableTouchFaceID()
@@ -172,8 +183,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let controller = SceneManager.shared.getController(scene: scene) as? NCMainTabBarController,
               let url = URLContexts.first?.url,
+              let sceneIdentifier = controller.sceneIdentifier,
               let appDelegate else { return }
-        let sceneIdentifier = controller.sceneIdentifier
+
         let account = appDelegate.account
         let scheme = url.scheme
         let action = url.host
@@ -234,14 +246,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 case NCGlobal.shared.actionTextDocument:
 
                     let directEditingCreators = NCManageDatabase.shared.getDirectEditingCreators(account: appDelegate.account)
-                    let directEditingCreator = directEditingCreators!.first(where: { $0.editor == NCGlobal.shared.editorText})!
-                    let serverUrl = controller.currentServerUrl()
-
-                    Task {
-                        let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + ".md", account: appDelegate.account, serverUrl: serverUrl)
-                        let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, urlBase: appDelegate.urlBase, userId: appDelegate.userId)
-
-                        NCCreateDocument().createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorText, creatorId: directEditingCreator.identifier, templateId: NCGlobal.shared.templateDocument)
+                    if let directEditingCreator = directEditingCreators?.first(where: { $0.editor == NCGlobal.shared.editorText}) {
+                        let serverUrl = controller.currentServerUrl()
+                        
+                        Task {
+                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + ".md", account: appDelegate.account, serverUrl: serverUrl)
+                            let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, urlBase: appDelegate.urlBase, userId: appDelegate.userId)
+                            
+                            NCCreateDocument().createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorText, creatorId: directEditingCreator.identifier, templateId: NCGlobal.shared.templateDocument)
+                        }
                     }
 
                 case NCGlobal.shared.actionVoiceMemo:
@@ -437,7 +450,10 @@ class SceneManager {
     func getSceneIdentifier() -> [String] {
         var results: [String] = []
         for controller in sceneController.keys {
-            results.append(controller.sceneIdentifier)
+            guard let sceneIdentifier = controller.sceneIdentifier else {
+                continue
+            }
+            results.append(sceneIdentifier)
         }
         return results
     }
