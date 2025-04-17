@@ -28,6 +28,8 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
         setNavigationBarAppearance()
     }
     
+    private var timer: Timer?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -39,6 +41,21 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
                                                     onAccountDetailsOpen: { [weak self] in self?.collectionViewCommon?.setEditMode(false) },
                                                     presentVC: { [weak self] vc in self?.present(vc, animated: true) },
                                                     onMenuOpened: { [weak self] in self?.collectionViewCommon?.dismissTip() })
+        
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
+            self.timer?.invalidate()
+            self.timer = nil
+        }
+
+        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                if UIApplication.shared.applicationState == .active {
+                    self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
+                        self.setNavigationRightItems()
+                    })
+                }
+            }
+        }
     }
     
     func setNavigationLeftItems() {
@@ -96,11 +113,27 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
             collectionViewCommon.tabBarSelect?.show()
         } else {
             collectionViewCommon.tabBarSelect?.hide()
-            collectionViewCommon.navigationItem.rightBarButtonItems = isCurrentScreenInMainTabBar() ? [createAccountButton()] : []
+            collectionViewCommon.navigationItem.rightBarButtonItems = isCurrentScreenInMainTabBar() ?
+            [createAccountButton(), createTransfersButtonIfNeeded()].compactMap { $0 }
+            : []
         }
     }
     
     private func createAccountButton() -> UIBarButtonItem {
         accountButtonFactory.createAccountButton()
+    }
+    
+    private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
+        let resultsCount = NCManageDatabase.shared.getResultsMetadatas(predicate: NSPredicate(format: "status != %i", NCGlobal.shared.metadataStatusNormal))?.count ?? 0
+        guard resultsCount > 0 else { return nil }
+        let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
+                                              style: .plain) { [weak self] in
+            if let navigationController = UIStoryboard(name: "NCTransfers", bundle: nil).instantiateInitialViewController() as? UINavigationController,
+               let viewController = navigationController.topViewController as? NCTransfers {
+                viewController.modalPresentationStyle = .pageSheet
+                self?.present(navigationController, animated: true, completion: nil)
+            }
+        }
+        return transfersButton
     }
 }

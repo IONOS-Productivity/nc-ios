@@ -235,7 +235,7 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
         cell.fileOcId = metadata.ocId
         cell.fileOcIdTransfer = metadata.ocIdTransfer
         cell.fileUser = metadata.ownerId
-        cell.filePreviewImageView?.image = imageCache.getImageFile()
+        cell.filePreviewImageView?.image = UIImage(resource: .fileUnsupported)
         cell.filePreviewImageView?.backgroundColor = nil
         cell.labelTitle.text = metadata.fileNameView
         cell.labelTitle.textColor = NCBrandColor.shared.textColor
@@ -243,15 +243,8 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
         var pathText = metadata.serverUrl.replacingOccurrences(of: serverUrlHome, with: "")
         if pathText.isEmpty { pathText = "/" }
         cell.labelPath.text = pathText
-        cell.setButtonMore(image: imageCache.getImageButtonStop())
-
-        /// Image item
-        if !metadata.iconName.isEmpty {
-            cell.filePreviewImageView?.image = utility.loadImage(named: metadata.iconName, useTypeIconFile: true, account: metadata.account)
-        } else {
-            cell.filePreviewImageView?.image = imageCache.getImageFile()
-        }
-
+        cell.setButtonMore(image: UIImage(resource: .Transfers.stopUpload))
+        
         /// Status and Info
         let user = (metadata.user == session.user ? "" : " - " + metadata.account)
         switch metadata.status {
@@ -295,7 +288,7 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
             cell.labelInfo.text = ""
         case NCGlobal.shared.metadataStatusUploading:
             if #available(iOS 17.0, *) {
-                cell.fileStatusImage?.image = utility.loadImage(named: "arrowshape.up.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+                cell.fileStatusImage?.image = UIImage(resource: .Transfers.uploadFlag)
             }
             cell.labelStatus.text = NSLocalizedString("_status_uploading_", comment: "") + user
             cell.labelInfo.text = utilityFileSystem.transformedSize(metadata.size) + " - " + self.utilityFileSystem.transformedSize(transfer.totalBytes)
