@@ -3,6 +3,16 @@
     {
       "filename" : "uploadFlag.svg",
       "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "uploadFlag_dark.svg",
+      "idiom" : "universal"
     }
   ],
   "info" : {
