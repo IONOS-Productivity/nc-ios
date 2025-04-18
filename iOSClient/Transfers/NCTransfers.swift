@@ -235,7 +235,6 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
         cell.fileOcId = metadata.ocId
         cell.fileOcIdTransfer = metadata.ocIdTransfer
         cell.fileUser = metadata.ownerId
-        cell.filePreviewImageView?.image = UIImage(resource: .fileUnsupported)
         cell.filePreviewImageView?.backgroundColor = nil
         cell.labelTitle.text = metadata.fileNameView
         cell.labelTitle.textColor = NCBrandColor.shared.textColor
@@ -244,6 +243,12 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
         if pathText.isEmpty { pathText = "/" }
         cell.labelPath.text = pathText
         cell.setButtonMore(image: UIImage(resource: .Transfers.stopUpload))
+        
+        if metadata.iconName == NKCommon.TypeClassFile.directory.rawValue {
+            cell.filePreviewImageView?.image = UIImage(resource: .folder)
+        } else {
+            cell.filePreviewImageView?.image = UIImage(resource: .fileUnsupported)
+        }
         
         /// Status and Info
         let user = (metadata.user == session.user ? "" : " - " + metadata.account)
