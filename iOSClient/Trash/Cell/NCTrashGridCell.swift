@@ -103,8 +103,8 @@ class NCTrashGridCell: UICollectionViewCell, NCTrashCellProtocol {
             buttonMore.isHidden = false
             setA11yActions()
         }
-        setBorderForGridViewCell(isSelected: isSelected)
-        imageSelect.isHidden = !isSelected
+        setBorderForGridViewCell(isSelected: status)
+        imageSelect.isHidden = !status
     }
 
     func writeInfoDateSize(date: NSDate, size: Int64) {
