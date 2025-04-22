@@ -77,9 +77,6 @@ struct NCSettingsView: View {
                     }
                 })
                 .tint(Color(NCBrandColor.shared.textColor))
-                .sheet(isPresented: $showPasscode) {
-                    SetupPasscodeView(isLockActive: $model.isLockActive)
-                }
                 /// Enable Touch ID
                 Toggle(NSLocalizedString("_enable_touch_face_id_", comment: ""), isOn: $model.enableTouchID)
                     .tint(Color(NCBrandColor.shared.switchColor))
