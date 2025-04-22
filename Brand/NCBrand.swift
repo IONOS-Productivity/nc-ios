@@ -32,15 +32,15 @@ let userAgent: String = {
 final class NCBrandOptions: @unchecked Sendable {
     static let shared = NCBrandOptions()
 
-    var brand: String = "Nextcloud"
-    var textCopyrightNextcloudiOS: String = "Nextcloud Hydrogen for iOS %@ © 2025"
-    var textCopyrightNextcloudServer: String = "Nextcloud Server %@"
-    var loginBaseUrl: String = "https://cloud.nextcloud.com"
+    var brand:                           String = "IONOS HiDrive Next"
+    var textCopyrightNextcloudiOS:       String = "IONOS HiDrive Next for iOS %@"
+    var textCopyrightNextcloudServer:    String = "IONOS HiDrive Next Server %@"
+    var loginBaseUrl:                    String = "https://storage.ionos.fr"
     var pushNotificationServerProxy: String = "https://push-notifications.nextcloud.com"
     var linkLoginHost: String = "https://nextcloud.com/install"
     var linkloginPreferredProviders: String = "https://nextcloud.com/signup-ios"
     var webLoginAutenticationProtocol: String = "nc://"                                        // example "abc://"
-    var privacy: String = "https://nextcloud.com/privacy"
+    var privacy: String = "https://privacy.ionos.de"
     var sourceCode: String = "https://github.com/nextcloud/ios"
     var mobileconfig: String = "/remote.php/dav/provisioning/apple-provisioning.mobileconfig"
     var appStoreUrl: String = "https://apps.apple.com/in/app/nextcloud/id1125420102"
@@ -49,24 +49,24 @@ final class NCBrandOptions: @unchecked Sendable {
     var folderDefaultAutoUpload: String = "Photos"
 
     // Capabilities Group
-    var capabilitiesGroup: String = "group.it.twsweb.Crypto-Cloud"
-    var capabilitiesGroupApps: String = "group.com.nextcloud.apps"
+    var capabilitiesGroup:              String = "group.com.ionos.hidrivenext"
+    var capabilitiesGroupApps:              String = "group.com.ionos.hidrivenext.apps"
 
     // BRAND ONLY
-    var use_AppConfig: Bool = false                                                         // Don't touch me !!
+    var use_AppConfig: Bool = false
 
     // Use server theming color
-    var use_themingColor: Bool = true
+    var use_themingColor:                Bool = false
 
-    var disable_intro: Bool = false
-    var disable_request_login_url: Bool = false
-    var disable_multiaccount: Bool = false
+    var disable_intro:       Bool = true
+    var disable_request_login_url:       Bool = true
+    var disable_multiaccount:            Bool = true
     var disable_more_external_site: Bool = false
     var disable_openin_file: Bool = false                                                       // Don't touch me !!
-    var disable_crash_service: Bool = false
+    var disable_crash_service:             Bool = true
     var disable_log: Bool = false
     var disable_mobileconfig: Bool = false
-    var disable_show_more_nextcloud_apps_in_settings: Bool = false
+    var disable_show_more_nextcloud_apps_in_settings:         Bool = true
     var doNotAskPasscodeAtStartup: Bool = false
     var disable_source_code_in_settings: Bool = false
     var enforce_passcode_lock = false
@@ -135,8 +135,8 @@ final class NCBrandColor: @unchecked Sendable {
 
     /// This is rewrited from customet theme, default is Nextcloud color
     ///
-    let customer: UIColor = UIColor(red: 0.0 / 255.0, green: 130.0 / 255.0, blue: 201.0 / 255.0, alpha: 1.0)         // BLU NC : #0082c9
-    var customerText: UIColor = .white
+    let customer:              UIColor = UIColor(red: 5.0/255.0, green: 255.0/255.0, blue: 34.0/255.0, alpha: 1.0)
+    var customerText:             UIColor = UIColor(red: 42.0/255.0, green: 39.0/255.0, blue: 180.0/255.0, alpha: 1.0)
 
     // INTERNAL DEFINE COLORS
     private var themingColor = ThreadSafeDictionary<String, UIColor>()
