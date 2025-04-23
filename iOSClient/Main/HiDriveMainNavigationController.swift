@@ -7,10 +7,13 @@
 //
 
 import UIKit
+import Combine
 
 class HiDriveMainNavigationController: UINavigationController, UINavigationControllerDelegate {
     
     var accountButtonFactory: AccountButtonFactory!
+    
+    var activeTransfersListener: AnyCancellable? = nil
     
     var controller: NCMainTabBarController? {
         self.tabBarController as? NCMainTabBarController
@@ -28,8 +31,6 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
         setNavigationBarAppearance()
     }
     
-    private var timer: Timer?
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -41,21 +42,19 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
                                                     onAccountDetailsOpen: { [weak self] in self?.collectionViewCommon?.setEditMode(false) },
                                                     presentVC: { [weak self] vc in self?.present(vc, animated: true) },
                                                     onMenuOpened: { [weak self] in self?.collectionViewCommon?.dismissTip() })
-        
-        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
-            self.timer?.invalidate()
-            self.timer = nil
-        }
-
-        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                if UIApplication.shared.applicationState == .active {
-                    self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
-                        self.setNavigationRightItems()
-                    })
-                }
-            }
-        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        activeTransfersListener = TransfersListener
+            .shared
+            .activeTransfersListener
+            .sink { [weak self] in self?.setNavigationRightItems() }
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        activeTransfersListener = nil
     }
     
     func setNavigationLeftItems() {
@@ -124,8 +123,9 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
     }
     
     private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
-        let resultsCount = NCManageDatabase.shared.getResultsMetadatas(predicate: NSPredicate(format: "status != %i", NCGlobal.shared.metadataStatusNormal))?.count ?? 0
-        guard resultsCount > 0 else { return nil }
+        guard TransfersListener.shared.areActiveTransfersPresent else {
+            return nil
+        }
         let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
                                               style: .plain) { [weak self] in
             if let navigationController = UIStoryboard(name: "NCTransfers", bundle: nil).instantiateInitialViewController() as? UINavigationController,
