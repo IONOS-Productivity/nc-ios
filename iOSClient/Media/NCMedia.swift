@@ -26,6 +26,7 @@ import Foundation
 import UIKit
 import NextcloudKit
 import RealmSwift
+import Combine
 
 class NCMedia: UIViewController {
     @IBOutlet weak var collectionView: UICollectionView!
@@ -65,7 +66,7 @@ class NCMedia: UIViewController {
     var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
     
     private var accountButtonFactory: AccountButtonFactory!
-    private var timer: Timer?
+    var activeTransfersListener: AnyCancellable? = nil
 
     var lastScale: CGFloat = 1.0
     var currentScale: CGFloat = 1.0
@@ -157,21 +158,6 @@ class NCMedia: UIViewController {
         accountButtonFactory = AccountButtonFactory(controller: controller,
                                                     onAccountDetailsOpen: { [weak self] in self?.setEditMode(false) },
                                                     presentVC: { [weak self] vc in self?.present(vc, animated: true) })
-        
-        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
-            self.timer?.invalidate()
-            self.timer = nil
-        }
-
-        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                if UIApplication.shared.applicationState == .active {
-                    self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true, block: { _ in
-                        self.setNavigationRightItems()
-                    })
-                }
-            }
-        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -187,6 +173,16 @@ class NCMedia: UIViewController {
         setNavigationLeftItems()
         updateHeadersView()
 		setNavigationBarLogoIfNeeded()
+        
+        activeTransfersListener = TransfersListener
+            .shared
+            .activeTransfersListener
+            .sink { [weak self] in self?.setNavigationRightItems() }
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        activeTransfersListener = nil
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -383,8 +379,9 @@ extension NCMedia {
     }
     
     private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
-        let resultsCount = self.database.getResultsMetadatas(predicate: NSPredicate(format: "status != %i", NCGlobal.shared.metadataStatusNormal))?.count ?? 0
-        guard resultsCount > 0 else { return nil }
+        guard TransfersListener.shared.areActiveTransfersPresent else {
+            return nil
+        }
         let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
                                               style: .plain) { [weak self] in
             if let navigationController = UIStoryboard(name: "NCTransfers", bundle: nil).instantiateInitialViewController() as? UINavigationController,

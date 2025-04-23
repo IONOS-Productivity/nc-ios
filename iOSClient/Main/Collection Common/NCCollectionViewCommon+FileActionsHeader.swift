@@ -29,7 +29,7 @@ extension NCCollectionViewCommon {
         
         fileActionsHeader?.onSelectModeChange = { [weak self] isSelectionMode in
             self?.setEditMode(isSelectionMode)
-            (self?.navigationController as? NCMainNavigationController)?.setNavigationRightItems()
+            (self?.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
             self?.updateHeadersView()
             self?.fileActionsHeader?.setSelectionState(selectionState: .none)
         }
