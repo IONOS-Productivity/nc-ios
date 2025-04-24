@@ -1265,6 +1265,7 @@
 		0F85B8942DB7D61100D089AE /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
 		0F8615AB2CBE6AC20056B4F2 /* UITabBarGuideline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITabBarGuideline.swift; sourceTree = "<group>"; };
 		0F8B9A5A2C7887F60041C17D /* FileActionsHeader.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FileActionsHeader.xib; sourceTree = "<group>"; };
+		0FAEC1B32DBA3F2A001A60D9 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		2C33C47F23E2C475005F963B /* Notification Service Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Notification Service Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C33C48123E2C475005F963B /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		2C33C48A23E2CC26005F963B /* Notification_Service_Extension-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Notification_Service_Extension-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -5163,6 +5164,7 @@
 				F7AA41BF27C7CF5700494705 /* fr */,
 				F7AA41C327C7CF5B00494705 /* de */,
 				F7AA41D427C7CF6E00494705 /* es */,
+				0FAEC1B32DBA3F2A001A60D9 /* it */,
 			);
 			name = InfoPlist.strings;
 			path = "Supporting Files";
