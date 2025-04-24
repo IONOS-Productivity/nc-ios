@@ -67,8 +67,8 @@
 "_unknown_"                 = "Unknown";
 "_success_"                 = "Success";
 "_mode_filename_"           = "Filename mode";
-"_warning_owncloud_"        = "You are connected to an ownCloud server. This is untested and unsupported, use at your own risk. To upgrade to Nextcloud, see https://nextcloud.com/migration.";
-"_warning_unsupported_"     = "You are using an unsupported version of Nextcloud. For the safety of your data we strongly recommend updating to the latest stable Nextcloud.";
+"_warning_owncloud_"        = "This is untested and unsupported, use at your own risk.";
+"_warning_unsupported_"     = "You are using an unsupported version. For the safety of your data we strongly recommend updating to the latest stable version.";
 "_restore_"                 = "Restore";
 "_tap_here_to_change_"      = "Tap here to change";
 "_no_albums_"               = "No albums";
@@ -285,7 +285,7 @@
 "_today_"                                   = "Today";
 "_yesterday_"                               = "Yesterday";
 "_access_photo_not_enabled_"                = "Access to Photos is not enabled";
-"_access_photo_not_enabled_msg_"            = "Please go to Settings → Apps → Nextcloud → Photos and enable Photo Library Access";
+"_access_photo_not_enabled_msg_"            = "Please go to Settings → Apps → HiDrive Next→ Photos and enable Photo Library Access";
 "_access_background_app_refresh_denied_"    = "\"Background App Refresh\" is denied. Please enable it in \"Settings\" otherwise, new photos or videos will not be detected when the application is in the background";
 "_new_photos_starting_"                     = "Only photos or videos starting %@ will be uploaded.";
 "_tutorial_photo_view_"                     = "No photos or videos uploaded yet";
