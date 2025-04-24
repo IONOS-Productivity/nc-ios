@@ -139,7 +139,7 @@ private struct IconWithText: View {
             .scaledToFit()
             .frame(width: iconWidth, height: iconHeight)
         Text(NSLocalizedString(label, comment: ""))
-            .font(.system(size: 11))
+            .font(.system(size: 12))
             .multilineTextAlignment(.center)
             .lineLimit(2)
             .tint(Color(NCBrandColor.shared.textColor))
