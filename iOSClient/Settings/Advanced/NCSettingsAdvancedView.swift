@@ -43,7 +43,7 @@ struct NCSettingsAdvancedView: View {
                     .onChange(of: model.showHiddenFiles) { _ in
                         model.updateShowHiddenFiles()
                 }
-            })
+            }).applyGlobalFormSectionStyle()
             /// file name
             Section(content: {
                NavigationLink(destination: LazyView {
@@ -89,7 +89,7 @@ struct NCSettingsAdvancedView: View {
                     }
                 }, footer: {
                     Text(NSLocalizedString("_disable_files_app_footer_", comment: ""))
-                })
+                }).applyGlobalFormSectionStyle()
             }
             /// Section: Privacy
             if !NCBrandOptions.shared.disable_crash_service {
