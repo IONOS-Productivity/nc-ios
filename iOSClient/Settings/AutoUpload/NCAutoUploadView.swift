@@ -200,7 +200,6 @@ struct NCAutoUploadView: View {
                 }.buttonStyle(.borderedProminent)
 					.foregroundStyle(Color(NCBrandColor.shared.customer))
 #endif
-
                 Toggle(isOn: model.autoUploadNewPhotosOnly || model.autoUploadStart ? $model.autoUploadStart : $showUploadAllPhotosWarning) {
                     Text(model.autoUploadStart ? "_stop_autoupload_" : "_start_autoupload_")
 						.font(.system(size: 16))
@@ -209,8 +208,8 @@ struct NCAutoUploadView: View {
                 }
 				.font(.headline)
 				.toggleStyle(.button)
-				.tint(Color(NCBrandColor.shared.customerText))
-				.background(Color(.Button.Primary.Background.selected))
+				.tint(auToggleTextColor)
+				.background(auToggleBackground)
 				.clipShape(.capsule)
 				.onChange(of: model.autoUploadStart) { newValue in
                     albumModel.populateSelectedAlbums()
@@ -227,6 +226,20 @@ struct NCAutoUploadView: View {
         }
 		.applyGlobalFormStyle()
     }
+	
+	private var auToggleTextColor: Color {
+		if #available(iOS 16.0, *) {
+			return Color(NCBrandColor.shared.customerText)
+		}
+		return Color(red: 0.078, green: 0.455, blue: 0.769)
+	}
+	
+	private var auToggleBackground: Color {
+		if #available(iOS 16.0, *) {
+			return Color(.Button.Primary.Background.selected)
+		}
+		return Color(.systemBackground)
+	}
 }
 
 @ViewBuilder
