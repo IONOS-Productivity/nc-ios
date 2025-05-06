@@ -32,16 +32,16 @@ let userAgent: String = {
 class NCBrandOptions: @unchecked Sendable {
     static let shared = NCBrandOptions()
 
-    var brand: String = "Nextcloud"
-    var textCopyrightNextcloudiOS: String = "Nextcloud Hydrogen for iOS %@ © 2025"
+    var brand: String = "IONOS HiDrive Next"
+    var textCopyrightNextcloudiOS: String = "HiDrive Next iOS %@ © 2025"
     var textCopyrightNextcloudServer: String = "Nextcloud Server %@"
-    var loginBaseUrl: String = "https://cloud.nextcloud.com"
+    var loginBaseUrl: String = "https://storage.ionos.fr"
     var pushNotificationServerProxy: String = "https://push-notifications.nextcloud.com"
     var linkLoginHost: String = "https://nextcloud.com/install"
     var linkloginPreferredProviders: String = "https://nextcloud.com/signup-ios"
     var webLoginAutenticationProtocol: String = "nc://"                                        // example "abc://"
-    var privacy: String = "https://nextcloud.com/privacy"
-    var sourceCode: String = "https://github.com/nextcloud/ios"
+    var privacy: String = "https://wl.hidrive.com/easy/ios/privacy.html"
+    var sourceCode: String = "https://wl.hidrive.com/easy/0181"
     var mobileconfig: String = "/remote.php/dav/provisioning/apple-provisioning.mobileconfig"
     var appStoreUrl: String = "https://apps.apple.com/in/app/nextcloud/id1125420102"
 
@@ -124,12 +124,6 @@ class NCBrandOptions: @unchecked Sendable {
         pushNotificationServerProxy = "https://c0004.customerpush.nextcloud.com"
 #endif
 		
-		brand = "IONOS HiDrive Next"
-		textCopyrightNextcloudiOS = "HiDrive Next iOS %@ © 2025"
-		loginBaseUrl = "https://storage.ionos.fr"
-		privacy = "https://wl.hidrive.com/easy/ios/privacy.html"
-		sourceCode = "https://wl.hidrive.com/easy/0181"
-
 		disable_intro = true
 		disable_request_login_url = true
 		disable_crash_service = true
@@ -154,9 +148,11 @@ class NCBrandOptions: @unchecked Sendable {
 
 class NCBrandColor: @unchecked Sendable {
     static let shared = NCBrandColor()
+	static let ionosBrandColor = UIColor(red: 20.0 / 255.0, green: 116.0 / 255.0, blue: 196.0 / 255.0, alpha: 1.0)
+	
     /// This is rewrited from customet theme, default is Nextcloud color
     ///
-    let customer: UIColor = UIColor(red: 20.0 / 255.0, green: 116.0 / 255.0, blue: 196.0 / 255.0, alpha: 1.0)
+	let customer: UIColor = NCBrandColor.ionosBrandColor
     var customerText: UIColor = .white
 
     // INTERNAL DEFINE COLORS
