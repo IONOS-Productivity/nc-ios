@@ -4,6 +4,7 @@
 //
 //  Created by Philippe Weidmann on 16.12.21.
 //  Copyright © 2021 Henrik Storch All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Henrik Storch <henrik.storch@nextcloud.com>
 //
@@ -42,7 +43,7 @@ class NCMenuFloatingPanelLayout: FloatingPanelLayout {
             topInset = 48
             return
         }
-        let screenHeight = UIDevice.current.orientation.isLandscape
+        let screenHeight = UIDevice.current.isVirtualOrientationLandscape
         ? min(window.frame.size.width, window.frame.size.height)
         : max(window.frame.size.width, window.frame.size.height)
         let bottomInset = window.rootViewController?.view.safeAreaInsets.bottom ?? 0
@@ -59,7 +60,7 @@ class NCMenuFloatingPanelLayout: FloatingPanelLayout {
     }
 
     func backdropAlpha(for state: FloatingPanelState) -> CGFloat {
-        return 0.2
+        return 1
     }
 }
 
@@ -72,7 +73,12 @@ class NCMenuPanelController: FloatingPanelController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        self.surfaceView.backgroundColor = .systemBackground
+        self.surfaceView.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        
+        self.surfaceView.grabberHandleSize = .init(width: 72, height: 4)
+        self.surfaceView.grabberHandle.backgroundColor = UIColor(resource: .FileMenu.grabber)
+        
+        self.backdropView.backgroundColor = UIColor(resource: .FileMenu.overlay)
         self.isRemovalInteractionEnabled = true
         self.backdropView.dismissalTapGestureRecognizer.isEnabled = true
         self.surfaceView.layer.cornerRadius = 16

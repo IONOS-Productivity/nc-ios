@@ -579,7 +579,7 @@ extension NCViewerMediaPage: UIGestureRecognizerDelegate {
 
             var velocityCheck: Bool = false
 
-            if UIDevice.current.orientation.isLandscape {
+            if UIDevice.current.isVirtualOrientationLandscape {
                 velocityCheck = velocity.x < 0
             } else {
                 velocityCheck = velocity.y < 0
