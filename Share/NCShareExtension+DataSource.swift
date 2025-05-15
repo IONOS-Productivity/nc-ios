@@ -106,10 +106,7 @@ extension NCShareExtension: UICollectionViewDataSource {
             setupDirectoryCell(cell, indexPath: indexPath, with: metadata)
         }
 
-        if metadata.favorite {
-            cell.imageFavorite.image = NCImageCache.shared.getImageFavorite()
-        }
-
+		cell.imageFavorite.image = metadata.favorite ? NCImageCache.shared.getImageFavorite() : nil
         cell.imageSelect.isHidden = true
         cell.backgroundView = nil
         cell.hideButtonMore(true)

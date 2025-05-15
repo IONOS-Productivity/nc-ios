@@ -343,9 +343,10 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
         }
 
+		
         // image Favorite
+		cell.fileFavoriteImage?.image = metadata.favorite ? imageCache.getImageFavorite() : nil
         if metadata.favorite {
-            cell.fileFavoriteImage?.image = imageCache.getImageFavorite()
             a11yValues.append(NSLocalizedString("_favorite_short_", comment: ""))
         }
 		
