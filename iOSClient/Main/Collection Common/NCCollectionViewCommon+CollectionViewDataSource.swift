@@ -27,6 +27,10 @@ import NextcloudKit
 import RealmSwift
 
 extension NCCollectionViewCommon: UICollectionViewDataSource {
+	private var shouldUseStatusIcon: Bool {
+		return false
+	}
+	
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return self.dataSource.numberOfSections()
     }
@@ -104,13 +108,15 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
         }
 
-        /// Status
-        ///
-        if metadata.isLivePhoto {
-            cell.fileStatusImage?.image = utility.loadImage(named: "livephoto", colors: isLayoutPhoto ? [.white] : [NCBrandColor.shared.iconImageColor2])
-        } else if metadata.isVideo {
-            cell.fileStatusImage?.image = utility.loadImage(named: "play.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-        }
+		if shouldUseStatusIcon {
+			/// Status
+			///
+			if metadata.isLivePhoto {
+				cell.fileStatusImage?.image = utility.loadImage(named: "livephoto", colors: isLayoutPhoto ? [.white] : [NCBrandColor.shared.iconImageColor2])
+			} else if metadata.isVideo {
+				cell.fileStatusImage?.image = utility.loadImage(named: "play.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+			}
+		}
 
         /// Edit mode
         if fileSelect.contains(metadata.ocId) {
@@ -361,40 +367,42 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell.setButtonMore(image: imageCache.getImageButtonMore())
         }
 
-        // Staus
-        if metadata.isLivePhoto {
-            cell.fileStatusImage?.image = utility.loadImage(named: "livephoto", colors: isLayoutPhoto ? [.white] : [NCBrandColor.shared.iconImageColor2])
-            a11yValues.append(NSLocalizedString("_upload_mov_livephoto_", comment: ""))
-        } else if metadata.isVideo {
-            cell.fileStatusImage?.image = utility.loadImage(named: "play.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-        }
-        switch metadata.status {
-        case NCGlobal.shared.metadataStatusWaitCreateFolder:
-            cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
-            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_create_folder_", comment: "")
-        case NCGlobal.shared.metadataStatusWaitFavorite:
-            cell.fileStatusImage?.image = utility.loadImage(named: "star.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_favorite_", comment: "")
-        case NCGlobal.shared.metadataStatusWaitCopy:
-            cell.fileStatusImage?.image = utility.loadImage(named: "c.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_copy_", comment: "")
-        case NCGlobal.shared.metadataStatusWaitMove:
-            cell.fileStatusImage?.image = utility.loadImage(named: "m.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_move_", comment: "")
-        case NCGlobal.shared.metadataStatusWaitRename:
-            cell.fileStatusImage?.image = utility.loadImage(named: "a.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_rename_", comment: "")
-        case NCGlobal.shared.metadataStatusWaitDownload:
-            cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
-        case NCGlobal.shared.metadataStatusDownloading:
-            if #available(iOS 17.0, *) {
-                cell.fileStatusImage?.image = utility.loadImage(named: "arrowshape.down.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-            }
-        case NCGlobal.shared.metadataStatusDownloadError, NCGlobal.shared.metadataStatusUploadError:
-            cell.fileStatusImage?.image = utility.loadImage(named: "exclamationmark.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-        default:
-            break
-        }
+		if shouldUseStatusIcon {
+			// Status
+	        if metadata.isLivePhoto {
+	            cell.fileStatusImage?.image = utility.loadImage(named: "livephoto", colors: isLayoutPhoto ? [.white] : [NCBrandColor.shared.iconImageColor2])
+	            a11yValues.append(NSLocalizedString("_upload_mov_livephoto_", comment: ""))
+	        } else if metadata.isVideo {
+	            cell.fileStatusImage?.image = utility.loadImage(named: "play.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+	        }
+	        switch metadata.status {
+	        case NCGlobal.shared.metadataStatusWaitCreateFolder:
+	            cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
+	            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_create_folder_", comment: "")
+	        case NCGlobal.shared.metadataStatusWaitFavorite:
+	            cell.fileStatusImage?.image = utility.loadImage(named: "star.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+	            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_favorite_", comment: "")
+	        case NCGlobal.shared.metadataStatusWaitCopy:
+	            cell.fileStatusImage?.image = utility.loadImage(named: "c.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+	            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_copy_", comment: "")
+	        case NCGlobal.shared.metadataStatusWaitMove:
+	            cell.fileStatusImage?.image = utility.loadImage(named: "m.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+	            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_move_", comment: "")
+	        case NCGlobal.shared.metadataStatusWaitRename:
+	            cell.fileStatusImage?.image = utility.loadImage(named: "a.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+	            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_rename_", comment: "")
+	        case NCGlobal.shared.metadataStatusWaitDownload:
+	            cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
+	        case NCGlobal.shared.metadataStatusDownloading:
+	            if #available(iOS 17.0, *) {
+	                cell.fileStatusImage?.image = utility.loadImage(named: "arrowshape.down.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+	            }
+	        case NCGlobal.shared.metadataStatusDownloadError, NCGlobal.shared.metadataStatusUploadError:
+	            cell.fileStatusImage?.image = utility.loadImage(named: "exclamationmark.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+	        default:
+	            break
+	        }
+		}
 
         // URL
         if metadata.classFile == NKCommon.TypeClassFile.url.rawValue {
