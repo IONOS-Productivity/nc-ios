@@ -124,7 +124,6 @@ extension NCAccountSettingsView {
 					.foregroundStyle(Color(NCBrandColor.shared.textColor))
 					.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
 			}
-			.font(.system(size: 14))
 		})
 		.sheet(isPresented: $showUserStatus) {
 			if let account = model.tblAccount?.account {
@@ -151,7 +150,6 @@ extension NCAccountSettingsView {
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
             }
-            .font(.system(size: 14))
         })
         .sheet(isPresented: $showServerCertificate) {
             if let url = URL(string: model.tblAccount?.urlBase), let host = url.host {
@@ -177,7 +175,6 @@ extension NCAccountSettingsView {
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
             }
-            .font(.system(size: 14))
         })
         .sheet(isPresented: $showPushCertificate) {
             if let url = URL(string: NCBrandOptions.shared.pushNotificationServerProxy), let host = url.host {
@@ -215,7 +212,6 @@ extension NCAccountSettingsView {
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
             }
-            .font(.system(size: 16))
         })
     }
     
@@ -237,7 +233,6 @@ extension NCAccountSettingsView {
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
             }
-            .font(.system(size: 16))
         })
         .alert(NSLocalizedString("_want_delete_account_", comment: ""), isPresented: $showDeleteAccountAlert) {
             Button(NSLocalizedString("_remove_local_account_", comment: ""), role: .destructive) {
@@ -259,14 +254,13 @@ struct AccountView: View {
         VStack {
             UserImageView(avatar: userAvatar, onlineStatus: userStatus.statusImage)
             Text(account.displayName)
-                .font(.system(size: 16))
             Spacer().frame(height: 10)
             Text(userStatus.statusMessage)
-                .font(.system(size: 10))
             Spacer().frame(height: 20)
-        }.font(.system(size: 14))
+        }
     }
 }
+
 
 struct PersonalDataView: View {
     let account: tableAccount
@@ -282,7 +276,7 @@ struct PersonalDataView: View {
             if !account.address.isEmpty {
                 PersonalDataRow(icon: "house", data: account.address)
             }
-         }.font(.system(size: 14))
+         }
     }
 }
 
@@ -353,11 +347,10 @@ struct SwitchAccountRowView: View {
                 Text(userName)
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(.trailing, 20)
-                    .font(.system(size: 17))
                 Text(account.email)
+					.font(.callout)
                     .foregroundStyle(Color(UIColor.lightGray))
                     .padding(.trailing, 20)
-                    .font(.system(size: 16))
             }
             .lineLimit(1)
             Spacer()
@@ -367,7 +360,6 @@ struct SwitchAccountRowView: View {
                 .frame(width: 35, height: 35)
                 .foregroundStyle(Color(NCBrandColor.shared.iconImageColor))
         }
-        .font(.system(size: 14))
     }
 }
 

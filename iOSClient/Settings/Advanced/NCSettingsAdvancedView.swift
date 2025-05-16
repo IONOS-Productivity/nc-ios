@@ -50,7 +50,6 @@ struct NCSettingsAdvancedView: View {
                    NCFileNameView(model: NCFileNameModel(controller: model.controller))
                }) {
                    Text(NSLocalizedString("_filenamemask_", comment: ""))
-                       .font(.system(size: 16))
                }
             }, footer: {
                 Text(NSLocalizedString("_filenamemask_footer_", comment: "")).listRowBackground(Color.clear)
@@ -62,13 +61,11 @@ struct NCSettingsAdvancedView: View {
                     .onChange(of: model.mostCompatible) { _ in
                         model.updateMostCompatible()
                 }
-                .font(.system(size: 16))
                 Toggle(NSLocalizedString("_upload_mov_livephoto_", comment: ""), isOn: $model.livePhoto)
                     .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
                     .onChange(of: model.livePhoto) { _ in
                         model.updateLivePhoto()
                 }
-                .font(.system(size: 16))
             }).applyGlobalFormSectionStyle()
             /// Remove from Camera Roll
             Section(content: {
@@ -77,7 +74,6 @@ struct NCSettingsAdvancedView: View {
                     .onChange(of: model.removeFromCameraRoll) { _ in
                         model.updateRemoveFromCameraRoll()
                 }
-                .font(.system(size: 16))
             }).applyGlobalFormSectionStyle()
             /// Section : Files App
             if !NCBrandOptions.shared.disable_openin_file {
@@ -213,7 +209,6 @@ struct NCSettingsAdvancedView: View {
                 Text(NSLocalizedString("_delete_files_desc_", comment: "")).listRowBackground(Color.clear)
             }, footer: {
                 Text(model.footerTitle)
-                    .font(.system(size: 12))
                     .multilineTextAlignment(.leading).listRowBackground(Color.clear)
             }).applyGlobalFormSectionStyle()
             /// Reset Application
@@ -230,7 +225,6 @@ struct NCSettingsAdvancedView: View {
                         Text(NSLocalizedString("_exit_", comment: ""))
 							.foregroundColor(Color(UIColor(resource: .destructiveAction)))
                     }
-                    .font(.system(size: 16))
                 })
                 .tint(Color(UIColor.label))
                 .alert(NSLocalizedString("_want_exit_", comment: ""), isPresented: $showExitAlert) {
@@ -245,7 +239,6 @@ struct NCSettingsAdvancedView: View {
                 +
                 Text("\n\n")
                )
-                    .font(.system(size: 12))
                     .listRowBackground(Color.clear)
                     .multilineTextAlignment(.leading)
             }).applyGlobalFormSectionStyle()
