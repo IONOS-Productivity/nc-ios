@@ -133,6 +133,7 @@ struct NCUploadAssetsView: View {
                             }
                         }
                     }
+					.applyGlobalFormSectionStyle()
 
                     Section {
                         ///
@@ -181,7 +182,8 @@ struct NCUploadAssetsView: View {
                             }
                         }
                     }
-
+					.applyGlobalFormSectionStyle()
+					
                     Section {
                         Button(NSLocalizedString("_save_", comment: "")) {
                             if model.useAutoUploadFolder, model.useAutoUploadSubFolder {
@@ -199,12 +201,13 @@ struct NCUploadAssetsView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .buttonStyle(ButtonRounded(disabled: model.uploadInProgress, account: model.session.account))
-                        .listRowBackground(Color(UIColor.systemGroupedBackground))
+						.buttonStyle(SaveButtonStyle(maxWidth: 200))
+                        .listRowBackground(Color(UIColor.clear))
                         .disabled(model.uploadInProgress)
                         .hiddenConditionally(isHidden: model.hiddenSave)
                     }
                 }
+				.applyGlobalFormStyle()
             }
             .navigationTitle(NSLocalizedString("_upload_photos_videos_", comment: ""))
             .navigationBarTitleDisplayMode(.inline)

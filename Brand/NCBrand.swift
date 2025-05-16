@@ -390,4 +390,12 @@ extension NCBrandColor {
 			return traits.userInterfaceStyle == .dark ? dark : light
 		}
 	}
+	
+	var hudBackgroundColor: UIColor {
+		UIColor(resource: .AppBackground.main)
+	}
+	
+	var hudTextColor: UIColor {
+		UIColor(resource: .ListCell.title)
+	}
 }

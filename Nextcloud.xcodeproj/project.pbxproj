@@ -13,6 +13,10 @@
 		0F5219412DB8F7C000E57667 /* UIDevice+VirtualOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5219402DB8F7C000E57667 /* UIDevice+VirtualOrientation.swift */; };
 		0F8615AC2CBE6AC20056B4F2 /* UITabBarGuideline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F8615AB2CBE6AC20056B4F2 /* UITabBarGuideline.swift */; };
 		0F8B9A5B2C7887F60041C17D /* FileActionsHeader.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0F8B9A5A2C7887F60041C17D /* FileActionsHeader.xib */; };
+		0FF6A4D22DD770FD0097FDC3 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
+		0FF6A4D32DD770FD0097FDC3 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
+		0FF6A4D42DD770FD0097FDC3 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
+		0FF6A4D52DD770FD0097FDC3 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
 		2C1D5D7623E2DE3300334ABB /* NCManageDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7BAADB51ED5A87C00B7EAD4 /* NCManageDatabase.swift */; };
 		2C1D5D7923E2DE9100334ABB /* NCBrand.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76B3CCD1EAE01BD00921AC9 /* NCBrand.swift */; };
 		2C33C48223E2C475005F963B /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C33C48123E2C475005F963B /* NotificationService.swift */; };
@@ -3945,6 +3949,7 @@
 				F7490E8D29882F5B009DCE94 /* Custom.xcassets in Resources */,
 				F7490E8E2988334A009DCE94 /* Localizable.strings in Resources */,
 				F7E4022E2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
+				0FF6A4D52DD770FD0097FDC3 /* Colors.xcassets in Resources */,
 				AA517B812D660EFE00F8D37C /* Localizable.stringsdict in Resources */,
 				F722F0112CFF569500065FB5 /* MainInterface.storyboard in Resources */,
 			);
@@ -3983,6 +3988,7 @@
 				FC930DC52CEDE33000C9B237 /* Colors.xcassets in Resources */,
 				F7E4022A2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
 				425F57B02D2E83DB006D5FD1 /* IonosImages.xcassets in Resources */,
+				0FF6A4D22DD770FD0097FDC3 /* Colors.xcassets in Resources */,
 				AA517B832D660EFE00F8D37C /* Localizable.stringsdict in Resources */,
 				F7346E2328B0FEBA006CE2D2 /* Assets.xcassets in Resources */,
 			);
@@ -3992,6 +3998,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0FF6A4D42DD770FD0097FDC3 /* Colors.xcassets in Resources */,
 				F7E4022D2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
 				F746EC52273906C40052598D /* NCViewCertificateDetails.storyboard in Resources */,
 			);
@@ -4093,6 +4100,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F7E4022B2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
+				0FF6A4D32DD770FD0097FDC3 /* Colors.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
