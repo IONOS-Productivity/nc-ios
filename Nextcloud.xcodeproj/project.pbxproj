@@ -13,10 +13,20 @@
 		0F5219412DB8F7C000E57667 /* UIDevice+VirtualOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F5219402DB8F7C000E57667 /* UIDevice+VirtualOrientation.swift */; };
 		0F8615AC2CBE6AC20056B4F2 /* UITabBarGuideline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F8615AB2CBE6AC20056B4F2 /* UITabBarGuideline.swift */; };
 		0F8B9A5B2C7887F60041C17D /* FileActionsHeader.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0F8B9A5A2C7887F60041C17D /* FileActionsHeader.xib */; };
-		0FF6A4D22DD770FD0097FDC3 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
-		0FF6A4D32DD770FD0097FDC3 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
-		0FF6A4D42DD770FD0097FDC3 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
-		0FF6A4D52DD770FD0097FDC3 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
+		0F9DB9BA2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
+		0F9DB9BB2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
+		0F9DB9BC2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
+		0F9DB9BD2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
+		0F9DB9BE2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
+		0F9DB9BF2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
+		0F9DB9C02DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
+		0F9DB9C12DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
+		0F9E787D2DD77EB8007980BF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
+		0F9E787E2DD77EB8007980BF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
+		0F9E787F2DD77ECE007980BF /* Custom.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F700222B1EC479840080073F /* Custom.xcassets */; };
+		0F9E78802DD77ECE007980BF /* Custom.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F700222B1EC479840080073F /* Custom.xcassets */; };
+		0F9E78812DD77F0A007980BF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
+		0F9E78822DD77F0A007980BF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
 		2C1D5D7623E2DE3300334ABB /* NCManageDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7BAADB51ED5A87C00B7EAD4 /* NCManageDatabase.swift */; };
 		2C1D5D7923E2DE9100334ABB /* NCBrand.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76B3CCD1EAE01BD00921AC9 /* NCBrand.swift */; };
 		2C33C48223E2C475005F963B /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C33C48123E2C475005F963B /* NotificationService.swift */; };
@@ -1262,6 +1272,7 @@
 		0F85B8942DB7D61100D089AE /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
 		0F8615AB2CBE6AC20056B4F2 /* UITabBarGuideline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITabBarGuideline.swift; sourceTree = "<group>"; };
 		0F8B9A5A2C7887F60041C17D /* FileActionsHeader.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FileActionsHeader.xib; sourceTree = "<group>"; };
+		0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCBrand-IONOS.swift"; sourceTree = "<group>"; };
 		0FAEC1B32DBA3F2A001A60D9 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		2C33C47F23E2C475005F963B /* Notification Service Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Notification Service Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C33C48123E2C475005F963B /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
@@ -3066,6 +3077,7 @@
 				F7362A1E220C853A005101B5 /* LaunchScreen.storyboard */,
 				F78E2D6429AF02DB0024D4F3 /* Database.swift */,
 				F76B3CCD1EAE01BD00921AC9 /* NCBrand.swift */,
+				0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */,
 			);
 			path = Brand;
 			sourceTree = "<group>";
@@ -3949,7 +3961,7 @@
 				F7490E8D29882F5B009DCE94 /* Custom.xcassets in Resources */,
 				F7490E8E2988334A009DCE94 /* Localizable.strings in Resources */,
 				F7E4022E2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
-				0FF6A4D52DD770FD0097FDC3 /* Colors.xcassets in Resources */,
+				0F9E787E2DD77EB8007980BF /* Colors.xcassets in Resources */,
 				AA517B812D660EFE00F8D37C /* Localizable.stringsdict in Resources */,
 				F722F0112CFF569500065FB5 /* MainInterface.storyboard in Resources */,
 			);
@@ -3983,13 +3995,14 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0F9E78812DD77F0A007980BF /* Colors.xcassets in Resources */,
 				F7C7B25128B8B0C400E7115D /* Images.xcassets in Resources */,
 				F7C7B25028B8AD4500E7115D /* Localizable.strings in Resources */,
 				FC930DC52CEDE33000C9B237 /* Colors.xcassets in Resources */,
 				F7E4022A2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
 				425F57B02D2E83DB006D5FD1 /* IonosImages.xcassets in Resources */,
-				0FF6A4D22DD770FD0097FDC3 /* Colors.xcassets in Resources */,
 				AA517B832D660EFE00F8D37C /* Localizable.stringsdict in Resources */,
+				0F9E787F2DD77ECE007980BF /* Custom.xcassets in Resources */,
 				F7346E2328B0FEBA006CE2D2 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3998,7 +4011,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0FF6A4D42DD770FD0097FDC3 /* Colors.xcassets in Resources */,
+				0F9E787D2DD77EB8007980BF /* Colors.xcassets in Resources */,
 				F7E4022D2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
 				F746EC52273906C40052598D /* NCViewCertificateDetails.storyboard in Resources */,
 			);
@@ -4099,8 +4112,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0F9E78822DD77F0A007980BF /* Colors.xcassets in Resources */,
+				0F9E78802DD77ECE007980BF /* Custom.xcassets in Resources */,
 				F7E4022B2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
-				0FF6A4D32DD770FD0097FDC3 /* Colors.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4183,6 +4197,7 @@
 				F749B64F297B0CBB00087535 /* NCManageDatabase+Share.swift in Sources */,
 				F359D86D2A7D03420023F405 /* NCUtility+Exif.swift in Sources */,
 				F73EF7AD2B0223900087E6E9 /* NCManageDatabase+Comments.swift in Sources */,
+				0F9DB9BA2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 				F7C9B9232B582F550064EA91 /* NCManageDatabase+SecurityGuard.swift in Sources */,
 				F73EF7CD2B0225610087E6E9 /* NCManageDatabase+PhotoLibrary.swift in Sources */,
 				F33918CA2C7CD8F2002D9AA1 /* FileNameValidator+Extensions.swift in Sources */,
@@ -4220,6 +4235,7 @@
 				F372087D2BAB4C0F006B5430 /* TestConstants.swift in Sources */,
 				F78E2D6C29AF02DB0024D4F3 /* Database.swift in Sources */,
 				F7817CFE29801A3500FFBC65 /* Data+Extension.swift in Sources */,
+				0F9DB9C02DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4305,6 +4321,7 @@
 				F724377E2C10B92300C7C68D /* NCPermissions.swift in Sources */,
 				F73EF7B42B0224350087E6E9 /* NCManageDatabase+DirectEditing.swift in Sources */,
 				F7490E8229882C80009DCE94 /* NCManageDatabase+E2EE.swift in Sources */,
+				0F9DB9BE2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 				F7490E7829882C28009DCE94 /* NCUtility.swift in Sources */,
 				F3E173C52C9B1067006D177A /* AwakeMode.swift in Sources */,
 				F71433E62C778FFB00E20B5A /* NotificationCenter+MainThread.swift in Sources */,
@@ -4353,6 +4370,7 @@
 				F77C973A2953143A00FDDD09 /* NCCameraRoll.swift in Sources */,
 				F740BEF02A35C2AD00E9B6D5 /* UILabel+Extension.swift in Sources */,
 				F7C30E01291BD2610017149B /* NCNetworkingE2EERename.swift in Sources */,
+				0F9DB9BF2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 				AF4BF61A27562A4B0081CEEF /* NCManageDatabase+Metadata.swift in Sources */,
 				AF4BF615275629E20081CEEF /* NCManageDatabase+Account.swift in Sources */,
 				F798F0E225880608000DAFFD /* UIColor+Extension.swift in Sources */,
@@ -4452,6 +4470,7 @@
 			files = (
 				F793E5A128B76541005E4B02 /* NotificationCenter+MainThread.swift in Sources */,
 				F76DEE9928F808AF0041B1C9 /* LockscreenWidgetView.swift in Sources */,
+				0F9DB9BC2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 				F7817D0029802D3D00FFBC65 /* NCViewCertificateDetails.swift in Sources */,
 				F78302F928B4C3E600B84583 /* NCManageDatabase+Account.swift in Sources */,
 				F7E0710128B13BB00001B882 /* DashboardData.swift in Sources */,
@@ -4561,6 +4580,7 @@
 				F7817D0229802D7700FFBC65 /* NCViewCertificateDetails.swift in Sources */,
 				F7434B3820E2400600417916 /* NCBrand.swift in Sources */,
 				F7327E332B73A86700A462C7 /* NCNetworking+WebDAV.swift in Sources */,
+				0F9DB9BD2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 				F7411C572D7B26D700F57358 /* NCNetworking+ServerError.swift in Sources */,
 				F724377F2C10B92400C7C68D /* NCPermissions.swift in Sources */,
 				F785EE9E2461A09900B3F945 /* NCNetworking.swift in Sources */,
@@ -4925,6 +4945,7 @@
 				F78B87E92B62550800C65ADC /* NCMediaDownloadThumbnail.swift in Sources */,
 				F73EF7AF2B0224350087E6E9 /* NCManageDatabase+DirectEditing.swift in Sources */,
 				4240DB502C5648E300E72FC0 /* BurgerMenuViewController.swift in Sources */,
+				0F9DB9C12DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 				D5B6AA7827200C7200D49C24 /* NCActivityTableViewCell.swift in Sources */,
 				F745B253222D88AE00346520 /* NCLoginQRCode.swift in Sources */,
 				F769454822E9F20D000A798A /* NCShareNetworking.swift in Sources */,
@@ -5019,6 +5040,7 @@
 				F7A8D73928F17E25008BBE1C /* NCManageDatabase+Metadata.swift in Sources */,
 				F73EF7E92B0226B90087E6E9 /* NCManageDatabase+UserStatus.swift in Sources */,
 				F73EF7B12B0224350087E6E9 /* NCManageDatabase+DirectEditing.swift in Sources */,
+				0F9DB9BB2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 				F343A4B52A1E084200DDA874 /* PHAsset+Extension.swift in Sources */,
 				F72FD3B7297ED49A00075D28 /* NCManageDatabase+E2EE.swift in Sources */,
 				F7A8D74128F18254008BBE1C /* UIColor+Extension.swift in Sources */,
@@ -5192,6 +5214,397 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		0F8968702DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = NO;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = NO;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 0;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = R7V5Z67X53;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					DEBUG,
+					NC,
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Nextcloud. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = "-v";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NC DEBUG";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Alpha;
+		};
+		0F8968712DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = IONOSAppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Alpha/iOSClient.entitlements";
+				CURRENT_PROJECT_VERSION = 10;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/iOSClient.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Develop com.viseven.ionos.easystorage";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Develop com.viseven.ionos.easystorage";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/iOSClient/Nextcloud-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				_EXPERIMENTAL_SWIFT_EXPLICIT_MODULES = NO;
+			};
+			name = Alpha;
+		};
+		0F8968722DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Alpha/Widget.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					EXTENSION,
+					EXTENSION_WIDGET,
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/Widget.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Nextcloud;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 Nextcloud. All rights reserved.";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Develop com.viseven.ionos.easystorage.Widget";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Develop com.viseven.ionos.easystorage.Widget";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) EXTENSION EXTENSION_WIDGET";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/Widget/Widget-Brinding-header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Alpha;
+		};
+		0F8968732DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Alpha//WidgetDashboardIntentHandler.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					EXTENSION,
+					EXTENSION_WIDGETDASHBOARDINTENTHANDLER,
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/WidgetDashboardIntentHandler.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = WidgetDashboardIntentHandler;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 Nextcloud. All rights reserved.";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage.WidgetDashboardIntentHandler;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Develop ionos.easystorage.WidgetDashboardIntentHan";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Develop ionos.easystorage.WidgetDashboardIntentHan";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) EXTENSION EXTENSION_WIDGETDASHBOARDINTENTHANDLER";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Alpha;
+		};
+		0F8968742DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Alpha/Share.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					EXTENSION,
+					EXTENSION_SHARE,
+				);
+				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/Share.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage.Share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Develop com.viseven.ionos.easystorage.Share";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Develop com.viseven.ionos.easystorage.Share";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) EXTENSION EXTENSION_SHARE";
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/Share/Share-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Alpha;
+		};
+		0F8968752DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Alpha/File_Provider_Extension.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					EXTENSION,
+					EXTENSION_FILE_PROVIDER_EXTENSION,
+				);
+				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/File_Provider_Extension.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.viseven.ionos.easystorage.File-Provider-Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Dev ionos.easystorage.File-Provider-Extension";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Dev ionos.easystorage.File-Provider-Extension";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) EXTENSION EXTENSION_FILE_PROVIDER_EXTENSION";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Alpha;
+		};
+		0F8968762DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Alpha/File_Provider_Extension_UI.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					EXTENSION,
+					EXTENSION_FILE_PROVIDER_EXTENSION_UI,
+				);
+				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/File_Provider_Extension_UI.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "File Provider Extension UI";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.viseven.ionos.easystorage.File-Provider-Extension-UI";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Dev ionos.easystorage.File-Provider-Extension-UI";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Dev ionos.easystorage.File-Provider-Extension-UI";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) EXTENSION EXTENSION_FILE_PROVIDER_EXTENSION_UI";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Alpha;
+		};
+		0F8968772DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Alpha/Notification_Service_Extension.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					EXTENSION,
+					EXTENSION_NOTIFICATION_SERVICE,
+				);
+				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/Notification_Service_Extension.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.viseven.ionos.easystorage.Notification-Service-Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "Dev ionos.easystorage.NotificationServiceExtension";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Dev ionos.easystorage.NotificationServiceExtension";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) EXTENSION EXTENSION_NOTIFICATION_SERVICE";
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/Notification Service Extension/Notification_Service_Extension-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Alpha;
+		};
+		0F8968782DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 Nextcloud. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				OTHER_LDFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.Nextcloud.NextcloudTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nextcloud.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nextcloud";
+			};
+			name = Alpha;
+		};
+		0F8968792DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				OTHER_LDFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.Nextcloud.NextcloudIntegrationTests.NextcloudIntegrationTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nextcloud.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nextcloud";
+			};
+			name = Alpha;
+		};
+		0F89687A2DD349B700810B87 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				OTHER_CFLAGS = "-v";
+				OTHER_LDFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.Nextcloud.NextcloudUITests.NextcloudUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_INSTALL_OBJC_HEADER = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_PRECOMPILE_BRIDGING_HEADER = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(TEST_HOST)";
+				TEST_TARGET_NAME = Nextcloud;
+			};
+			name = Alpha;
+		};
 		2C33C48723E2C475005F963B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -5537,7 +5950,8 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = IONOSAppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Beta/iOSClient.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CURRENT_PROJECT_VERSION = 10;
@@ -5916,7 +6330,8 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = IONOSAppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/AppStore/iOSClient.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
@@ -6466,6 +6881,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/iOSClient.entitlements";
 				CURRENT_PROJECT_VERSION = 10;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
@@ -6489,6 +6905,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/iOSClient.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CURRENT_PROJECT_VERSION = 10;
@@ -6729,6 +7146,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				2C33C48723E2C475005F963B /* Debug */,
+				0F8968772DD349B700810B87 /* Alpha */,
 				2C33C48823E2C475005F963B /* Release */,
 				D5C2D2192C9AC00B00E7579D /* Beta */,
 				D5C6179D2CABE20500105DC6 /* AppStore */,
@@ -6740,6 +7158,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AF8ED1FF2757821000B8DBC4 /* Debug */,
+				0F8968782DD349B700810B87 /* Alpha */,
 				AF8ED2002757821000B8DBC4 /* Release */,
 				D5C2D21A2C9AC00B00E7579D /* Beta */,
 				D5C6179E2CABE20500105DC6 /* AppStore */,
@@ -6751,6 +7170,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C0046CE22A17B98400D87C9D /* Debug */,
+				0F89687A2DD349B700810B87 /* Alpha */,
 				C0046CE32A17B98400D87C9D /* Release */,
 				D5C2D21C2C9AC00B00E7579D /* Beta */,
 				D5C617A02CABE20500105DC6 /* AppStore */,
@@ -6762,6 +7182,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C04E2F272A17BB4E001BAD85 /* Debug */,
+				0F8968792DD349B700810B87 /* Alpha */,
 				C04E2F282A17BB4E001BAD85 /* Release */,
 				D5C2D21B2C9AC00B00E7579D /* Beta */,
 				D5C6179F2CABE20500105DC6 /* AppStore */,
@@ -6773,6 +7194,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F70716EE2987F81600E72C1D /* Debug */,
+				0F8968762DD349B700810B87 /* Alpha */,
 				F70716EF2987F81600E72C1D /* Release */,
 				D5C2D2182C9AC00B00E7579D /* Beta */,
 				D5C6179C2CABE20500105DC6 /* AppStore */,
@@ -6784,6 +7206,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F7145A261D12E3B700CAFEEC /* Debug */,
+				0F8968742DD349B700810B87 /* Alpha */,
 				F7145A271D12E3B700CAFEEC /* Release */,
 				D5C2D2162C9AC00B00E7579D /* Beta */,
 				D5C6179A2CABE20500105DC6 /* AppStore */,
@@ -6795,6 +7218,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F7346E1D28B0EF5E006CE2D2 /* Debug */,
+				0F8968722DD349B700810B87 /* Alpha */,
 				F7346E1E28B0EF5E006CE2D2 /* Release */,
 				D5C2D2142C9AC00B00E7579D /* Beta */,
 				D5C617982CABE20500105DC6 /* AppStore */,
@@ -6806,6 +7230,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F771E3F020E2392E00AFB62D /* Debug */,
+				0F8968752DD349B700810B87 /* Alpha */,
 				F771E3F120E2392E00AFB62D /* Release */,
 				D5C2D2172C9AC00B00E7579D /* Beta */,
 				D5C6179B2CABE20500105DC6 /* AppStore */,
@@ -6817,6 +7242,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F77B0F9B1D118A16002130FE /* Debug */,
+				0F8968712DD349B700810B87 /* Alpha */,
 				F77B0F9C1D118A16002130FE /* Release */,
 				D5C2D2132C9AC00B00E7579D /* Beta */,
 				D5C617972CABE20500105DC6 /* AppStore */,
@@ -6828,6 +7254,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F7C9739B28F17132002C43E2 /* Debug */,
+				0F8968732DD349B700810B87 /* Alpha */,
 				F7C9739C28F17132002C43E2 /* Release */,
 				D5C2D2152C9AC00B00E7579D /* Beta */,
 				D5C617992CABE20500105DC6 /* AppStore */,
@@ -6839,6 +7266,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F7F67BC91A24D27800EE80DA /* Debug */,
+				0F8968702DD349B700810B87 /* Alpha */,
 				F7F67BCA1A24D27800EE80DA /* Release */,
 				D5C2D2122C9AC00B00E7579D /* Beta */,
 				D5C617962CABE20500105DC6 /* AppStore */,

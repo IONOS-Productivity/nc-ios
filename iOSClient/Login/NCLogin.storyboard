@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_9" orientation="portrait" appearance="dark"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
-        <capability name="Image references" minToolsVersion="12.0"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23721"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
-        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -15,23 +14,23 @@
             <objects>
                 <viewController storyboardIdentifier="NCLogin" id="yj9-jo-WIn" customClass="NCLogin" customModule="Nextcloud" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Bv6-g3-l0M">
-                        <rect key="frame" x="0.0" y="0.0" width="810" height="1080"/>
+                        <rect key="frame" x="0.0" y="0.0" width="440" height="956"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="gradientBackground" translatesAutoresizingMaskIntoConstraints="NO" id="9ke-OB-mlJ" userLabel="background">
-                                <rect key="frame" x="0.0" y="0.0" width="810" height="1080"/>
+                                <rect key="frame" x="0.0" y="0.0" width="440" height="956"/>
                             </imageView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="hwa-hT-QjM" userLabel="loginContentView">
-                                <rect key="frame" x="0.0" y="0.0" width="810" height="1080"/>
+                                <rect key="frame" x="0.0" y="0.0" width="440" height="956"/>
                                 <subviews>
-                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="logo" translatesAutoresizingMaskIntoConstraints="NO" id="O7g-q0-SHY" userLabel="logo">
-                                        <rect key="frame" x="223" y="140" width="364.5" height="50"/>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="IONOSLogo" translatesAutoresizingMaskIntoConstraints="NO" id="O7g-q0-SHY" userLabel="logo">
+                                        <rect key="frame" x="121" y="138" width="198" height="27.666666666666657"/>
                                         <constraints>
                                             <constraint firstAttribute="width" secondItem="O7g-q0-SHY" secondAttribute="height" multiplier="159:22" id="pid-4S-EEo"/>
                                         </constraints>
                                     </imageView>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ySx-9E-GUK" userLabel="lblWelcome">
-                                        <rect key="frame" x="18" y="378" width="774" height="0.0"/>
+                                        <rect key="frame" x="18" y="334.66666666666669" width="404" height="0.0"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>
@@ -40,7 +39,7 @@
                                         </variation>
                                     </label>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="HQd-pF-3cE" customClass="PrimaryButton" customModule="Nextcloud" customModuleProvider="target">
-                                        <rect key="frame" x="277" y="883.5" width="256" height="48"/>
+                                        <rect key="frame" x="44" y="811" width="352" height="48"/>
                                         <color key="backgroundColor" name="Button/Primary/Background/Normal"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="48" id="3yh-bo-Bzr"/>
@@ -66,7 +65,7 @@
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1jK-Ok-o52" userLabel="QRCode" customClass="SecondaryButton" customModule="Nextcloud" customModuleProvider="target">
-                                        <rect key="frame" x="277" y="819.5" width="256" height="48"/>
+                                        <rect key="frame" x="44" y="747" width="352" height="48"/>
                                         <color key="backgroundColor" name="Button/Primary/Background/Normal"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="48" id="X9p-86-T8V"/>
@@ -82,13 +81,13 @@
                                         </connections>
                                     </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5fY-iq-Tv0" userLabel="lblDescription">
-                                        <rect key="frame" x="10" y="961.5" width="790" height="0.0"/>
+                                        <rect key="frame" x="10" y="889" width="420" height="0.0"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="large" translatesAutoresizingMaskIntoConstraints="NO" id="048-Uj-QCi">
-                                        <rect key="frame" x="386.5" y="521.5" width="37" height="37"/>
+                                        <rect key="frame" x="201.66666666666666" y="459.66666666666669" width="37" height="37"/>
                                         <color key="color" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     </activityIndicatorView>
                                 </subviews>
@@ -146,7 +145,7 @@
             <objects>
                 <viewController storyboardIdentifier="NCLoginProvider" id="yEb-Ky-35s" customClass="NCLoginProvider" customModule="Nextcloud" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="UX5-cJ-bY6">
-                        <rect key="frame" x="0.0" y="0.0" width="810" height="1080"/>
+                        <rect key="frame" x="0.0" y="0.0" width="440" height="956"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <viewLayoutGuide key="safeArea" id="vqz-4v-cZu"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -158,9 +157,9 @@
         </scene>
     </scenes>
     <resources>
-        <image name="gradientBackground" width="768" height="1024"/>
-        <image name="logo" width="204" height="25"/>
-        <image name="qrcode" width="14" height="14"/>
+        <image name="IONOSLogo" width="204" height="25"/>
+        <image name="gradientBackground" width="320" height="568"/>
+        <image name="qrcode" width="36" height="36"/>
         <namedColor name="Button/Primary/Background/Normal">
             <color red="0.043137254901960784" green="0.16470588235294117" blue="0.38823529411764707" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

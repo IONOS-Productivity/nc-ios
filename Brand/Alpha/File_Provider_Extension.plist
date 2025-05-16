@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Nextcloud</string>
+	<string>HiDrive Next</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,16 +27,16 @@
 	</dict>
 	<key>NSExtension</key>
 	<dict>
-		<key>NSExtensionAttributes</key>
-		<dict>
-			<key>NSExtensionActivationRule</key>
-			<string>SUBQUERY (extensionItems, $extensionItem, SUBQUERY ($extensionItem.attachments,$attachment,(ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.data")).@count == $extensionItem.attachments.@count).@count &gt; 0
-            </string>
-		</dict>
-		<key>NSExtensionMainStoryboard</key>
-		<string>MainInterface</string>
+		<key>NSExtensionFileProviderDocumentGroup</key>
+		<string>group.com.viseven.ionos.easystorage</string>
+		<key>NSExtensionFileProviderSupportsEnumeration</key>
+		<true/>
+		<key>NSExtensionFileProviderSupportsPickingFolders</key>
+		<true/>
 		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.share-services</string>
+		<string>com.apple.fileprovider-nonui</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>$(PRODUCT_MODULE_NAME).FileProviderExtension</string>
 	</dict>
 </dict>
 </plist>

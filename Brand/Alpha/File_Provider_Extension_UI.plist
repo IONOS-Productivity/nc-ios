@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Nextcloud</string>
+	<string>HiDrive Next</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,28 +15,30 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
-	<string>XPC!</string>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
 	<key>NSExtension</key>
 	<dict>
-		<key>NSExtensionAttributes</key>
-		<dict>
-			<key>NSExtensionActivationRule</key>
-			<string>SUBQUERY (extensionItems, $extensionItem, SUBQUERY ($extensionItem.attachments,$attachment,(ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.data")).@count == $extensionItem.attachments.@count).@count &gt; 0
-            </string>
-		</dict>
+		<key>NSExtensionFileProviderActions</key>
+		<array>
+			<dict>
+				<key>NSExtensionFileProviderActionActivationRule</key>
+				<string>TRUEPREDICATE</string>
+				<key>NSExtensionFileProviderActionIdentifier</key>
+				<string>com.mycompany.FileProviderUI.CustomAction</string>
+				<key>NSExtensionFileProviderActionName</key>
+				<string>Custom Action</string>
+			</dict>
+		</array>
 		<key>NSExtensionMainStoryboard</key>
 		<string>MainInterface</string>
 		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.share-services</string>
+		<string>com.apple.fileprovider-actionsui</string>
 	</dict>
+	<key>NSHumanReadableCopyright</key>
+	<string></string>
 </dict>
 </plist>
