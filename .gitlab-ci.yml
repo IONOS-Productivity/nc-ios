@@ -3,7 +3,7 @@ variables:
   IPA_PATH: "${outputDirPath}/${scheme}.ipa"
   DSYM_PATH: "*.dSYM.zip"
   scheme: "Nextcloud"
-  dev_configuration: "Release"
+  dev_configuration: "Alpha"
   beta_configuration: "Beta"
   archive_path: "${outputDirPath}/${scheme}"
   export_method: "ad-hoc"
