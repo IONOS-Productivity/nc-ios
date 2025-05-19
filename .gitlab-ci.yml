@@ -62,7 +62,7 @@ stages:
     --clean
     
 .build_simulator_general_script: &build_simulator_general_script
-  - xcodebuild -configuration Debug -scheme $scheme -sdk iphonesimulator -derivedDataPath ./BuildForSimulator -quiet
+  - xcodebuild -configuration Alpha -scheme $scheme -sdk iphonesimulator -derivedDataPath ./BuildForSimulator -quiet
 
 ############## build ##############
 
