@@ -26,11 +26,11 @@ import UIKit
 let userAgent: String = {
     let appVersion: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
     // Original Nextcloud useragent "Mozilla/5.0 (iOS) Nextcloud-iOS/\(appVersion)"
-    return "Mozilla/5.0 (iOS) Nextcloud-iOS/\(appVersion)"
+    return "Mozilla/5.0 (iOS) IONOS HiDrive Next/\(appVersion)"
 }()
 
-final class NCBrandOptions: @unchecked Sendable {
-    static let shared = NCBrandOptions()
+class NCBrandOptions: @unchecked Sendable {
+    static let shared = NCBrandOptionsIONOS()
 
     var brand: String = "Nextcloud"
     var textCopyrightNextcloudiOS: String = "Nextcloud Hydrogen for iOS %@ © 2025"
@@ -130,8 +130,8 @@ final class NCBrandOptions: @unchecked Sendable {
     }
 }
 
-final class NCBrandColor: @unchecked Sendable {
-    static let shared = NCBrandColor()
+class NCBrandColor: @unchecked Sendable {
+    static let shared = NCBrandColorIONOS()
 
     /// This is rewrited from customet theme, default is Nextcloud color
     ///

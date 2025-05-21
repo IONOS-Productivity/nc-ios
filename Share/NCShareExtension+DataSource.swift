@@ -106,10 +106,7 @@ extension NCShareExtension: UICollectionViewDataSource {
             setupDirectoryCell(cell, indexPath: indexPath, with: metadata)
         }
 
-        if metadata.favorite {
-            cell.imageFavorite.image = NCImageCache.shared.getImageFavorite()
-        }
-
+		cell.imageFavorite.image = metadata.favorite ? NCImageCache.shared.getImageFavorite() : nil
         cell.imageSelect.isHidden = true
         cell.backgroundView = nil
         cell.hideButtonMore(true)
@@ -139,11 +136,11 @@ extension NCShareExtension: UICollectionViewDataSource {
         if metadata.e2eEncrypted {
             cell.imageItem.image = NCImageCache.shared.getFolderEncrypted(account: metadata.account)
         } else if isShare {
-            cell.imageItem.image = NCImageCache.shared.getFolderSharedWithMe(account: metadata.account)
+            cell.imageItem.image = NCImageCache.shared.getFolderSharedWithMe()
         } else if !metadata.shareType.isEmpty {
             metadata.shareType.contains(3) ?
             (cell.imageItem.image = NCImageCache.shared.getFolderPublic(account: metadata.account)) :
-            (cell.imageItem.image = NCImageCache.shared.getFolderSharedWithMe(account: metadata.account))
+            (cell.imageItem.image = NCImageCache.shared.getFolderSharedWithMe())
         } else if metadata.mountType == "group" {
             cell.imageItem.image = NCImageCache.shared.getFolderGroup(account: metadata.account)
         } else if isMounted {

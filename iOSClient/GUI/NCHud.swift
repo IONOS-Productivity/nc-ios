@@ -13,7 +13,8 @@ import JGProgressHUD
 class NCHud: NSObject {
     private let hud = JGProgressHUD()
     private var view: UIView?
-
+	private let dimColor = UIColor.black.withAlphaComponent(0.4)
+	
     public init(_ view: UIView? = nil) {
         if let view {
             self.view = view
@@ -28,6 +29,8 @@ class NCHud: NSObject {
             }
 
             self.hud.indicatorView = JGProgressHUDIndicatorView()
+			self.hud.backgroundColor = self.dimColor
+			self.hud.contentView.backgroundColor = NCBrandColor.shared.hudBackgroundColor
 
             self.hud.textLabel.text = text
             self.hud.textLabel.textColor = NCBrandColor.shared.iconImageColor
@@ -60,7 +63,10 @@ class NCHud: NSObject {
             let indicatorView = self.hud.indicatorView as? JGProgressHUDRingIndicatorView
             indicatorView?.ringWidth = 1.5
             indicatorView?.ringColor = NCBrandColor.shared.iconImageColor
-
+			indicatorView?.ringBackgroundColor = NCBrandColor.shared.iconImageColor2
+			
+			self.hud.backgroundColor = self.dimColor
+			self.hud.contentView.backgroundColor = NCBrandColor.shared.hudBackgroundColor
             self.hud.textLabel.text = text
             self.hud.textLabel.textColor = NCBrandColor.shared.iconImageColor
 
