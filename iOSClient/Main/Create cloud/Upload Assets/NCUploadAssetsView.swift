@@ -33,7 +33,8 @@ struct NCUploadAssetsView: View {
         NavigationView {
             ZStack(alignment: .top) {
                 List {
-                    Section(footer: Text(NSLocalizedString("_modify_image_desc_", comment: ""))) {
+                    Section(footer: Text(NSLocalizedString("_modify_image_desc_", comment: ""))
+						.font(.system(size: 16))) {
                         ScrollView(.horizontal) {
                             LazyHGrid(rows: gridItems, alignment: .center, spacing: 10) {
                                 ForEach(0..<model.previewStore.count, id: \.self) { index in
@@ -133,6 +134,7 @@ struct NCUploadAssetsView: View {
                             }
                         }
                     }
+					.applyGlobalFormSectionStyle()
 
                     Section {
                         ///
@@ -181,7 +183,8 @@ struct NCUploadAssetsView: View {
                             }
                         }
                     }
-
+					.applyGlobalFormSectionStyle()
+					
                     Section {
                         Button(NSLocalizedString("_save_", comment: "")) {
                             if model.useAutoUploadFolder, model.useAutoUploadSubFolder {
@@ -199,12 +202,13 @@ struct NCUploadAssetsView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .buttonStyle(ButtonRounded(disabled: model.uploadInProgress, account: model.session.account))
-                        .listRowBackground(Color(UIColor.systemGroupedBackground))
+						.buttonStyle(SaveButtonStyle(maxWidth: 150))
+                        .listRowBackground(Color(UIColor.clear))
                         .disabled(model.uploadInProgress)
                         .hiddenConditionally(isHidden: model.hiddenSave)
                     }
                 }
+				.applyGlobalFormStyle()
             }
             .navigationTitle(NSLocalizedString("_upload_photos_videos_", comment: ""))
             .navigationBarTitleDisplayMode(.inline)

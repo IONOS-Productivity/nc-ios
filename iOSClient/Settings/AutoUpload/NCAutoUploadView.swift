@@ -202,7 +202,6 @@ struct NCAutoUploadView: View {
 #endif
                 Toggle(isOn: model.autoUploadNewPhotosOnly || model.autoUploadStart ? $model.autoUploadStart : $showUploadAllPhotosWarning) {
                     Text(model.autoUploadStart ? "_stop_autoupload_" : "_start_autoupload_")
-						.font(.system(size: 16))
                         .padding(.horizontal, 20)
                         .padding(.vertical, 7)
                 }

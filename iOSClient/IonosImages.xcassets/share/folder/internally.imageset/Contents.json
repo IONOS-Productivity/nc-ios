@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "shared_internally_folder.svg",
+      "filename" : "shared_internally_folder@3x.png",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "shared_internally_folder 1.svg",
+      "filename" : "shared_internally_folder 1@3x.png",
       "idiom" : "universal"
     }
   ],

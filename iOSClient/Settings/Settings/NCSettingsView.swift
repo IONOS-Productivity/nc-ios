@@ -59,7 +59,6 @@ struct NCSettingsView: View {
                     }
                 }
             })
-            .font(.system(size: 16))
             .listRowBackground(Color(NCBrandColor.shared.formRowBackgroundColor))
             /// `Privacy` Section
             Section(content: {
@@ -80,14 +79,12 @@ struct NCSettingsView: View {
                 /// Enable Touch ID
                 Toggle(NSLocalizedString("_enable_touch_face_id_", comment: ""), isOn: $model.enableTouchID)
                     .tint(Color(NCBrandColor.shared.switchColor))
-                    .font(.system(size: 16))
                     .onChange(of: model.enableTouchID) { _ in
                         model.updateTouchIDSetting()
                     }
                 /// Reset app wrong attempts
                 Toggle(NSLocalizedString("_reset_wrong_passcode_", comment: ""), isOn: $model.resetWrongAttempts)
                     .tint(Color(NCBrandColor.shared.switchColor))
-                    .font(.system(size: 16))
                     .onChange(of: model.resetWrongAttempts) { _ in
                         model.updateResetWrongAttemptsSetting()
                     }
@@ -95,7 +92,6 @@ struct NCSettingsView: View {
                 Text(NSLocalizedString("_privacy_", comment: "")).listRowBackground(Color.clear)
             }, footer: {
                 Text(String(format: NSLocalizedString("_reset_wrong_passcode_desc_", comment: ""), NCBrandOptions.shared.resetAppPasscodeAttempts))
-                    .font(.system(size: 12))
                     .listRowBackground(Color.clear)
                     .lineSpacing(1)
             }).applyGlobalFormSectionStyle()
@@ -122,7 +118,6 @@ struct NCSettingsView: View {
                         Text(NSLocalizedString("_calendar_contacts_footer_warning_", comment: ""))
                         Spacer()
                         Text(NSLocalizedString("_calendar_contacts_footer_", comment: ""))
-                            .font(.system(size: 12))
                     }.listRowBackground(Color.clear)
 
                 }).applyGlobalFormSectionStyle()
@@ -153,7 +148,6 @@ struct NCSettingsView: View {
                             .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                         Text(NSLocalizedString("_data_protection_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 }
             }.applyGlobalFormSectionStyle()
             /// `Information` Section
@@ -203,7 +197,6 @@ struct NCSettingsView: View {
                             .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                         Text(NSLocalizedString("_source_code_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 })
                 .tint(Color(NCBrandColor.shared.textColor))
                 .sheet(isPresented: $showSourceCode) {

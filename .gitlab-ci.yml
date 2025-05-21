@@ -3,7 +3,7 @@ variables:
   IPA_PATH: "${outputDirPath}/${scheme}.ipa"
   DSYM_PATH: "*.dSYM.zip"
   scheme: "Nextcloud"
-  dev_configuration: "Release"
+  dev_configuration: "Alpha"
   beta_configuration: "Beta"
   archive_path: "${outputDirPath}/${scheme}"
   export_method: "ad-hoc"
@@ -15,6 +15,7 @@ stages:
 .mac_general_scripts: &mac_general_scripts
   - security unlock-keychain -p $PASSWORD_BUILDE ~/Library/Keychains/login.keychain-db
   - brew install jq
+  - gem install fastlane --user-install
   - fastlane -v
   - xcodebuild -version
   - date
@@ -61,7 +62,7 @@ stages:
     --clean
     
 .build_simulator_general_script: &build_simulator_general_script
-  - xcodebuild -configuration Debug -scheme $scheme -sdk iphonesimulator -derivedDataPath ./BuildForSimulator -quiet
+  - xcodebuild -configuration Alpha -scheme $scheme -sdk iphonesimulator -derivedDataPath ./BuildForSimulator -quiet
 
 ############## build ##############
 
