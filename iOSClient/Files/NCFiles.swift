@@ -28,10 +28,15 @@ import RealmSwift
 import SwiftUI
 
 class NCFiles: NCCollectionViewCommon {
+
     internal var fileNameBlink: String?
     internal var fileNameOpen: String?
     internal var matadatasHash: String = ""
     internal var semaphoreReloadDataSource = DispatchSemaphore(value: 1)
+
+    internal var lastOffsetY: CGFloat = 0
+    internal var lastScrollTime: TimeInterval = 0
+    internal var accumulatedScrollDown: CGFloat = 0
 
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -63,7 +68,6 @@ class NCFiles: NCCollectionViewCommon {
                     if let controller = userInfo["controller"] as? NCMainTabBarController,
                        controller == self.controller {
                         controller.account = account
-                        controller.availableNotifications = false
                     } else {
                         return
                     }
@@ -123,6 +127,7 @@ class NCFiles: NCCollectionViewCommon {
         fileNameOpen = nil
     }
 
+
     // MARK: - DataSource
 
     override func reloadDataSource() {
@@ -148,9 +153,9 @@ class NCFiles: NCCollectionViewCommon {
         self.metadataFolder = database.getMetadataFolder(session: session, serverUrl: self.serverUrl)
         self.richWorkspaceText = database.getTableDirectory(predicate: predicateDirectory)?.richWorkspace
 
-        let metadatas = self.database.getResultsMetadatasPredicate(predicate, layoutForView: layoutForView)
+        let metadatas = self.database.getResultsMetadatasPredicate(predicate, layoutForView: layoutForView, account: session.account)
 
-        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: layoutForView)
+        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: layoutForView, account: session.account)
 
         if metadatas.isEmpty {
             self.semaphoreReloadDataSource.signal()
@@ -164,10 +169,6 @@ class NCFiles: NCCollectionViewCommon {
     }
 
     override func getServerData() {
-        if UIApplication.shared.applicationState == .background {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[DEBUG] Files not reload datasource network with the application in background")
-            return
-        }
         guard !isSearchingMode else {
             return networkSearch()
         }
@@ -185,13 +186,10 @@ class NCFiles: NCCollectionViewCommon {
         }
 
         DispatchQueue.global().async {
-            self.networkReadFolder { metadatas, isChanged, error in
+            self.networkReadFolder { metadatas, error in
                 DispatchQueue.main.async {
-                    self.refreshControl.endRefreshing()
-
-                    if isChanged || self.isNumberOfItemsInAllSectionsNull {
-                        self.reloadDataSource()
-                    }
+                    self.refreshControlEndRefreshing()
+                    self.reloadDataSource()
                 }
 
                 if error == .success {
@@ -214,7 +212,11 @@ class NCFiles: NCCollectionViewCommon {
         }
     }
 
-    private func networkReadFolder(completion: @escaping (_ metadatas: [tableMetadata]?, _ isDataChanged: Bool, _ error: NKError) -> Void) {
+    private func networkReadFolder(completion: @escaping (_ metadatas: [tableMetadata]?, _ error: NKError) -> Void) {
+        func returnFunc(metadataFolder: tableMetadata?, metadatas: [tableMetadata]) {
+
+        }
+
         NCNetworking.shared.readFile(serverUrlFileName: serverUrl, account: session.account) { task in
             self.dataSourceTask = task
             if self.dataSource.isEmpty() {
@@ -223,48 +225,38 @@ class NCFiles: NCCollectionViewCommon {
         } completion: { account, metadata, error in
             let isDirectoryE2EE = NCUtilityFileSystem().isDirectoryE2EE(session: self.session, serverUrl: self.serverUrl)
             guard error == .success, let metadata else {
-                return completion(nil, false, error)
+                return completion(nil, error)
             }
             /// Check change eTag or E2EE  or DataSource empty
             self.database.updateDirectoryRichWorkspace(metadata.richWorkspace, account: account, serverUrl: self.serverUrl)
             let tableDirectory = self.database.getTableDirectory(ocId: metadata.ocId)
             guard tableDirectory?.etag != metadata.etag || metadata.e2eEncrypted || self.dataSource.isEmpty() else {
-                return completion(nil, false, NKError())
-            }
-            /// Check Response DataChanged
-            var checkResponseDataChanged = true
-            if tableDirectory?.etag.isEmpty ?? true || isDirectoryE2EE || self.dataSource.isEmpty() {
-                checkResponseDataChanged = false
+                return completion(nil, NKError())
             }
 
             NCNetworking.shared.readFolder(serverUrl: self.serverUrl,
                                            account: metadata.account,
-                                           checkResponseDataChanged: checkResponseDataChanged,
                                            queue: NextcloudKit.shared.nkCommonInstance.backgroundQueue) { task in
                 self.dataSourceTask = task
                 if self.dataSource.isEmpty() {
                     self.collectionView.reloadData()
                 }
-            } completion: { account, metadataFolder, metadatas, isDataChanged, error in
+            } completion: { account, metadataFolder, metadatas, error in
                 /// Error
                 guard error == .success else {
-                    return completion(nil, false, error)
+                    return completion(nil, error)
                 }
                 /// Updata folder
                 if let metadataFolder {
-                    self.metadataFolder = metadataFolder
+                    self.metadataFolder = tableMetadata(value: metadataFolder)
                     self.richWorkspaceText = metadataFolder.richWorkspace
-                }
-                /// check Response Data Changed
-                if !isDataChanged {
-                    return completion(nil, false, error)
                 }
 
                 guard let metadataFolder,
                       isDirectoryE2EE,
                       NCKeychain().isEndToEndEnabled(account: account),
                       !NCNetworkingE2EE().isInUpload(account: account, serverUrl: self.serverUrl) else {
-                    return completion(metadatas, true, error)
+                    return completion(metadatas, error)
                 }
 
                 /// E2EE
@@ -304,7 +296,7 @@ class NCFiles: NCCollectionViewCommon {
                     } else {
                         NCContentPresenter().showError(error: NKError(errorCode: NCGlobal.shared.errorE2EEKeyDecodeMetadata, errorDescription: "_e2e_error_"))
                     }
-                    completion(metadatas, true, error)
+                    completion(metadatas, error)
                 }
             }
         }
@@ -353,7 +345,15 @@ class NCFiles: NCCollectionViewCommon {
         let currentAccount = session.account
 
         if database.getAllTableAccount().isEmpty {
-            appDelegate.openLogin(selector: NCGlobal.shared.introLogin)
+            let navigationController: UINavigationController?
+
+            if NCBrandOptions.shared.disable_intro, let viewController = UIStoryboard(name: "NCLogin", bundle: nil).instantiateViewController(withIdentifier: "NCLogin") as? NCLogin {
+                navigationController = UINavigationController(rootViewController: viewController)
+            } else {
+                navigationController = UIStoryboard(name: "NCIntro", bundle: nil).instantiateInitialViewController() as? UINavigationController
+            }
+
+            UIApplication.shared.firstWindow?.rootViewController = navigationController
         } else if let account = tableAccount?.account, account != currentAccount {
             NCAccount().changeAccount(account, userProfile: nil, controller: controller) { }
         } else if self.serverUrl == self.utilityFileSystem.getHomeServer(session: self.session) {

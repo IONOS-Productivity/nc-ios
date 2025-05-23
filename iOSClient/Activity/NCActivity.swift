@@ -235,7 +235,7 @@ extension NCActivity: UITableViewDataSource {
             cell.fileAvatarImageView?.image = results.image
         }
 
-        if let tableAvatar = results.tableAvatar,
+		if let tableAvatar = results.tblAvatar,
            !tableAvatar.loaded,
            NCNetworking.shared.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
             NCNetworking.shared.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: comment.actorId, fileName: fileName, account: account, view: tableView))
@@ -316,7 +316,7 @@ extension NCActivity: UITableViewDataSource {
                 cell.fileAvatarImageView?.image = results.image
             }
 
-            if !(results.tableAvatar?.loaded ?? false),
+			if !(results.tblAvatar?.loaded ?? false),
                NCNetworking.shared.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
                 NCNetworking.shared.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: activity.user, fileName: fileName, account: session.account, view: tableView))
             }
@@ -520,44 +520,44 @@ extension NCActivity: NCShareCommentsCellDelegate {
         guard let tableComment = tableComment else {
             return
         }
-        self.showProfileMenu(userId: tableComment.actorId, session: session)
+        self.showProfileMenu(userId: tableComment.actorId, session: session, sender: sender)
     }
 
     func tapMenu(with tableComments: tableComments?, sender: Any) {
-        toggleMenu(with: tableComments)
+        toggleMenu(with: tableComments, sender: sender)
     }
 
-    func toggleMenu(with tableComments: tableComments?) {
+    func toggleMenu(with tableComments: tableComments?, sender: Any) {
         var actions = [NCMenuAction]()
 
         actions.append(
             NCMenuAction(
                 title: NSLocalizedString("_edit_comment_", comment: ""),
                 icon:  NCImagesRepository.menuIconEdit,
-                action: { _ in
-                    guard let metadata = self.metadata, let tableComments = tableComments else { return }
-
-                    let alert = UIAlertController(title: NSLocalizedString("_edit_comment_", comment: ""), message: nil, preferredStyle: .alert)
-                    alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel, handler: nil))
-
-                    alert.addTextField(configurationHandler: { textField in
-                        textField.placeholder = NSLocalizedString("_new_comment_", comment: "")
-                    })
-
-                    alert.addAction(UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default, handler: { _ in
-                        guard let message = alert.textFields?.first?.text, !message.isEmpty else { return }
-
-                        NextcloudKit.shared.updateComments(fileId: metadata.fileId, messageId: tableComments.messageId, message: message, account: metadata.account) { _, _, error in
-                            if error == .success {
-                                self.loadComments()
-                            } else {
-                                NCContentPresenter().showError(error: error)
-                            }
-                        }
-                    }))
-
-                    self.present(alert, animated: true)
-                }
+				sender: sender, action: { _ in
+					guard let metadata = self.metadata, let tableComments = tableComments else { return }
+					
+					let alert = UIAlertController(title: NSLocalizedString("_edit_comment_", comment: ""), message: nil, preferredStyle: .alert)
+					alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel, handler: nil))
+					
+					alert.addTextField(configurationHandler: { textField in
+						textField.placeholder = NSLocalizedString("_new_comment_", comment: "")
+					})
+					
+					alert.addAction(UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default, handler: { _ in
+						guard let message = alert.textFields?.first?.text, !message.isEmpty else { return }
+						
+						NextcloudKit.shared.updateComments(fileId: metadata.fileId, messageId: tableComments.messageId, message: message, account: metadata.account) { _, _, error in
+							if error == .success {
+								self.loadComments()
+							} else {
+								NCContentPresenter().showError(error: error)
+							}
+						}
+					}))
+					
+					self.present(alert, animated: true)
+				}
             )
         )
 
@@ -566,6 +566,7 @@ extension NCActivity: NCShareCommentsCellDelegate {
                 title: NSLocalizedString("_delete_comment_", comment: ""),
                 destructive: true,
                 icon: utility.loadImage(named: "trash", colors: [.red]),
+                sender: sender,
                 action: { _ in
                     guard let metadata = self.metadata, let tableComments = tableComments else { return }
 
@@ -580,6 +581,6 @@ extension NCActivity: NCShareCommentsCellDelegate {
             )
         )
 
-        presentMenu(with: actions)
+        presentMenu(with: actions, sender: sender)
     }
 }

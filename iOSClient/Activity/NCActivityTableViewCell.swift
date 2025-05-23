@@ -67,13 +67,13 @@ class NCActivityTableViewCell: UITableViewCell, NCCellProtocol {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        let avatarRecognizer = UITapGestureRecognizer(target: self, action: #selector(tapAvatarImage))
+        let avatarRecognizer = UITapGestureRecognizer(target: self, action: #selector(tapAvatarImage(_:)))
         avatar.addGestureRecognizer(avatarRecognizer)
     }
 
-    @objc func tapAvatarImage() {
+    @objc func tapAvatarImage(_ sender: Any?) {
         guard let fileUser = fileUser else { return }
-        viewController.showProfileMenu(userId: fileUser, session: NCSession.shared.getSession(account: account))
+        viewController.showProfileMenu(userId: fileUser, session: NCSession.shared.getSession(account: account), sender: sender)
     }
 }
 
@@ -98,9 +98,9 @@ extension NCActivityTableViewCell: UICollectionViewDelegate {
             }
             if (responder as? UIViewController)!.navigationController != nil {
                 if let viewController = UIStoryboard(name: "NCTrash", bundle: nil).instantiateInitialViewController() as? NCTrash {
-                    if let resultTableTrash = NCManageDatabase.shared.getResultTrashItem(fileId: String(activityPreview.fileId), account: activityPreview.account) {
-                        viewController.blinkFileId = resultTableTrash.fileId
-                        viewController.filePath = resultTableTrash.filePath
+                    if let result = NCManageDatabase.shared.getResultTrash(fileId: String(activityPreview.fileId), account: activityPreview.account) {
+                        viewController.blinkFileId = result.fileId
+                        viewController.filePath = result.filePath
                         (responder as? UIViewController)!.navigationController?.pushViewController(viewController, animated: true)
                     } else {
                         let error = NKError(errorCode: NCGlobal.shared.errorInternalError, errorDescription: "_trash_file_not_found_")
@@ -230,5 +230,5 @@ class NCOperationDownloadThumbnailActivity: ConcurrentOperation, @unchecked Send
             }
             self.finish()
         }
-            }
+    }
 }

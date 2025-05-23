@@ -83,7 +83,7 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
 
     func share() {
         let metadatas = getSelectedMetadatas()
-        NCActionCenter.shared.openActivityViewController(selectedMetadata: metadatas, controller: self.controller)
+        NCActionCenter.shared.openActivityViewController(selectedMetadata: metadatas, controller: self.controller, sender: nil)
         setEditMode(false)
     }
 
@@ -130,6 +130,7 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
         navigationItem.hidesBackButton = editMode
         navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
         searchController(enabled: !editMode)
+        isHiddenPlusButton(editMode)
 
         if editMode {
             navigationItem.leftBarButtonItems = nil

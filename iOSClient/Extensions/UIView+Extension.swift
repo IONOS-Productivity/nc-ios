@@ -73,4 +73,15 @@ extension UIView {
     var bottomCenter: CGRect {
         return CGRect(origin: CGPoint(x: center.x, y: bounds.height), size: CGSizeZero)
     }
+
+    var parentTabBarController: UITabBarController? {
+        var responder: UIResponder? = self
+        while let nextResponder = responder?.next {
+            if let tabBarController = nextResponder as? UITabBarController {
+                return tabBarController
+            }
+            responder = nextResponder
+        }
+        return nil
+    }
 }

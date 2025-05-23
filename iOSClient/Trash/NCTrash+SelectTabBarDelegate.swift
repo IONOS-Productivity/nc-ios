@@ -73,6 +73,5 @@ extension NCTrash: HiDriveCollectionViewCommonSelectToolbarDelegate {
         navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
         navigationItem.hidesBackButton = editMode
         collectionView.reloadData()
-
     }
 }

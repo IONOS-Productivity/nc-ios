@@ -23,8 +23,25 @@
 
 import UIKit
 
+/// Used for read/write in Realm
+var isAppSuspending: Bool = false
+/// Used for know if the app in in Background mode
+var isAppInBackground: Bool = false
+
 final class NCGlobal: Sendable {
     static let shared = NCGlobal()
+
+    init() {
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { _ in
+            isAppSuspending = true
+            isAppInBackground = true
+        }
+
+        NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { _ in
+            isAppSuspending = false
+            isAppInBackground = false
+        }
+    }
 
     // ENUM
     //
@@ -268,10 +285,9 @@ final class NCGlobal: Sendable {
     let metadataStatusWaitCopy: Int             = 14
     let metadataStatusWaitMove: Int             = 15
 
+    let metadataStatusUploadingAllMode          = [1,2,3]
     let metadataStatusInTransfer                = [-1, -2, 1, 2]
-    let metadataStatusFileDown                  = [-1, -2, -3]
     let metadataStatusHideInView                = [1, 2, 3, 11]
-    let metadataStatusHideInFileExtension       = [1, 2, 3, 10, 11]
     let metadataStatusWaitWebDav                = [10, 11, 12, 13, 14, 15]
 
     // Auto upload subfolder granularity
@@ -292,6 +308,7 @@ final class NCGlobal: Sendable {
     let notificationCenterClearCache                            = "clearCache"
     let notificationCenterChangeLayout                          = "changeLayout"                    // userInfo: account, serverUrl, layoutForView
     let notificationCenterCheckUserDelaultErrorDone             = "checkUserDelaultErrorDone"       // userInfo: account, controller
+    let notificationCenterUpdateNotification                    = "updateNotification"
 
     let notificationCenterReloadDataSource                      = "reloadDataSource"                // userInfo: serverUrl?, clearDataSource
     let notificationCenterGetServerData                         = "getServerData"                   // userInfo: serverUrl?
@@ -336,10 +353,11 @@ final class NCGlobal: Sendable {
 
     // TIP
     //
-    let tipNCViewerPDFThumbnail                                 = "tipncviewerpdfthumbnail"
-    let tipNCCollectionViewCommonAccountRequest                 = "tipnccollectionviewcommonaccountrequest"
-    let tipNCScanAddImage                                       = "tipncscanaddimage"
-    let tipNCViewerMediaDetailView                              = "tipncviewermediadetailview"
+    let tipPDFThumbnail                                         = "tipPDFThumbnail"
+    let tipAccountRequest                                       = "tipAccountRequest"
+    let tipScanAddImage                                         = "tipScanAddImage"
+    let tipMediaDetailView                                      = "tipMediaDetailView"
+    let tipAutoUploadButton                                     = "tipAutoUploadButton"
 
     // ACTION
     //

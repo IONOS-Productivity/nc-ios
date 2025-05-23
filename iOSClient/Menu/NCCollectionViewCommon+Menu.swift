@@ -31,7 +31,7 @@ import NextcloudKit
 import Queuer
 
 extension NCCollectionViewCommon {
-    func toggleMenu(metadata: tableMetadata, image: UIImage?) {
+    func toggleMenu(metadata: tableMetadata, image: UIImage?, sender: Any?) {
         guard let metadata = database.getMetadataFromOcId(metadata.ocId),
               let sceneIdentifier = self.controller?.sceneIdentifier else {
             return
@@ -67,11 +67,12 @@ extension NCCollectionViewCommon {
                 icon: iconHeader,
 				isHeader: true,
                 order: 0,
+                sender: sender,
                 action: nil
             )
         )
 
-        actions.append(.seperator(order: 1))
+        actions.append(.seperator(order: 1, sender: sender))
 
         //
         // DETAILS
@@ -83,6 +84,7 @@ extension NCCollectionViewCommon {
                     title: NSLocalizedString("_details_", comment: ""),
                     icon: NCImagesRepository.menuIconDetails,
                     order: 10,
+                    sender: sender,
                     action: { _ in
                         NCActionCenter.shared.openShare(viewController: self, metadata: metadata, page: .activity)
                     }
@@ -119,6 +121,7 @@ extension NCCollectionViewCommon {
                     details: lockTimeString,
                     icon: lockIcon,
                     order: 20,
+                    sender: sender,
                     action: nil)
             )
         }
@@ -133,6 +136,7 @@ extension NCCollectionViewCommon {
                     title: NSLocalizedString("_view_in_folder_", comment: ""),
                     icon: NCImagesRepository.menuIconViewInFolder,
                     order: 21,
+                    sender: sender,
                     action: { _ in
                         NCActionCenter.shared.openFileViewInFolder(serverUrl: metadata.serverUrl, fileNameBlink: metadata.fileName, fileNameOpen: nil, sceneIdentifier: sceneIdentifier)
                     }
@@ -147,7 +151,7 @@ extension NCCollectionViewCommon {
            !metadata.directory,
            metadata.canUnlock(as: metadata.userId),
            !NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityFilesLockVersion.isEmpty {
-            actions.append(NCMenuAction.lockUnlockFiles(shouldLock: !metadata.lock, metadatas: [metadata], order: 30))
+            actions.append(NCMenuAction.lockUnlockFiles(shouldLock: !metadata.lock, metadatas: [metadata], order: 30, sender: sender))
         }
 
         //
@@ -160,6 +164,7 @@ extension NCCollectionViewCommon {
                     title: NSLocalizedString("_e2e_set_folder_encrypted_", comment: ""),
                     icon: NCImagesRepository.menuIconLock,
                     order: 30,
+                    sender: sender,
                     action: { _ in
                         Task {
                             let error = await NCNetworkingE2EEMarkFolder().markFolderE2ee(account: metadata.account, fileName: metadata.fileName, serverUrl: metadata.serverUrl, userId: metadata.userId)
@@ -182,6 +187,7 @@ extension NCCollectionViewCommon {
                     title: NSLocalizedString("_e2e_remove_folder_encrypted_", comment: ""),
                     icon: NCImagesRepository.menuIconLock,
                     order: 30,
+                    sender: sender,
                     action: { _ in
                         NextcloudKit.shared.markE2EEFolder(fileId: metadata.fileId, delete: true, account: metadata.account) { _, _, error in
                             if error == .success {
@@ -208,6 +214,7 @@ extension NCCollectionViewCommon {
                     title: metadata.favorite ? NSLocalizedString("_remove_favorites_", comment: "") : NSLocalizedString("_add_favorites_", comment: ""),
 					icon: favIcon,
                     order: 50,
+                    sender: sender,
                     action: { _ in
                         NCNetworking.shared.favoriteMetadata(metadata) { error in
                             if error != .success {
@@ -224,7 +231,7 @@ extension NCCollectionViewCommon {
         //
         if NCNetworking.shared.isOnline,
            metadata.canSetAsAvailableOffline {
-            actions.append(.setAvailableOfflineAction(selectedMetadatas: [metadata], isAnyOffline: isOffline, viewController: self, order: 60, completion: {
+            actions.append(.setAvailableOfflineAction(selectedMetadatas: [metadata], isAnyOffline: isOffline, viewController: self, order: 60, sender: sender, completion: {
                 self.reloadDataSource()
             }))
         }
@@ -233,7 +240,7 @@ extension NCCollectionViewCommon {
         // SHARE
         //
         if (NCNetworking.shared.isOnline || (tableLocalFile != nil && fileExists)) && metadata.canShare {
-            actions.append(.share(selectedMetadatas: [metadata], controller: self.controller, order: 80))
+            actions.append(.share(selectedMetadatas: [metadata], controller: self.controller, order: 80, sender: sender))
         }
 
         //
@@ -247,6 +254,7 @@ extension NCCollectionViewCommon {
                     title: NSLocalizedString("_livephoto_save_", comment: ""),
                     icon: NCImagesRepository.menuIconLivePhoto,
                     order: 100,
+                    sender: sender,
                     action: { _ in
                         NCNetworking.shared.saveLivePhotoQueue.addOperation(NCOperationSaveLivePhoto(metadata: metadata, metadataMOV: metadataMOV, hudView: hudView))
                     }
@@ -287,6 +295,7 @@ extension NCCollectionViewCommon {
                     title: NSLocalizedString("_save_as_scan_", comment: ""),
                     icon: NCImagesRepository.menuIconSaveAsScan,
                     order: 110,
+                    sender: sender,
                     action: { _ in
                         if self.utilityFileSystem.fileProviderStorageExists(metadata) {
                             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDownloadedFile,
@@ -319,6 +328,7 @@ extension NCCollectionViewCommon {
                     title: NSLocalizedString("_rename_", comment: ""),
                     icon: NCImagesRepository.menuIconRename,
                     order: 120,
+                    sender: sender,
                     action: { _ in
                         self.present(UIAlertController.renameFile(metadata: metadata), animated: true)
                     }
@@ -330,7 +340,7 @@ extension NCCollectionViewCommon {
         // COPY - MOVE
         //
         if metadata.isCopyableMovable {
-            actions.append(.moveOrCopyAction(selectedMetadatas: [metadata], viewController: self, order: 130))
+            actions.append(.moveOrCopyAction(selectedMetadatas: [metadata], viewController: self, order: 130, sender: sender))
         }
 
         //
@@ -343,6 +353,7 @@ extension NCCollectionViewCommon {
                     title: NSLocalizedString("_modify_", comment: ""),
                     icon: NCImagesRepository.menuIconModifyWithQuickLook,
                     order: 150,
+                    sender: sender,
                     action: { _ in
                         if self.utilityFileSystem.fileProviderStorageExists(metadata) {
                             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDownloadedFile,
@@ -370,12 +381,12 @@ extension NCCollectionViewCommon {
         // DELETE
         //
         if metadata.isDeletable {
-            actions.append(.deleteAction(selectedMetadatas: [metadata], metadataFolder: metadataFolder, controller: self.controller, order: 170))
+            actions.append(.deleteAction(selectedMetadatas: [metadata], metadataFolder: metadataFolder, controller: self.controller, order: 170, sender: sender))
         }
 
         applicationHandle.addCollectionViewCommonMenu(metadata: metadata, image: image, actions: &actions)
 
-        presentMenu(with: actions)
+        presentMenu(with: actions, controller: controller, sender: sender)
     }
 }
 

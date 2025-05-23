@@ -34,7 +34,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         // get auto upload folder
-        self.autoUploadFileName = self.database.getAccountAutoUploadFileName()
+        self.autoUploadFileName = self.database.getAccountAutoUploadFileName(account: self.session.account)
         self.autoUploadDirectory = self.database.getAccountAutoUploadDirectory(session: self.session)
         // get layout for view
         self.layoutForView = self.database.getLayoutForView(account: self.session.account, key: self.layoutKey, serverUrl: self.serverUrl)
@@ -105,14 +105,14 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
         }
 
-		/// Status
-		///
-		cell.fileStatusImage?.image = nil
-		if metadata.isLivePhoto {
-			cell.fileStatusImage?.image = utility.loadImage(named: "livephoto", colors: isLayoutPhoto ? [.white] : [NCBrandColor.shared.iconImageColor2])
-		} else if metadata.isVideo {
-			cell.fileStatusImage?.image = utility.loadImage(named: "play.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-		}
+        /// Status
+        ///
+        cell.fileStatusImage?.image = nil
+        if metadata.isLivePhoto {
+            cell.fileStatusImage?.image = utility.loadImage(named: "livephoto", colors: isLayoutPhoto ? [.white] : [NCBrandColor.shared.iconImageColor2])
+        } else if metadata.isVideo {
+            cell.fileStatusImage?.image = utility.loadImage(named: "play.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+        }
 
         /// Edit mode
         if fileSelect.contains(metadata.ocId) {
@@ -534,7 +534,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
                         }
                         emptyTitle = NSLocalizedString(self.emptyTitle, comment: "")
                         emptyDescription = NSLocalizedString(emptyDescription, comment: "")
-                    } else if metadataFolder?.status == global.metadataStatusWaitCreateFolder {
+                    } else if self.metadataFolder?.status == global.metadataStatusWaitCreateFolder {
                         emptyImage = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: [NCBrandColor.shared.getElement(account: session.account)])
                         emptyTitle = NSLocalizedString("_files_no_files_", comment: "")
                         emptyDescription = NSLocalizedString("_folder_offline_desc_", comment: "")

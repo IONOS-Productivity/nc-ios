@@ -26,7 +26,6 @@ import NextcloudKit
 import RealmSwift
 
 class NCGroupfolders: NCCollectionViewCommon {
-
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
 
@@ -59,20 +58,19 @@ class NCGroupfolders: NCCollectionViewCommon {
         var metadatas: [tableMetadata] = []
 
         if self.serverUrl.isEmpty {
-            if let results = database.getResultsMetadatasFromGroupfolders(session: session) {
-                metadatas = Array(results.freeze())
-            }
+            metadatas = database.getResultsMetadatasFromGroupfolders(session: session, layoutForView: layoutForView)
         } else {
-            metadatas = self.database.getResultsMetadatasPredicate(self.defaultPredicate, layoutForView: layoutForView)
+            metadatas = self.database.getResultsMetadatasPredicate(self.defaultPredicate, layoutForView: layoutForView, account: session.account)
         }
 
-        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: layoutForView)
+        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: layoutForView, account: session.account)
 
         super.reloadDataSource()
     }
 
     override func getServerData() {
         let homeServerUrl = utilityFileSystem.getHomeServer(session: session)
+        let showHiddenFiles = NCKeychain().getShowHiddenFiles(account: session.account)
 
         NextcloudKit.shared.getGroupfolders(account: session.account) { task in
             self.dataSourceTask = task
@@ -86,7 +84,7 @@ class NCGroupfolders: NCCollectionViewCommon {
                     for groupfolder in groupfolders {
                         let mountPoint = groupfolder.mountPoint.hasPrefix("/") ? groupfolder.mountPoint : "/" + groupfolder.mountPoint
                         let serverUrlFileName = homeServerUrl + mountPoint
-                        let results = await NCNetworking.shared.readFileOrFolder(serverUrlFileName: serverUrlFileName, depth: "0", showHiddenFiles: NCKeychain().showHiddenFiles, account: account)
+                        let results = await NCNetworking.shared.readFileOrFolder(serverUrlFileName: serverUrlFileName, depth: "0", showHiddenFiles: showHiddenFiles, account: account)
 
                         if results.error == .success, let file = results.files?.first {
                             let isDirectoryE2EE = self.utilityFileSystem.isDirectoryE2EE(file: file)
@@ -98,7 +96,7 @@ class NCGroupfolders: NCCollectionViewCommon {
                     self.reloadDataSource()
                 }
             }
-            self.refreshControl.endRefreshing()
+            self.refreshControlEndRefreshing()
         }
     }
 }

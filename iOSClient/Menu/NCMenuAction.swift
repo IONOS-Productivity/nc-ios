@@ -43,9 +43,9 @@ class NCMenuAction {
     var rowHeight: CGFloat { self.title == NCMenuAction.seperatorIdentifier ? NCMenuAction.seperatorHeight : self.details != nil ? 76 : 56 }
     var order: Int = 0
 	var isHeader = false
+    var sender: Any?
 
-
-    init(title: String, boldTitle: Bool = false, destructive: Bool = false, details: String? = nil, icon: UIImage, isHeader: Bool = false, order: Int = 0, accessibilityIdentifier: String? = nil, action: ((_ menuAction: NCMenuAction) -> Void)?) {
+    init(title: String, boldTitle: Bool = false, destructive: Bool = false, details: String? = nil, icon: UIImage, isHeader: Bool = false, order: Int = 0, accessibilityIdentifier: String? = nil, sender: Any?, action: ((_ menuAction: NCMenuAction) -> Void)?) {
         self.accessibilityIdentifier = accessibilityIdentifier
         self.title = title
         self.boldTitle = boldTitle
@@ -56,9 +56,10 @@ class NCMenuAction {
         self.action = action
         self.selectable = false
         self.order = order
+        self.sender = sender
     }
 
-    init(title: String, boldTitle: Bool = false, destructive: Bool = false, details: String? = nil, icon: UIImage, onTitle: String? = nil, onIcon: UIImage? = nil, selected: Bool, on: Bool, order: Int = 0, accessibilityIdentifier: String? = nil, action: ((_ menuAction: NCMenuAction) -> Void)?) {
+    init(title: String, boldTitle: Bool = false, destructive: Bool = false, details: String? = nil, icon: UIImage, onTitle: String? = nil, onIcon: UIImage? = nil, selected: Bool, on: Bool, order: Int = 0, accessibilityIdentifier: String? = nil, sender: Any?, action: ((_ menuAction: NCMenuAction) -> Void)?) {
         self.accessibilityIdentifier = accessibilityIdentifier
         self.title = title
         self.boldTitle = boldTitle
@@ -72,6 +73,7 @@ class NCMenuAction {
         self.isOn = on
         self.selectable = true
         self.order = order
+        self.sender = sender
     }
 }
 
@@ -82,31 +84,31 @@ extension NCMenuAction {
     static let seperatorHeight: CGFloat = 0.5
 
     /// A static seperator, with no actions, text, or icons
-    static func seperator(order: Int = 0) -> NCMenuAction {
-        return NCMenuAction(title: seperatorIdentifier, icon: UIImage(), order: order, action: nil)
+    static func seperator(order: Int = 0, sender: Any?) -> NCMenuAction {
+        return NCMenuAction(title: seperatorIdentifier, icon: UIImage(), order: order, sender: sender, action: nil)
     }
 
     /// Select all items
-    static func selectAllAction(action: @escaping () -> Void) -> NCMenuAction {
+    static func selectAllAction(sender: Any?, action: @escaping () -> Void) -> NCMenuAction {
         NCMenuAction(
             title: NSLocalizedString("_select_all_", comment: ""),
             icon: NCImagesRepository.menuIconSelectAll,
-            action: { _ in action() }
+			sender: sender, action: { _ in action() }
         )
     }
 
     /// Cancel
-    static func cancelAction(action: @escaping () -> Void) -> NCMenuAction {
+    static func cancelAction(sender: Any?, action: @escaping () -> Void) -> NCMenuAction {
         NCMenuAction(
             title: NSLocalizedString("_cancel_", comment: ""),
             icon: NCImagesRepository.menuIconClose,
-            action: { _ in action() }
+			sender: sender, action: { _ in action() }
         )
     }
 
     /// Delete files either from cache or from Nextcloud
-    static func deleteAction(selectedMetadatas: [tableMetadata], metadataFolder: tableMetadata? = nil, controller: NCMainTabBarController?, order: Int = 0, completion: (() -> Void)? = nil) -> NCMenuAction {
-        var isDestructive = true
+    static func deleteAction(selectedMetadatas: [tableMetadata], metadataFolder: tableMetadata? = nil, controller: NCMainTabBarController?, order: Int = 0, sender: Any?, completion: (() -> Void)? = nil) -> NCMenuAction {
+		var isDestructive = true
         var titleDelete = NSLocalizedString("_delete_", comment: "")
         var message = NSLocalizedString("_want_delete_", comment: "")
         var icon = NCImagesRepository.menuIconDelete
@@ -149,6 +151,7 @@ extension NCMenuAction {
 			destructive: isDestructive,
             icon: icon,
             order: order,
+            sender: sender,
             action: { _ in
                 let alertController = UIAlertController.deleteFileOrFolder(titleString: titleDelete + "?", message: message + fileList, canDeleteServer: canDeleteServer, selectedMetadatas: selectedMetadatas, sceneIdentifier: controller?.sceneIdentifier) { _ in
                     completion?()
@@ -159,24 +162,26 @@ extension NCMenuAction {
     }
 
     /// Open "share view" (activity VC) to open files in another app
-    static func share(selectedMetadatas: [tableMetadata], controller: NCMainTabBarController?, order: Int = 0, completion: (() -> Void)? = nil) -> NCMenuAction {
+    static func share(selectedMetadatas: [tableMetadata], controller: NCMainTabBarController?, order: Int = 0, sender: Any?, completion: (() -> Void)? = nil) -> NCMenuAction {
         NCMenuAction(
             title: NSLocalizedString("_share_", comment: ""),
             icon: NCImagesRepository.menuIconShare,
             order: order,
+            sender: sender,
             action: { _ in
-                NCActionCenter.shared.openActivityViewController(selectedMetadata: selectedMetadatas, controller: controller)
+                NCActionCenter.shared.openActivityViewController(selectedMetadata: selectedMetadatas, controller: controller, sender: sender)
                 completion?()
             }
         )
     }
 
     /// Set (or remove) a file as *available offline*. Downloads the file if not downloaded already
-    static func setAvailableOfflineAction(selectedMetadatas: [tableMetadata], isAnyOffline: Bool, viewController: UIViewController, order: Int = 0, completion: (() -> Void)? = nil) -> NCMenuAction {
+    static func setAvailableOfflineAction(selectedMetadatas: [tableMetadata], isAnyOffline: Bool, viewController: UIViewController, order: Int = 0, sender: Any?, completion: (() -> Void)? = nil) -> NCMenuAction {
         NCMenuAction(
             title: isAnyOffline ? NSLocalizedString("_remove_available_offline_", comment: "") : NSLocalizedString("_set_available_offline_", comment: ""),
             icon: isAnyOffline ? NCImagesRepository.menuIconAvailableOffline : NCImagesRepository.menuIconAddToOffline,
             order: order,
+            sender: sender,
             action: { _ in
                 if !isAnyOffline, selectedMetadatas.count > 3 {
                     let alert = UIAlertController(
@@ -197,11 +202,12 @@ extension NCMenuAction {
         )
     }
     /// Open view that lets the user move or copy the files within Nextcloud
-    static func moveOrCopyAction(selectedMetadatas: [tableMetadata], viewController: UIViewController, order: Int = 0, completion: (() -> Void)? = nil) -> NCMenuAction {
+    static func moveOrCopyAction(selectedMetadatas: [tableMetadata], viewController: UIViewController, order: Int = 0, sender: Any?, completion: (() -> Void)? = nil) -> NCMenuAction {
         NCMenuAction(
             title: NSLocalizedString("_move_or_copy_", comment: ""),
             icon: NCImagesRepository.menuIconMoveOrCopy,
             order: order,
+            sender: sender,
             action: { _ in
                 var fileNameError: NKError?
 
@@ -227,7 +233,7 @@ extension NCMenuAction {
     }
 
     /// Lock or unlock a file using *files_lock*
-    static func lockUnlockFiles(shouldLock: Bool, metadatas: [tableMetadata], order: Int = 0, completion: (() -> Void)? = nil) -> NCMenuAction {
+    static func lockUnlockFiles(shouldLock: Bool, metadatas: [tableMetadata], order: Int = 0, sender: Any?, completion: (() -> Void)? = nil) -> NCMenuAction {
         let titleKey: String
         if metadatas.count == 1 {
             titleKey = shouldLock ? "_lock_file_" : "_unlock_file_"
@@ -239,6 +245,7 @@ extension NCMenuAction {
             title: NSLocalizedString(titleKey, comment: ""),
             icon: image,
             order: order,
+            sender: sender,
             action: { _ in
                 for metadata in metadatas where metadata.lock != shouldLock {
                     NCNetworking.shared.lockUnlockFile(metadata, shoulLock: shouldLock)

@@ -38,7 +38,6 @@ class NCMainTabBarController: UITabBarController {
     var documentPickerViewController: NCDocumentPickerViewController?
     let navigationCollectionViewCommon = ThreadSafeArray<NavigationCollectionViewCommon>()
     private var previousIndex: Int?
-    private let groupDefaults = UserDefaults(suiteName: NCBrandOptions.shared.capabilitiesGroup)
     private var checkUserDelaultErrorInProgress: Bool = false
     private var timer: Timer?
     private var unauthorizedAccountInProgress: Bool = false
@@ -46,23 +45,25 @@ class NCMainTabBarController: UITabBarController {
     
     private(set) var burgerMenuController: BurgerMenuAttachController?
 
+    var window: UIWindow? {
+        return SceneManager.shared.getWindow(controller: self)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         delegate = self
+		if #available(iOS 17.0, *) {
+			traitOverrides.horizontalSizeClass = .compact
+		}
+		
+        tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
 
-        if #available(iOS 17.0, *) {
-            traitOverrides.horizontalSizeClass = .compact
-        }
 
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeTheming), object: nil, queue: .main) { [weak self] notification in
             if let userInfo = notification.userInfo as? NSDictionary,
                let account = userInfo["account"] as? String,
-               let tabBar = self?.tabBar as? NCMainTabBar,
                self?.account == account {
-                let color = NCBrandColor.shared.getElement(account: account)
-                tabBar.color = color
-                tabBar.tintColor = color
-                tabBar.setNeedsDisplay()
+                self?.tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
             }
         }
 
@@ -82,8 +83,8 @@ class NCMainTabBarController: UITabBarController {
         }
 
         NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                if UIApplication.shared.applicationState == .active {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                if !isAppInBackground {
                     self.timerCheckServerError()
                 }
             }
@@ -149,6 +150,22 @@ class NCMainTabBarController: UITabBarController {
             }
         }
         return serverUrl
+    }
+
+    func hide() {
+        if #available(iOS 18.0, *) {
+            setTabBarHidden(true, animated: true)
+        } else {
+            tabBar.isHidden = true
+        }
+    }
+
+    func show() {
+        if #available(iOS 18.0, *) {
+            setTabBarHidden(false, animated: true)
+        } else {
+            tabBar.isHidden = false
+        }
     }
 }
 

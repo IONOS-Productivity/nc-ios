@@ -29,433 +29,433 @@ import RealmSwift
 import Combine
 
 class NCMedia: UIViewController {
-    @IBOutlet weak var collectionView: UICollectionView!
-    @IBOutlet weak var fileActionsHeader: FileActionsHeader?
-
-    let semaphoreSearchMedia = DispatchSemaphore(value: 1)
-    let semaphoreNotificationCenter = DispatchSemaphore(value: 1)
-
-    let layout = NCMediaLayout()
-    var layoutType = NCGlobal.shared.mediaLayoutRatio
-    var documentPickerViewController: NCDocumentPickerViewController?
-    var tabBarSelect: HiDriveCollectionViewCommonSelectToolbar!
-    let utilityFileSystem = NCUtilityFileSystem()
-    let global = NCGlobal.shared
-    let utility = NCUtility()
-    let database = NCManageDatabase.shared
-    let imageCache = NCImageCache.shared
-    var dataSource = NCMediaDataSource()
-    let refreshControl = UIRefreshControl()
-    var isTop: Bool = true
-    var isEditMode = false
-    var fileSelect: [String] = []
-    var filesExists: ThreadSafeArray<String> = ThreadSafeArray()
-    var ocIdDoNotExists: ThreadSafeArray<String> = ThreadSafeArray()
-    var searchMediaInProgress: Bool = false
-    var attributesZoomIn: UIMenuElement.Attributes = []
-    var attributesZoomOut: UIMenuElement.Attributes = []
-    let gradient: CAGradientLayer = CAGradientLayer()
-    var showOnlyImages = false
-    var showOnlyVideos = false
-    var timeIntervalSearchNewMedia: TimeInterval = 2.0
-    var timerSearchNewMedia: Timer?
-    let livePhotoImage = NCUtility().loadImage(named: "livephoto", colors: [.white])
-    let playImage = NCUtility().loadImage(named: "play.fill", colors: [.white])
-    var photoImage = UIImage()
-    var videoImage = UIImage()
-    var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
-    
-    private var accountButtonFactory: AccountButtonFactory!
-    var activeTransfersListener: AnyCancellable? = nil
-
-    var lastScale: CGFloat = 1.0
-    var currentScale: CGFloat = 1.0
-    var maxColumns: Int {
-        let screenWidth = min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        let column = Int(screenWidth / 44)
-
-        return column
-    }
-    var transitionColumns = false
-    var numberOfColumns: Int = 0
-    var lastNumberOfColumns: Int = 0
-
-    var session: NCSession.Session {
-        NCSession.shared.getSession(controller: tabBarController)
-    }
-
-    var controller: NCMainTabBarController? {
-        self.tabBarController as? NCMainTabBarController
-    }
-
-    var isViewActived: Bool {
-        return self.isViewLoaded && self.view.window != nil
-    }
-
-    var isPinchGestureActive: Bool {
-        return pinchGesture.state == .began || pinchGesture.state == .changed
-    }
-
-    // MARK: - View Life Cycle
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
-
-        collectionView.register(UINib(nibName: "NCSectionFirstHeaderEmptyData", bundle: nil), forSupplementaryViewOfKind: mediaSectionHeader, withReuseIdentifier: "sectionFirstHeaderEmptyData")
-        collectionView.register(UINib(nibName: "NCSectionFooter", bundle: nil), forSupplementaryViewOfKind: mediaSectionFooter, withReuseIdentifier: "sectionFooter")
-        collectionView.register(UINib(nibName: "NCMediaCell", bundle: nil), forCellWithReuseIdentifier: "mediaCell")
-        collectionView.alwaysBounceVertical = true
-        collectionView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
-        collectionView.backgroundColor = NCBrandColor.shared.appBackgroundColor
-        collectionView.prefetchDataSource = self
-        collectionView.dragInteractionEnabled = true
-        collectionView.dragDelegate = self
-        collectionView.dropDelegate = self
-        collectionView.accessibilityIdentifier = "NCMedia"
-
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
-        collectionView.collectionViewLayout = layout
-        layoutType = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "")?.layout ?? global.mediaLayoutRatio
-
-        tabBarSelect = HiDriveCollectionViewCommonSelectToolbar(controller: controller, delegate: self, displayedButtons: [.delete])
-
-        gradient.startPoint = CGPoint(x: 0, y: 0.1)
-        gradient.endPoint = CGPoint(x: 0, y: 1)
-        gradient.colors = [UIColor.black.withAlphaComponent(UIAccessibility.isReduceTransparencyEnabled ? 0.8 : 0.4).cgColor, UIColor.clear.cgColor]
-
-        collectionView.refreshControl = refreshControl
-        refreshControl.action(for: .valueChanged) { _ in
-            self.loadDataSource()
-            self.searchMediaUI(true)
-        }
-
-        pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinchGesture(_:)))
-        collectionView.addGestureRecognizer(pinchGesture)
-
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { _ in
-            self.layoutType = self.database.getLayoutForView(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "")?.layout ?? self.global.mediaLayoutRatio
-            self.imageCache.removeAll()
-            self.loadDataSource()
-            self.searchMediaUI(true)
-        }
-
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterClearCache), object: nil, queue: nil) { _ in
-            self.dataSource.metadatas.removeAll()
-            self.imageCache.removeAll()
-            self.searchMediaUI(true)
-        }
-
-        NotificationCenter.default.addObserver(self, selector: #selector(fileExists(_:)), name: NSNotification.Name(rawValue: global.notificationCenterFileExists), object: nil)
-
-        NotificationCenter.default.addObserver(self, selector: #selector(deleteFile(_:)), name: NSNotification.Name(rawValue: global.notificationCenterDeleteFile), object: nil)
-
-        NotificationCenter.default.addObserver(self, selector: #selector(reloadDataSource(_:)), name: NSNotification.Name(rawValue: global.notificationCenterReloadDataSource), object: nil)
-
-        NotificationCenter.default.addObserver(self, selector: #selector(networkRemoveAll), name: UIApplication.didEnterBackgroundNotification, object: nil)
-        
-        accountButtonFactory = AccountButtonFactory(controller: controller,
-                                                    onAccountDetailsOpen: { [weak self] in self?.setEditMode(false) },
-                                                    presentVC: { [weak self] vc in self?.present(vc, animated: true) })
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        navigationController?.setNavigationBarAppearance()
-        navigationItem.largeTitleDisplayMode = .never
-        if dataSource.metadatas.isEmpty {
-            loadDataSource()
-        }
-        
-        setNavigationRightItems()
-        setNavigationLeftItems()
-        updateHeadersView()
+	@IBOutlet weak var collectionView: UICollectionView!
+	@IBOutlet weak var fileActionsHeader: FileActionsHeader?
+	
+	let semaphoreSearchMedia = DispatchSemaphore(value: 1)
+	let semaphoreNotificationCenter = DispatchSemaphore(value: 1)
+	
+	let layout = NCMediaLayout()
+	var layoutType = NCGlobal.shared.mediaLayoutRatio
+	var documentPickerViewController: NCDocumentPickerViewController?
+	var tabBarSelect: HiDriveCollectionViewCommonSelectToolbar!
+	let utilityFileSystem = NCUtilityFileSystem()
+	let global = NCGlobal.shared
+	let utility = NCUtility()
+	let database = NCManageDatabase.shared
+	let imageCache = NCImageCache.shared
+	var dataSource = NCMediaDataSource()
+	let refreshControl = UIRefreshControl()
+	var isTop: Bool = true
+	var isEditMode = false
+	var fileSelect: [String] = []
+	var filesExists: ThreadSafeArray<String> = ThreadSafeArray()
+	var ocIdDoNotExists: ThreadSafeArray<String> = ThreadSafeArray()
+	var searchMediaInProgress: Bool = false
+	var attributesZoomIn: UIMenuElement.Attributes = []
+	var attributesZoomOut: UIMenuElement.Attributes = []
+	let gradient: CAGradientLayer = CAGradientLayer()
+	var showOnlyImages = false
+	var showOnlyVideos = false
+	var timeIntervalSearchNewMedia: TimeInterval = 2.0
+	var timerSearchNewMedia: Timer?
+	let livePhotoImage = NCUtility().loadImage(named: "livephoto", colors: [.white])
+	let playImage = NCUtility().loadImage(named: "play.fill", colors: [.white])
+	var photoImage = UIImage()
+	var videoImage = UIImage()
+	var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
+	
+	private var accountButtonFactory: AccountButtonFactory!
+	var activeTransfersListener: AnyCancellable? = nil
+	
+	var lastScale: CGFloat = 1.0
+	var currentScale: CGFloat = 1.0
+	var maxColumns: Int {
+		let screenWidth = min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+		let column = Int(screenWidth / 44)
+		
+		return column
+	}
+	var transitionColumns = false
+	var numberOfColumns: Int = 0
+	var lastNumberOfColumns: Int = 0
+	
+	var session: NCSession.Session {
+		NCSession.shared.getSession(controller: tabBarController)
+	}
+	
+	var controller: NCMainTabBarController? {
+		self.tabBarController as? NCMainTabBarController
+	}
+	
+	var isViewActived: Bool {
+		return self.isViewLoaded && self.view.window != nil
+	}
+	
+	var isPinchGestureActive: Bool {
+		return pinchGesture.state == .began || pinchGesture.state == .changed
+	}
+	
+	// MARK: - View Life Cycle
+	
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		
+		view.backgroundColor = NCBrandColor.shared.appBackgroundColor
+		
+		collectionView.register(UINib(nibName: "NCSectionFirstHeaderEmptyData", bundle: nil), forSupplementaryViewOfKind: mediaSectionHeader, withReuseIdentifier: "sectionFirstHeaderEmptyData")
+		collectionView.register(UINib(nibName: "NCSectionFooter", bundle: nil), forSupplementaryViewOfKind: mediaSectionFooter, withReuseIdentifier: "sectionFooter")
+		collectionView.register(UINib(nibName: "NCMediaCell", bundle: nil), forCellWithReuseIdentifier: "mediaCell")
+		collectionView.alwaysBounceVertical = true
+		collectionView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
+		collectionView.backgroundColor = NCBrandColor.shared.appBackgroundColor
+		collectionView.prefetchDataSource = self
+		collectionView.dragInteractionEnabled = true
+		collectionView.dragDelegate = self
+		collectionView.dropDelegate = self
+		collectionView.accessibilityIdentifier = "NCMedia"
+		
+		layout.sectionInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
+		collectionView.collectionViewLayout = layout
+		layoutType = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "")?.layout ?? global.mediaLayoutRatio
+		
+		tabBarSelect = HiDriveCollectionViewCommonSelectToolbar(controller: controller, delegate: self, displayedButtons: [.delete])
+		
+		gradient.startPoint = CGPoint(x: 0, y: 0.1)
+		gradient.endPoint = CGPoint(x: 0, y: 1)
+		gradient.colors = [UIColor.black.withAlphaComponent(UIAccessibility.isReduceTransparencyEnabled ? 0.8 : 0.4).cgColor, UIColor.clear.cgColor]
+		
+		collectionView.refreshControl = refreshControl
+		refreshControl.action(for: .valueChanged) { _ in
+			self.loadDataSource()
+			self.searchMediaUI(true)
+		}
+		
+		pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinchGesture(_:)))
+		collectionView.addGestureRecognizer(pinchGesture)
+		
+		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { _ in
+			self.layoutType = self.database.getLayoutForView(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "")?.layout ?? self.global.mediaLayoutRatio
+			self.imageCache.removeAll()
+			self.loadDataSource()
+			self.searchMediaUI(true)
+		}
+		
+		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterClearCache), object: nil, queue: nil) { _ in
+			self.dataSource.metadatas.removeAll()
+			self.imageCache.removeAll()
+			self.searchMediaUI(true)
+		}
+		
+		NotificationCenter.default.addObserver(self, selector: #selector(fileExists(_:)), name: NSNotification.Name(rawValue: global.notificationCenterFileExists), object: nil)
+		
+		NotificationCenter.default.addObserver(self, selector: #selector(deleteFile(_:)), name: NSNotification.Name(rawValue: global.notificationCenterDeleteFile), object: nil)
+		
+		NotificationCenter.default.addObserver(self, selector: #selector(reloadDataSource(_:)), name: NSNotification.Name(rawValue: global.notificationCenterReloadDataSource), object: nil)
+		
+		NotificationCenter.default.addObserver(self, selector: #selector(networkRemoveAll(_:)), name: UIApplication.didEnterBackgroundNotification, object: nil)
+		
+		accountButtonFactory = AccountButtonFactory(controller: controller,
+													onAccountDetailsOpen: { [weak self] in self?.setEditMode(false) },
+													presentVC: { [weak self] vc in self?.present(vc, animated: true) })
+	}
+	
+	override func viewWillAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
+		
+		navigationController?.setNavigationBarAppearance()
+		navigationItem.largeTitleDisplayMode = .never
+		if dataSource.metadatas.isEmpty {
+			loadDataSource()
+		}
+		
+		setNavigationRightItems()
+		setNavigationLeftItems()
+		updateHeadersView()
 		setNavigationBarLogoIfNeeded()
-        
-        activeTransfersListener = TransfersListener
-            .shared
-            .activeTransfersListener
-            .sink { [weak self] in self?.setNavigationRightItems() }
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        activeTransfersListener = nil
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
-        NotificationCenter.default.addObserver(self, selector: #selector(copyMoveFile(_:)), name: NSNotification.Name(rawValue: global.notificationCenterCopyMoveFile), object: nil)
-
-        NotificationCenter.default.addObserver(self, selector: #selector(enterForeground(_:)), name: UIApplication.willEnterForegroundNotification, object: nil)
-
-        searchNewMedia()
-    }
-
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: global.notificationCenterCopyMoveFile), object: nil)
-
-        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
-
-        networkRemoveAll()
-    }
-
-    override var preferredStatusBarStyle: UIStatusBarStyle {
-        if self.traitCollection.userInterfaceStyle == .dark {
-            return .lightContent
-        } else if isTop {
-            return .darkContent
-        } else {
-            return .lightContent
-        }
-    }
-
-    override func viewWillLayoutSubviews() {
-        super.viewWillLayoutSubviews()
-        tabBarSelect.onViewWillLayoutSubviews()
-    }
-
-    func searchNewMedia() {
-        timerSearchNewMedia?.invalidate()
-        timerSearchNewMedia = Timer.scheduledTimer(timeInterval: timeIntervalSearchNewMedia, target: self, selector: #selector(searchMediaUI(_:)), userInfo: nil, repeats: false)
-    }
-
-    // MARK: - NotificationCenter
-
-    @objc func networkRemoveAll() {
-        timerSearchNewMedia?.invalidate()
-        timerSearchNewMedia = nil
-        filesExists.removeAll()
-
-        NCNetworking.shared.fileExistsQueue.cancelAll()
-        NCNetworking.shared.downloadThumbnailQueue.cancelAll()
-
-        Task {
-            let tasks = await NCNetworking.shared.getAllDataTask()
-            for task in tasks.filter({ $0.taskDescription == global.taskDescriptionRetrievesProperties }) {
-                task.cancel()
-            }
-        }
-    }
-
-    @objc func reloadDataSource(_ notification: NSNotification) {
-        self.loadDataSource()
-    }
-
-    @objc func deleteFile(_ notification: NSNotification) {
-        guard let userInfo = notification.userInfo as NSDictionary?,
-              let error = userInfo["error"] as? NKError
-        else {
-            return
-        }
-
-        // This is only a fail safe "dead lock", I don't think the timeout will ever be called but at least nothing gets stuck, if after 5 sec. (which is a long time in this routine), the semaphore is still locked
-        //
-        if self.semaphoreNotificationCenter.wait(timeout: .now() + 5) == .timedOut {
-            self.semaphoreNotificationCenter.signal()
-        }
-
-        if error.errorCode == self.global.errorResourceNotFound,
-           let ocIds = userInfo["ocId"] as? [String],
-           let ocId = ocIds.first {
-            self.database.deleteMetadataOcId(ocId)
-            self.loadDataSource {
-                self.semaphoreNotificationCenter.signal()
-            }
-        } else if error != .success {
-            self.loadDataSource {
-                self.semaphoreNotificationCenter.signal()
-            }
-        } else {
-            semaphoreNotificationCenter.signal()
-        }
-    }
-
-    @objc func enterForeground(_ notification: NSNotification) {
-        searchNewMedia()
-    }
-
-    @objc func fileExists(_ notification: NSNotification) {
-        guard let userInfo = notification.userInfo as NSDictionary?,
-              let ocId = userInfo["ocId"] as? String,
-              let fileExists = userInfo["fileExists"] as? Bool
-        else {
-            return
-        }
-
-        filesExists.append(ocId)
-        if !fileExists {
-            ocIdDoNotExists.append(ocId)
-        }
-
-        if NCNetworking.shared.fileExistsQueue.operationCount == 0,
-           !ocIdDoNotExists.isEmpty,
-           let ocIdDoNotExists = self.ocIdDoNotExists.getArray() {
-            dataSource.removeMetadata(ocIdDoNotExists)
-            database.deleteMetadataOcIds(ocIdDoNotExists)
-            self.ocIdDoNotExists.removeAll()
-            collectionViewReloadData()
-        }
-    }
-
-    @objc func copyMoveFile(_ notification: NSNotification) {
-        guard let userInfo = notification.userInfo as NSDictionary?,
-              let dragDrop = userInfo["dragdrop"] as? Bool,
-              dragDrop else { return }
-
-        setEditMode(false)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            self.loadDataSource()
-            self.searchMediaUI()
-        }
-    }
-
-    func buildMediaPhotoVideo(columnCount: Int) {
-        var pointSize: CGFloat = 0
-
-        switch columnCount {
-        case 0...1: pointSize = 60
-        case 2...3: pointSize = 30
-        case 4...5: pointSize = 25
-        case 6...Int(maxColumns): pointSize = 20
-        default: pointSize = 20
-        }
-        if let image = UIImage(systemName: "photo.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))?.withTintColor(.systemGray4, renderingMode: .alwaysOriginal) {
-            photoImage = image
-        }
-        if let image = UIImage(systemName: "video.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))?.withTintColor(.systemGray4, renderingMode: .alwaysOriginal) {
-            videoImage = image
-        }
-    }
+		
+		activeTransfersListener = TransfersListener
+			.shared
+			.activeTransfersListener
+			.sink { [weak self] in self?.setNavigationRightItems() }
+	}
+	
+	override func viewWillDisappear(_ animated: Bool) {
+		super.viewWillDisappear(animated)
+		activeTransfersListener = nil
+	}
+	
+	override func viewDidAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
+		
+		NotificationCenter.default.addObserver(self, selector: #selector(copyMoveFile(_:)), name: NSNotification.Name(rawValue: global.notificationCenterCopyMoveFile), object: nil)
+		
+		NotificationCenter.default.addObserver(self, selector: #selector(enterForeground(_:)), name: UIApplication.willEnterForegroundNotification, object: nil)
+		
+		searchNewMedia()
+	}
+	
+	override func viewDidDisappear(_ animated: Bool) {
+		super.viewDidDisappear(animated)
+		
+		NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: global.notificationCenterCopyMoveFile), object: nil)
+		
+		NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+		
+		networkRemoveAll(nil)
+	}
+	
+	override var preferredStatusBarStyle: UIStatusBarStyle {
+		if self.traitCollection.userInterfaceStyle == .dark {
+			return .lightContent
+		} else if isTop {
+			return .darkContent
+		} else {
+			return .lightContent
+		}
+	}
+	
+	override func viewWillLayoutSubviews() {
+		super.viewWillLayoutSubviews()
+		tabBarSelect.onViewWillLayoutSubviews()
+	}
+	
+	func searchNewMedia() {
+		timerSearchNewMedia?.invalidate()
+		timerSearchNewMedia = Timer.scheduledTimer(timeInterval: timeIntervalSearchNewMedia, target: self, selector: #selector(searchMediaUI(_:)), userInfo: nil, repeats: false)
+	}
+	
+	// MARK: - NotificationCenter
+	
+	@objc func networkRemoveAll(_ sender: Any?) {
+		timerSearchNewMedia?.invalidate()
+		timerSearchNewMedia = nil
+		filesExists.removeAll()
+		
+		NCNetworking.shared.fileExistsQueue.cancelAll()
+		NCNetworking.shared.downloadThumbnailQueue.cancelAll()
+		
+		Task {
+			let tasks = await NCNetworking.shared.getAllDataTask()
+			for task in tasks.filter({ $0.taskDescription == global.taskDescriptionRetrievesProperties }) {
+				task.cancel()
+			}
+		}
+	}
+	
+	@objc func reloadDataSource(_ notification: NSNotification) {
+		self.loadDataSource()
+	}
+	
+	@objc func deleteFile(_ notification: NSNotification) {
+		guard let userInfo = notification.userInfo as NSDictionary?,
+			  let error = userInfo["error"] as? NKError
+		else {
+			return
+		}
+		
+		// This is only a fail safe "dead lock", I don't think the timeout will ever be called but at least nothing gets stuck, if after 5 sec. (which is a long time in this routine), the semaphore is still locked
+		//
+		if self.semaphoreNotificationCenter.wait(timeout: .now() + 5) == .timedOut {
+			self.semaphoreNotificationCenter.signal()
+		}
+		
+		if error.errorCode == self.global.errorResourceNotFound,
+		   let ocIds = userInfo["ocId"] as? [String],
+		   let ocId = ocIds.first {
+			self.database.deleteMetadataOcId(ocId)
+			self.loadDataSource {
+				self.semaphoreNotificationCenter.signal()
+			}
+		} else if error != .success {
+			self.loadDataSource {
+				self.semaphoreNotificationCenter.signal()
+			}
+		} else {
+			semaphoreNotificationCenter.signal()
+		}
+	}
+	
+	@objc func enterForeground(_ notification: NSNotification) {
+		searchNewMedia()
+	}
+	
+	@objc func fileExists(_ notification: NSNotification) {
+		guard let userInfo = notification.userInfo as NSDictionary?,
+			  let ocId = userInfo["ocId"] as? String,
+			  let fileExists = userInfo["fileExists"] as? Bool
+		else {
+			return
+		}
+		
+		filesExists.append(ocId)
+		if !fileExists {
+			ocIdDoNotExists.append(ocId)
+		}
+		
+		if NCNetworking.shared.fileExistsQueue.operationCount == 0,
+		   !ocIdDoNotExists.isEmpty,
+		   let ocIdDoNotExists = self.ocIdDoNotExists.getArray() {
+			dataSource.removeMetadata(ocIdDoNotExists)
+			database.deleteMetadataOcIds(ocIdDoNotExists)
+			self.ocIdDoNotExists.removeAll()
+			collectionViewReloadData()
+		}
+	}
+	
+	@objc func copyMoveFile(_ notification: NSNotification) {
+		guard let userInfo = notification.userInfo as NSDictionary?,
+			  let dragDrop = userInfo["dragdrop"] as? Bool,
+			  dragDrop else { return }
+		
+		setEditMode(false)
+		
+		DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+			self.loadDataSource()
+			self.searchMediaUI()
+		}
+	}
+	
+	func buildMediaPhotoVideo(columnCount: Int) {
+		var pointSize: CGFloat = 0
+		
+		switch columnCount {
+		case 0...1: pointSize = 60
+		case 2...3: pointSize = 30
+		case 4...5: pointSize = 25
+		case 6...Int(maxColumns): pointSize = 20
+		default: pointSize = 20
+		}
+		if let image = UIImage(systemName: "photo.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))?.withTintColor(.systemGray4, renderingMode: .alwaysOriginal) {
+			photoImage = image
+		}
+		if let image = UIImage(systemName: "video.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))?.withTintColor(.systemGray4, renderingMode: .alwaysOriginal) {
+			videoImage = image
+		}
+	}
 }
 
 // MARK: -
 
 extension NCMedia: UIScrollViewDelegate {
-
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        if !decelerate {
-            if !decelerate {
-                searchNewMedia()
-            }
-        }
-    }
-
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        searchNewMedia()
-    }
+	
+	func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+		if !decelerate {
+			if !decelerate {
+				searchNewMedia()
+			}
+		}
+	}
+	
+	func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+		searchNewMedia()
+	}
 }
 
 // MARK: -
 
 extension NCMedia: NCSelectDelegate {
-    func dismissSelect(serverUrl: String?, metadata: tableMetadata?, type: String, items: [Any], overwrite: Bool, copy: Bool, move: Bool, session: NCSession.Session) {
-        guard let serverUrl else { return }
-        let home = utilityFileSystem.getHomeServer(session: session)
-        let mediaPath = serverUrl.replacingOccurrences(of: home, with: "")
-
-        database.setAccountMediaPath(mediaPath, account: session.account)
-
-        imageCache.removeAll()
-        loadDataSource()
-        searchNewMedia()
-    }
+	func dismissSelect(serverUrl: String?, metadata: tableMetadata?, type: String, items: [Any], overwrite: Bool, copy: Bool, move: Bool, session: NCSession.Session) {
+		guard let serverUrl else { return }
+		let home = utilityFileSystem.getHomeServer(session: session)
+		let mediaPath = serverUrl.replacingOccurrences(of: home, with: "")
+		
+		database.setAccountMediaPath(mediaPath, account: session.account)
+		
+		imageCache.removeAll()
+		loadDataSource()
+		searchNewMedia()
+	}
 }
 
 // MARK: -
 extension NCMedia {
-    func setNavigationRightItems() {
-        navigationItem.rightBarButtonItems = [createAccountButton(), createTransfersButtonIfNeeded()].compactMap { $0 }
-    }
-    
-    private func createAccountButton() -> UIBarButtonItem {
-        accountButtonFactory.createAccountButton()
-    }
-    
-    private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
-        guard TransfersListener.shared.areActiveTransfersPresent else {
-            return nil
-        }
-        let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
-                                              style: .plain) { [weak self] in
-            if let navigationController = UIStoryboard(name: "NCTransfers", bundle: nil).instantiateInitialViewController() as? UINavigationController,
-               let viewController = navigationController.topViewController as? NCTransfers {
-                viewController.modalPresentationStyle = .pageSheet
-                self?.present(navigationController, animated: true, completion: nil)
-            }
-        }
-        return transfersButton
-    }
-    
-    func setNavigationLeftItems() {
-        if isEditMode {
-            navigationItem.setLeftBarButtonItems(nil, animated: true)
-            return
-        }
-        let burgerMenuItem = UIBarButtonItem(image: UIImage(resource: .BurgerMenu.bars),
-                                             style: .plain,
-                                             action: { [weak self] in
-            self?.showBurgerMenu()
-        })
-        burgerMenuItem.tintColor = UIColor(resource: .BurgerMenu.navigationBarButton)
-        navigationItem.setLeftBarButtonItems([burgerMenuItem], animated: true)
-    }
-    
-    func showBurgerMenu() {
+	func setNavigationRightItems() {
+		navigationItem.rightBarButtonItems = [createAccountButton(), createTransfersButtonIfNeeded()].compactMap { $0 }
+	}
+	
+	private func createAccountButton() -> UIBarButtonItem {
+		accountButtonFactory.createAccountButton()
+	}
+	
+	private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
+		guard TransfersListener.shared.areActiveTransfersPresent else {
+			return nil
+		}
+		let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
+											  style: .plain) { [weak self] in
+			if let navigationController = UIStoryboard(name: "NCTransfers", bundle: nil).instantiateInitialViewController() as? UINavigationController,
+			   let viewController = navigationController.topViewController as? NCTransfers {
+				viewController.modalPresentationStyle = .pageSheet
+				self?.present(navigationController, animated: true, completion: nil)
+			}
+		}
+		return transfersButton
+	}
+	
+	func setNavigationLeftItems() {
+		if isEditMode {
+			navigationItem.setLeftBarButtonItems(nil, animated: true)
+			return
+		}
+		let burgerMenuItem = UIBarButtonItem(image: UIImage(resource: .BurgerMenu.bars),
+											 style: .plain,
+											 action: { [weak self] in
+			self?.showBurgerMenu()
+		})
+		burgerMenuItem.tintColor = UIColor(resource: .BurgerMenu.navigationBarButton)
+		navigationItem.setLeftBarButtonItems([burgerMenuItem], animated: true)
+	}
+	
+	func showBurgerMenu() {
 		mainTabBarController?.showBurgerMenu()
-    }
-    
-    private func setNavigationBarLogoIfNeeded() {
-        if self.navigationController?.viewControllers.count == 1 {
-            setNavigationBarLogo()
-        }
-    }
-    
-    func updateHeadersView() {
-        fileActionsHeader?.showViewModeButton(false)
-        fileActionsHeader?.setIsEditingMode(isEditingMode: isEditMode)
-        fileActionsHeader?.enableSelection(enable: self.dataSource.metadatas.count > 0)
-        updateHeadersMenu()
-        fileActionsHeader?.onSelectModeChange = { [weak self] isSelectionMode in
-            self?.setEditMode(isSelectionMode)
-            self?.updateHeadersView()
-            self?.fileActionsHeader?.setSelectionState(selectionState: .none)
-        }
-        
-        fileActionsHeader?.onSelectAll = { [weak self] in
-            guard let self = self else { return }
-            self.selectAllOrDeselectAll()
-            tabBarSelect.update(fileSelect: fileSelect)
-            self.fileActionsHeader?.setSelectionState(selectionState: selectionState)
-        }
-    }
-    
-    var selectionState: FileActionsHeaderSelectionState {
-        let selectedItemsCount = fileSelect.count
-        if selectedItemsCount == self.dataSource.metadatas.count {
-            return .all
-        }
-        
-        return selectedItemsCount == 0 ? .none : .some(selectedItemsCount)
-    }
-    
-    func selectAllOrDeselectAll() {
-        let metadatas = self.dataSource.metadatas
-        if !fileSelect.isEmpty, metadatas.count == fileSelect.count {
-            fileSelect = []
-        } else {
-            fileSelect = metadatas.compactMap({ $0.ocId })
-        }
-        collectionView.reloadData()
-    }
-    
-    func updateHeadersMenu() {
-        fileActionsHeader?.setSortingMenu(sortingMenuElements: createMenuElements(), title: NSLocalizedString("_media_options_", tableName: nil, bundle: Bundle.main, value: "Media Options", comment: ""), image: nil)
-    }
+	}
+	
+	private func setNavigationBarLogoIfNeeded() {
+		if self.navigationController?.viewControllers.count == 1 {
+			setNavigationBarLogo()
+		}
+	}
+	
+	func updateHeadersView() {
+		fileActionsHeader?.showViewModeButton(false)
+		fileActionsHeader?.setIsEditingMode(isEditingMode: isEditMode)
+		fileActionsHeader?.enableSelection(enable: self.dataSource.metadatas.count > 0)
+		updateHeadersMenu()
+		fileActionsHeader?.onSelectModeChange = { [weak self] isSelectionMode in
+			self?.setEditMode(isSelectionMode)
+			self?.updateHeadersView()
+			self?.fileActionsHeader?.setSelectionState(selectionState: .none)
+		}
+		
+		fileActionsHeader?.onSelectAll = { [weak self] in
+			guard let self = self else { return }
+			self.selectAllOrDeselectAll()
+			tabBarSelect.update(fileSelect: fileSelect)
+			self.fileActionsHeader?.setSelectionState(selectionState: selectionState)
+		}
+	}
+	
+	var selectionState: FileActionsHeaderSelectionState {
+		let selectedItemsCount = fileSelect.count
+		if selectedItemsCount == self.dataSource.metadatas.count {
+			return .all
+		}
+		
+		return selectedItemsCount == 0 ? .none : .some(selectedItemsCount)
+	}
+	
+	func selectAllOrDeselectAll() {
+		let metadatas = self.dataSource.metadatas
+		if !fileSelect.isEmpty, metadatas.count == fileSelect.count {
+			fileSelect = []
+		} else {
+			fileSelect = metadatas.compactMap({ $0.ocId })
+		}
+		collectionView.reloadData()
+	}
+	
+	func updateHeadersMenu() {
+		fileActionsHeader?.setSortingMenu(sortingMenuElements: createMenuElements(), title: NSLocalizedString("_media_options_", tableName: nil, bundle: Bundle.main, value: "Media Options", comment: ""), image: nil)
+	}
 }

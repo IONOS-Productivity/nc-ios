@@ -152,7 +152,7 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
             titleCurrentFolder = NCBrandOptions.shared.brand
         }
 
-        autoUploadFileName = self.database.getAccountAutoUploadFileName()
+        autoUploadFileName = self.database.getAccountAutoUploadFileName(account: session.account)
         autoUploadDirectory = self.database.getAccountAutoUploadDirectory(session: session)
 
         self.navigationItem.title = titleCurrentFolder
@@ -229,7 +229,7 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
 
     func tapRichWorkspace(_ sender: Any) { }
 
-    func tapRecommendationsButtonMenu(with metadata: tableMetadata, image: UIImage?) { }
+    func tapRecommendationsButtonMenu(with metadata: tableMetadata, image: UIImage?, sender: Any?) { }
 
     func tapRecommendations(with metadata: tableMetadata) { }
 
@@ -368,7 +368,7 @@ extension NCSelect: UICollectionViewDataSource {
             cell.labelInfo.text = utility.getRelativeDateTitle(metadata.date as Date) + " · " + utilityFileSystem.transformedSize(metadata.size)
 
             // image local
-            if self.database.getTableLocalFile(ocId: metadata.ocId) != nil {
+            if self.database.getResultTableLocalFile(ocId: metadata.ocId) != nil {
                 cell.imageLocal.image = NCImageCache.shared.getImageOfflineFlag()
             } else if utilityFileSystem.fileProviderStorageExists(metadata) {
                 cell.imageLocal.image = NCImageCache.shared.getImageLocal()
@@ -489,16 +489,15 @@ extension NCSelect {
 
         NCNetworking.shared.readFolder(serverUrl: serverUrl,
                                        account: session.account,
-                                       checkResponseDataChanged: false,
                                        queue: .main) { task in
             self.dataSourceTask = task
             if self.dataSource.isEmpty() {
                 self.collectionView.reloadData()
             }
-        } completion: { _, _, _, _, _ in
-            let metadatas = self.database.getResultsMetadatasPredicate(predicate, layoutForView: NCDBLayoutForView())
+        } completion: { _, _, _, _ in
+            let metadatas = self.database.getResultsMetadatasPredicate(predicate, layoutForView: NCDBLayoutForView(), account: self.session.account)
 
-            self.dataSource = NCCollectionViewDataSource(metadatas: metadatas)
+            self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, account: self.session.account)
             self.collectionView.reloadData()
 
             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterReloadDataSource, userInfo: ["serverUrl": self.serverUrl])

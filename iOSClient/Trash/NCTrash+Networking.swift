@@ -25,7 +25,7 @@ import Queuer
 import RealmSwift
 
 extension NCTrash {
-    @objc func loadListingTrash() {
+    @objc func loadListingTrash(_ sender: Any?) {
         NextcloudKit.shared.listingTrash(filename: filename, showHiddenFiles: false, account: session.account) { task in
             self.dataSourceTask = task
             self.collectionView.reloadData()
@@ -43,9 +43,9 @@ extension NCTrash {
     }
 
     func restoreItem(with fileId: String) {
-        guard let resultTableTrash = self.database.getResultTrashItem(fileId: fileId, account: session.account) else { return }
-        let fileNameFrom = resultTableTrash.filePath + resultTableTrash.fileName
-        let fileNameTo = session.urlBase + "/remote.php/dav/trashbin/" + session.userId + "/restore/" + resultTableTrash.fileName
+        guard let result = self.database.getResultTrash(fileId: fileId, account: session.account) else { return }
+        let fileNameFrom = result.filePath + result.fileName
+        let fileNameTo = session.urlBase + "/remote.php/dav/trashbin/" + session.userId + "/restore/" + result.fileName
 
         NextcloudKit.shared.moveFileOrFolder(serverUrlFileNameSource: fileNameFrom, serverUrlFileNameDestination: fileNameTo, overwrite: true, account: session.account) { account, _, error in
             guard error == .success else {
@@ -71,8 +71,8 @@ extension NCTrash {
     }
 
     func deleteItem(with fileId: String) {
-        guard let resultTableTrash = self.database.getResultTrashItem(fileId: fileId, account: session.account) else { return }
-        let serverUrlFileName = resultTableTrash.filePath + resultTableTrash.fileName
+        guard let result = self.database.getResultTrash(fileId: fileId, account: session.account) else { return }
+        let serverUrlFileName = result.filePath + result.fileName
 
         NextcloudKit.shared.deleteFileOrFolder(serverUrlFileName: serverUrlFileName, account: session.account) { account, _, error in
             guard error == .success else {

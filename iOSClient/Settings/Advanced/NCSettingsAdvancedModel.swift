@@ -34,8 +34,6 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     var keychain = NCKeychain()
     /// State variable for indicating if the user is in Admin group
     @Published var isAdminGroup: Bool = false
-    /// State variable for indicating whether hidden files are shown.
-    @Published var showHiddenFiles: Bool = false
     /// State variable for indicating the most compatible format.
     @Published var mostCompatible: Bool = false
     /// State variable for enabling live photo uploads.
@@ -72,7 +70,6 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     func onViewAppear() {
         let groups = NCManageDatabase.shared.getAccountGroups(account: session.account)
         isAdminGroup = groups.contains(NCGlobal.shared.groupAdmin)
-        showHiddenFiles = keychain.showHiddenFiles
         mostCompatible = keychain.formatCompatibility
         livePhoto = keychain.livePhoto
         removeFromCameraRoll = keychain.removePhotoCameraRoll
@@ -87,11 +84,6 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     }
 
     // MARK: - All functions
-
-    /// Updates the value of `showHiddenFiles` in the keychain.
-    func updateShowHiddenFiles() {
-        keychain.showHiddenFiles = showHiddenFiles
-    }
 
     /// Updates the value of `mostCompatible` in the keychain.
     func updateMostCompatible() {
@@ -123,7 +115,6 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     func updateSelectedLogLevel() {
         keychain.logLevel = selectedLogLevel.rawValue
         NextcloudKit.shared.nkCommonInstance.levelLog = selectedLogLevel.rawValue
-        exit(0)
     }
 
     /// Updates the value of `selectedInterval` in the keychain.
@@ -133,15 +124,13 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
 
     /// Clears cache
     func clearCache() {
-        NCActivityIndicator.shared.startActivity(style: .large, blurEffect: true)
+        NCActivityIndicator.shared.startActivity(backgroundView: self.controller?.view, style: .large, blurEffect: true)
         // Cancel all networking tasks
         NCNetworking.shared.cancelAllTask()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             URLCache.shared.removeAllCachedResponses()
 
             NCManageDatabase.shared.clearDatabase()
-
-            NCNetworking.shared.removeAllKeyUserDefaultsData(account: nil)
 
             let ufs = NCUtilityFileSystem()
             ufs.removeGroupDirectoryProviderStorage()

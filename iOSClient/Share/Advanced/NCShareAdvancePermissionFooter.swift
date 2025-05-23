@@ -39,17 +39,17 @@ class NCShareAdvancePermissionFooter: UIView {
         backgroundColor = .clear
 
         buttonCancel.setTitle(NSLocalizedString("_cancel_", comment: ""), for: .normal)
-        buttonCancel.addTarget(self, action: #selector(cancelClicked), for: .touchUpInside)
+        buttonCancel.addTarget(self, action: #selector(cancelClicked(_:)), for: .touchUpInside)
 
         buttonNext.setTitle(NSLocalizedString(delegate?.isNewShare == true ? "_share_" : "_save_", comment: ""), for: .normal)
-        buttonNext.addTarget(self, action: #selector(nextClicked), for: .touchUpInside)
+        buttonNext.addTarget(self, action: #selector(nextClicked(_:)), for: .touchUpInside)
     }
 
-    @objc func cancelClicked() {
+    @objc func cancelClicked(_ sender: Any?) {
         delegate?.dismissShareAdvanceView(shouldSave: false)
     }
 
-    @objc func nextClicked() {
+    @objc func nextClicked(_ sender: Any?) {
         delegate?.dismissShareAdvanceView(shouldSave: true)
     }
 }

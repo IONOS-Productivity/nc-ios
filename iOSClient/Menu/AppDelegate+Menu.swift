@@ -29,7 +29,7 @@ import FloatingPanel
 import NextcloudKit
 
 extension AppDelegate {
-    func toggleMenu(controller: NCMainTabBarController) {
+    func toggleMenu(controller: NCMainTabBarController, sender: Any?) {
         var actions: [NCMenuAction] = []
         let session = NCSession.shared.getSession(controller: controller)
         let directEditingCreators = NCManageDatabase.shared.getDirectEditingCreators(account: session.account)
@@ -41,40 +41,42 @@ extension AppDelegate {
 		
         actions.append(
             NCMenuAction(
-                title: NSLocalizedString("_upload_photos_videos_", comment: ""), icon: NCImagesRepository.menuIconUploadPhotosVideos, action: { _ in
-                    NCAskAuthorization().askAuthorizationPhotoLibrary(controller: controller) { hasPermission in
-                        if hasPermission {NCPhotosPickerViewController(controller: controller, maxSelectedAssets: 0, singleSelectedMode: false)
-                        }
-                    }
-                }
+				title: NSLocalizedString("_upload_photos_videos_", comment: ""), icon: NCImagesRepository.menuIconUploadPhotosVideos, sender: sender, action: { _ in
+					NCAskAuthorization().askAuthorizationPhotoLibrary(controller: controller) { hasPermission in
+						if hasPermission {NCPhotosPickerViewController(controller: controller, maxSelectedAssets: 0, singleSelectedMode: false)
+						}
+					}
+				}
             )
         )
 
         actions.append(
             NCMenuAction(
-                title: NSLocalizedString("_upload_file_", comment: ""), icon: NCImagesRepository.menuIconUploadFile, action: { _ in
-                    controller.documentPickerViewController = NCDocumentPickerViewController(controller: controller, isViewerMedia: false, allowsMultipleSelection: true)
-                }
+				title: NSLocalizedString("_upload_file_", comment: ""), icon: NCImagesRepository.menuIconUploadFile, sender: sender, action: { _ in
+					controller.documentPickerViewController = NCDocumentPickerViewController(controller: controller, isViewerMedia: false, allowsMultipleSelection: true)
+				}
             )
         )
 
         actions.append(
             NCMenuAction(
-                title: NSLocalizedString("_scans_document_", comment: ""), icon: NCImagesRepository.menuIconScan, action: { _ in
-                    NCDocumentCamera.shared.openScannerDocument(viewController: controller)
-                }
+				title: NSLocalizedString("_scans_document_", comment: ""), icon: NCImagesRepository.menuIconScan, sender: sender, action: { _ in
+					NCDocumentCamera.shared.openScannerDocument(viewController: controller)
+				}
             )
         )
 
         if NCKeychain().isEndToEndEnabled(account: session.account) {
-            actions.append(.seperator(order: 0))
+            actions.append(.seperator(order: 0, sender: sender))
         }
 
         let titleCreateFolder = isDirectoryE2EE ? NSLocalizedString("_create_folder_e2ee_", comment: "") : NSLocalizedString("_create_folder_", comment: "")
         let imageCreateFolder = NCImagesRepository.menuIconCreateFolder
         actions.append(
             NCMenuAction(title: titleCreateFolder,
-                         icon: imageCreateFolder, action: { _ in
+                         icon: imageCreateFolder,
+                         sender: sender,
+                         action: { _ in
                              let alertController = UIAlertController.createFolder(serverUrl: serverUrl, session: session, sceneIdentifier: controller.sceneIdentifier)
                              controller.present(alertController, animated: true, completion: nil)
                          }
@@ -86,19 +88,19 @@ extension AppDelegate {
             actions.append(
                 NCMenuAction(title: NSLocalizedString("_create_folder_e2ee_", comment: ""),
                              icon: NCImagesRepository.menuIconCreateFolder,
-                             action: { _ in
-                                 let alertController = UIAlertController.createFolder(serverUrl: serverUrl, session: session, markE2ee: true, sceneIdentifier: controller.sceneIdentifier)
-                                 controller.present(alertController, animated: true, completion: nil)
-                             })
+							 sender: sender, action: { _ in
+								 let alertController = UIAlertController.createFolder(serverUrl: serverUrl, session: session, markE2ee: true, sceneIdentifier: controller.sceneIdentifier)
+								 controller.present(alertController, animated: true, completion: nil)
+							 })
             )
         }
 
         if NCKeychain().isEndToEndEnabled(account: session.account) {
-            actions.append(.seperator(order: 0))
+            actions.append(.seperator(order: 0, sender: sender))
         }
 
 		guard canCreateOfficeFiles else {
-			controller.presentMenu(with: actions)
+			controller.presentMenu(with: actions, sender: sender)
 			return
 		}
 		
@@ -106,7 +108,10 @@ extension AppDelegate {
             let directEditingCreator = directEditingCreators!.first(where: { $0.editor == NCGlobal.shared.editorOnlyoffice && $0.identifier == NCGlobal.shared.onlyofficeDocx})!
             actions.append(
                 NCMenuAction(
-                    title: NSLocalizedString("_create_new_document_", comment: ""), icon: utility.loadImage(named: "doc.text", colors: [NCBrandColor.shared.documentIconColor]), action: { _ in
+                    title: NSLocalizedString("_create_new_document_", comment: ""),
+                    icon: utility.loadImage(named: "doc.text", colors: [NCBrandColor.shared.documentIconColor]),
+                    sender: sender,
+                    action: { _ in
                         let createDocument = NCCreateDocument()
 
                         Task {
@@ -125,7 +130,10 @@ extension AppDelegate {
             let directEditingCreator = directEditingCreators!.first(where: { $0.editor == NCGlobal.shared.editorOnlyoffice && $0.identifier == NCGlobal.shared.onlyofficeXlsx})!
             actions.append(
                 NCMenuAction(
-                    title: NSLocalizedString("_create_new_spreadsheet_", comment: ""), icon: utility.loadImage(named: "tablecells", colors: [NCBrandColor.shared.spreadsheetIconColor]), action: { _ in
+                    title: NSLocalizedString("_create_new_spreadsheet_", comment: ""),
+                    icon: utility.loadImage(named: "tablecells", colors: [NCBrandColor.shared.spreadsheetIconColor]),
+                    sender: sender,
+                    action: { _ in
                         let createDocument = NCCreateDocument()
 
                         Task {
@@ -144,7 +152,10 @@ extension AppDelegate {
             let directEditingCreator = directEditingCreators!.first(where: { $0.editor == NCGlobal.shared.editorOnlyoffice && $0.identifier == NCGlobal.shared.onlyofficePptx})!
             actions.append(
                 NCMenuAction(
-                    title: NSLocalizedString("_create_new_presentation_", comment: ""), icon: utility.loadImage(named: "play.rectangle", colors: [NCBrandColor.shared.presentationIconColor]), action: { _ in
+                    title: NSLocalizedString("_create_new_presentation_", comment: ""),
+                    icon: utility.loadImage(named: "play.rectangle", colors: [NCBrandColor.shared.presentationIconColor]),
+                    sender: sender,
+                    action: { _ in
                         let createDocument = NCCreateDocument()
 
                         Task {
@@ -163,23 +174,26 @@ extension AppDelegate {
             if NextcloudKit.shared.isNetworkReachable() && !isDirectoryE2EE {
                 actions.append(
                     NCMenuAction(
-                        title: NSLocalizedString("_create_new_document_", comment: ""), icon: utility.loadImage(named: "doc.text", colors: [NCBrandColor.shared.documentIconColor]), action: { _ in
-                            let createDocument = NCCreateDocument()
-
-                            Task {
-                                let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorCollabora, templateId: NCGlobal.shared.templateDocument, account: session.account)
-                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
-                                let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
-
-                                createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorCollabora, templateId: templates.selectedTemplate.identifier, account: session.account)
-                            }
-                        }
+						title: NSLocalizedString("_create_new_document_", comment: ""), icon: utility.loadImage(named: "doc.text", colors: [NCBrandColor.shared.documentIconColor]), sender: sender, action: { _ in
+							let createDocument = NCCreateDocument()
+							
+							Task {
+								let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorCollabora, templateId: NCGlobal.shared.templateDocument, account: session.account)
+								let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+								let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
+								
+								createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorCollabora, templateId: templates.selectedTemplate.identifier, account: session.account)
+							}
+						}
                     )
                 )
 
                 actions.append(
                     NCMenuAction(
-                        title: NSLocalizedString("_create_new_spreadsheet_", comment: ""), icon: utility.loadImage(named: "tablecells", colors: [NCBrandColor.shared.spreadsheetIconColor]), action: { _ in
+                        title: NSLocalizedString("_create_new_spreadsheet_", comment: ""),
+                        icon: utility.loadImage(named: "tablecells", colors: [NCBrandColor.shared.spreadsheetIconColor]),
+                        sender: sender,
+                        action: { _ in
                             let createDocument = NCCreateDocument()
 
                             Task {
@@ -195,7 +209,10 @@ extension AppDelegate {
 
                 actions.append(
                     NCMenuAction(
-                        title: NSLocalizedString("_create_new_presentation_", comment: ""), icon: utility.loadImage(named: "play.rectangle", colors: [NCBrandColor.shared.presentationIconColor]), action: { _ in
+                        title: NSLocalizedString("_create_new_presentation_", comment: ""),
+                        icon: utility.loadImage(named: "play.rectangle", colors: [NCBrandColor.shared.presentationIconColor]),
+                        sender: sender,
+                        action: { _ in
                             let createDocument = NCCreateDocument()
 
                             Task {
@@ -211,6 +228,6 @@ extension AppDelegate {
             }
         }
 
-        controller.presentMenu(with: actions)
+        controller.presentMenu(with: actions, controller: controller, sender: sender)
     }
 }

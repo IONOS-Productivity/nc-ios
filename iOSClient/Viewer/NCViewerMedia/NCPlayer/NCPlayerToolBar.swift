@@ -257,7 +257,7 @@ class NCPlayerToolBar: UIView {
         let spuTracks = player.videoSubTitlesNames
         let spuTrackIndexes = player.videoSubTitlesIndexes
 
-        toggleMenuSubTitle(spuTracks: spuTracks, spuTrackIndexes: spuTrackIndexes)
+        toggleMenuSubTitle(spuTracks: spuTracks, spuTrackIndexes: spuTrackIndexes, sender: sender)
     }
 
     @IBAction func tapAudio(_ sender: Any) {
@@ -265,7 +265,7 @@ class NCPlayerToolBar: UIView {
         let audioTracks = player.audioTrackNames
         let audioTrackIndexes = player.audioTrackIndexes
 
-        toggleMenuAudio(audioTracks: audioTracks, audioTrackIndexes: audioTrackIndexes)
+        toggleMenuAudio(audioTracks: audioTracks, audioTrackIndexes: audioTrackIndexes, sender: sender)
     }
 
     @IBAction func tapPlayerPause(_ sender: Any) {
@@ -306,7 +306,7 @@ class NCPlayerToolBar: UIView {
 }
 
 extension NCPlayerToolBar {
-    func toggleMenuSubTitle(spuTracks: [Any], spuTrackIndexes: [Any]) {
+    func toggleMenuSubTitle(spuTracks: [Any], spuTrackIndexes: [Any], sender: Any?) {
         var actions = [NCMenuAction]()
         var subTitleIndex: Int?
 
@@ -329,6 +329,7 @@ extension NCPlayerToolBar {
                         onIcon: UIImage(),
                         selected: (subTitleIndex ?? -9999) == idx,
                         on: (subTitleIndex ?? -9999) == idx,
+                        sender: sender,
                         action: { _ in
                             self.ncplayer?.player.currentVideoSubTitleIndex = idx
                             self.database.addVideo(metadata: metadata, currentVideoSubTitleIndex: Int(idx))
@@ -337,7 +338,7 @@ extension NCPlayerToolBar {
                 )
             }
 
-            actions.append(.seperator(order: 0))
+            actions.append(.seperator(order: 0, sender: sender))
         }
 
         actions.append(
@@ -348,6 +349,7 @@ extension NCPlayerToolBar {
                 onIcon: UIImage(),
                 selected: false,
                 on: false,
+                sender: sender,
                 action: { _ in
 
                     guard let metadata = self.metadata else { return }
@@ -369,10 +371,10 @@ extension NCPlayerToolBar {
             )
         )
 
-        viewerMediaPage?.presentMenu(with: actions, menuColor: UIColor(hexString: "#1C1C1EFF"), textColor: .white)
+        viewerMediaPage?.presentMenu(with: actions, menuColor: UIColor(hexString: "#1C1C1EFF"), textColor: .white, sender: sender)
     }
 
-    func toggleMenuAudio(audioTracks: [Any], audioTrackIndexes: [Any]) {
+    func toggleMenuAudio(audioTracks: [Any], audioTrackIndexes: [Any], sender: Any?) {
         var actions = [NCMenuAction]()
         var audioIndex: Int?
 
@@ -393,6 +395,7 @@ extension NCPlayerToolBar {
                         onIcon: UIImage(),
                         selected: (audioIndex ?? -9999) == idx,
                         on: (audioIndex ?? -9999) == idx,
+                        sender: sender,
                         action: { _ in
                             self.ncplayer?.player.currentAudioTrackIndex = idx
                             self.database.addVideo(metadata: metadata, currentAudioTrackIndex: Int(idx))
@@ -401,7 +404,7 @@ extension NCPlayerToolBar {
                 )
             }
 
-            actions.append(.seperator(order: 0))
+            actions.append(.seperator(order: 0, sender: sender))
         }
 
         actions.append(
@@ -412,6 +415,7 @@ extension NCPlayerToolBar {
                 onIcon: UIImage(),
                 selected: false,
                 on: false,
+                sender: sender,
                 action: { _ in
                     guard let metadata = self.metadata else { return }
                     let storyboard = UIStoryboard(name: "NCSelect", bundle: nil)
@@ -432,7 +436,7 @@ extension NCPlayerToolBar {
             )
         )
 
-        viewerMediaPage?.presentMenu(with: actions, menuColor: UIColor(hexString: "#1C1C1EFF"), textColor: .white)
+        viewerMediaPage?.presentMenu(with: actions, menuColor: UIColor(hexString: "#1C1C1EFF"), textColor: .white, sender: sender)
     }
 }
 

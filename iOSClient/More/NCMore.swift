@@ -77,7 +77,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         tableView.register(NCMoreAppSuggestionsCell.fromNib(), forCellReuseIdentifier: NCMoreAppSuggestionsCell.reuseIdentifier)
 
         // create tap gesture recognizer
-        let tapQuota = UITapGestureRecognizer(target: self, action: #selector(tapLabelQuotaExternalSite))
+        let tapQuota = UITapGestureRecognizer(target: self, action: #selector(tapLabelQuotaExternalSite(_:)))
         labelQuotaExternalSite.isUserInteractionEnabled = true
         labelQuotaExternalSite.addGestureRecognizer(tapQuota)
     }
@@ -116,6 +116,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         item.order = 20
         functionMenu.append(item)
 
+        /*
         if capabilities.capabilityActivityEnabled {
             // ITEM : Activity
             item = NKExternalSite()
@@ -125,6 +126,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
             item.order = 30
             functionMenu.append(item)
         }
+        */
 
         if capabilities.capabilityAssistantEnabled, NCBrandOptions.shared.disable_show_more_nextcloud_apps_in_settings {
             // ITEM : Assistant
@@ -260,7 +262,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
 
     // MARK: - Action
 
-    @objc func tapLabelQuotaExternalSite() {
+    @objc func tapLabelQuotaExternalSite(_ sender: Any?) {
         if !quotaMenu.isEmpty {
             let item = quotaMenu[0]
             if let browserWebVC = UIStoryboard(name: "NCBrowserWeb", bundle: nil).instantiateInitialViewController() as? NCBrowserWeb {
@@ -369,8 +371,22 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         } else if item.url == "logout" {
             let alertController = UIAlertController(title: "", message: NSLocalizedString("_want_delete_", comment: ""), preferredStyle: .alert)
             let actionYes = UIAlertAction(title: NSLocalizedString("_yes_delete_", comment: ""), style: .default) { (_: UIAlertAction) in
-                let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
-                appDelegate.openLogin(selector: NCGlobal.shared.introLogin)
+                if NCBrandOptions.shared.disable_intro {
+                    if let viewController = UIStoryboard(name: "NCLogin", bundle: nil).instantiateViewController(withIdentifier: "NCLogin") as? NCLogin {
+                        viewController.controller = self.controller
+                        let navigationController = UINavigationController(rootViewController: viewController)
+                        navigationController.modalPresentationStyle = .fullScreen
+                        self.present(navigationController, animated: true)
+                    }
+                } else {
+                    if let navigationController = UIStoryboard(name: "NCIntro", bundle: nil).instantiateInitialViewController() as? UINavigationController {
+                        if let viewController = navigationController.topViewController as? NCIntroViewController {
+                            viewController.controller = self.controller
+                        }
+                        navigationController.modalPresentationStyle = .fullScreen
+                        self.present(navigationController, animated: true)
+                    }
+                }
             }
 
             let actionNo = UIAlertAction(title: NSLocalizedString("_no_delete_", comment: ""), style: .default) { (_: UIAlertAction) in

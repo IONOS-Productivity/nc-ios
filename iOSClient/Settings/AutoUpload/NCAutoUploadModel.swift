@@ -26,6 +26,7 @@ import Foundation
 import UIKit
 import Photos
 import NextcloudKit
+import EasyTipView
 
 enum AutoUploadTimespan: String, CaseIterable, Identifiable {
     case allPhotos = "_all_photos_"
@@ -50,9 +51,9 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
     /// A state variable that indicates the granularity of the subfolders, either daily, monthly, or yearly
     @Published var autoUploadSubfolderGranularity: Granularity = .monthly
     /// A state variable that indicates the date from when new photos/videos will be uploaded.
-    @Published var autoUploadSinceDate: Date?
+    @Published var autoUploadOnlyNewSinceDate: Date?
     /// A state variable that indicates from whether new photos only or all photos will be uploaded.
-    @Published var autoUploadNewPhotosOnly: Bool = false
+    @Published var autoUploadOnlyNew: Bool = false
     /// A state variable that indicates whether a warning should be shown if all photos must be uploaded.
     @Published var showUploadAllPhotosWarning = false
     /// A state variable that indicates whether Photos permissions have been granted or not.
@@ -65,8 +66,9 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
     /// A string variable that contains error text
     @Published var error: String = ""
     let database = NCManageDatabase.shared
-    @Published var autoUploadPath = "\(NCManageDatabase.shared.getAccountAutoUploadFileName())"
 
+    /// Tip
+    var tip: EasyTipView?
     /// Root View Controller
     var controller: NCMainTabBarController?
     /// A variable user for change the auto upload directory
@@ -79,6 +81,17 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
     /// Initialization code to set up the ViewModel with the active account
     init(controller: NCMainTabBarController?) {
         self.controller = controller
+
+        NotificationCenter.default.addObserver(forName: UIDevice.orientationDidChangeNotification,
+                                               object: nil,
+                                               queue: .main) { _ in
+            self.tip?.dismiss()
+            self.tip = nil
+        }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     /// Triggered when the view appears.
@@ -91,8 +104,8 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
             autoUploadStart = tableAccount.autoUploadStart
             autoUploadCreateSubfolder = tableAccount.autoUploadCreateSubfolder
             autoUploadSubfolderGranularity = Granularity(rawValue: tableAccount.autoUploadSubfolderGranularity) ?? .monthly
-            autoUploadSinceDate = tableAccount.autoUploadSinceDate
-            autoUploadNewPhotosOnly = tableAccount.autoUploadSinceDate != nil ? true : false
+            autoUploadOnlyNewSinceDate = tableAccount.autoUploadOnlyNewSinceDate
+            autoUploadOnlyNew = tableAccount.autoUploadOnlyNew
         }
 
         serverUrl = NCUtilityFileSystem().getHomeServer(session: session)
@@ -100,6 +113,13 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
         requestAuthorization()
 
         if !autoUploadImage && !autoUploadVideo { autoUploadImage = true }
+
+        showTip()
+    }
+
+    func onViewDisappear() {
+        tip?.dismiss()
+        tip = nil
     }
 
     // MARK: - All functions
@@ -138,10 +158,8 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
         database.updateAccountProperty(\.autoUploadWWAnVideo, value: newValue, account: session.account)
     }
 
-    func handleAutoUploadNewPhotosOnly(newValue: Bool) {
-        let date = newValue ? Date.now : nil
-        autoUploadSinceDate = date
-        database.updateAccountProperty(\.autoUploadSinceDate, value: date, account: session.account)
+    func handleAutoUploadOnlyNew(newValue: Bool) {
+        database.updateAccountProperty(\.autoUploadOnlyNew, value: newValue, account: session.account)
     }
 
     /// Updates the auto-upload full content setting.
@@ -151,6 +169,9 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
         database.updateAccountProperty(\.autoUploadStart, value: newValue, account: session.account)
 
         if newValue {
+            if autoUploadOnlyNew {
+                database.updateAccountProperty(\.autoUploadOnlyNewSinceDate, value: Date.now, account: session.account)
+            }
             NCAutoUpload.shared.autoUploadSelectedAlbums(controller: self.controller, assetCollections: assetCollections, log: "Auto upload selected albums", account: session.account)
         } else {
             database.clearMetadatasUpload(account: session.account)
@@ -167,18 +188,11 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
         database.updateAccountProperty(\.autoUploadSubfolderGranularity, value: newValue.rawValue, account: session.account)
     }
 
-    func resetAutoUploadLastUploadedDate() {
-        guard let activeAccount = database.getTableAccount(account: session.account) else { return }
-//        activeAccount[keyPath: keyPath] = value
-        activeAccount.autoUploadLastUploadedDate = nil
-        database.updateAccount(activeAccount)
-    }
-
     /// Returns the path for auto-upload based on the active account's settings.
     ///
     /// - Returns: The path for auto-upload.
     func returnPath() -> String {
-        let autoUploadPath = self.database.getAccountAutoUploadDirectory(session: session) + "/" + self.database.getAccountAutoUploadFileName()
+        let autoUploadPath = self.database.getAccountAutoUploadDirectory(session: session) + "/" + self.database.getAccountAutoUploadFileName(account: session.account)
         let homeServer = NCUtilityFileSystem().getHomeServer(session: session)
         let path = autoUploadPath.replacingOccurrences(of: homeServer, with: "")
         return path
@@ -209,6 +223,56 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
         } else {
             return NSLocalizedString("_multiple_albums_", comment: "")
         }
+    }
+
+    func existsAutoUpload() -> Bool {
+        let autoUploadServerUrlBase = NCManageDatabase.shared.getAccountAutoUploadServerUrlBase(session: session)
+        return NCManageDatabase.shared.existsAutoUpload(account: session.account, autoUploadServerUrlBase: autoUploadServerUrlBase)
+    }
+
+
+    func deleteAutoUploadTransfer() {
+        let autoUploadServerUrlBase = NCManageDatabase.shared.getAccountAutoUploadServerUrlBase(session: session)
+        NCManageDatabase.shared.deleteAutoUploadTransfer(account: session.account, autoUploadServerUrlBase: autoUploadServerUrlBase)
+    }
+}
+
+extension NCAutoUploadModel: EasyTipViewDelegate {
+    func showTip() {
+        guard !session.account.isEmpty,
+              !database.tipExists(NCGlobal.shared.tipAutoUploadButton)
+        else {
+            return
+        }
+
+        var preferences = EasyTipView.Preferences()
+
+        preferences.drawing.foregroundColor = .white
+        preferences.drawing.backgroundColor = .lightGray
+        preferences.drawing.textAlignment = .left
+        preferences.drawing.arrowPosition = .any
+        preferences.drawing.cornerRadius = 10
+
+        preferences.animating.dismissTransform = CGAffineTransform(translationX: 0, y: 100)
+        preferences.animating.showInitialTransform = CGAffineTransform(translationX: 0, y: -100)
+        preferences.animating.showInitialAlpha = 0
+        preferences.animating.showDuration = 0.5
+        preferences.animating.dismissDuration = 0.5
+
+        if tip == nil {
+            tip = EasyTipView(text: NSLocalizedString("_tip_autoupload_button_", comment: ""), preferences: preferences, delegate: self, tip: NCGlobal.shared.tipAutoUploadButton)
+            if let view = controller?.tabBar {
+                tip?.show(forView: view)
+            }
+        }
+    }
+
+    func easyTipViewDidTap(_ tipView: EasyTipView) {
+        database.addTip(NCGlobal.shared.tipAutoUploadButton)
+    }
+
+    func easyTipViewDidDismiss(_ tipView: EasyTipView) {
+        tip = nil
     }
 }
 

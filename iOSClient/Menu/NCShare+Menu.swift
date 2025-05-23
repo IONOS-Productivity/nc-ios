@@ -27,7 +27,7 @@ import UIKit
 import NextcloudKit
 
 extension NCShare {
-    func toggleShareMenu(for share: tableShare) {
+    func toggleShareMenu(for share: tableShare, sender: Any?) {
         let capabilities = NCCapabilities.shared.getCapabilities(account: self.metadata.account)
         var actions = [NCMenuAction]()
 
@@ -36,9 +36,9 @@ extension NCShare {
                 NCMenuAction(
                     title: NSLocalizedString("_share_add_sharelink_", comment: ""),
                     icon: NCImagesRepository.menuIconAdd,
-                    action: { _ in
-                        self.makeNewLinkShare()
-                    }
+					sender: sender, action: { _ in
+						self.makeNewLinkShare()
+					}
                 )
             )
         }
@@ -48,6 +48,7 @@ extension NCShare {
                 title: NSLocalizedString("_details_", comment: ""),
                 icon: NCImagesRepository.menuIconDetails,
                 accessibilityIdentifier: "shareMenu/details",
+                sender: sender,
                 action: { _ in
                     guard
                         let advancePermission = UIStoryboard(name: "NCShare", bundle: nil).instantiateViewController(withIdentifier: "NCShareAdvancePermission") as? NCShareAdvancePermission,
@@ -71,29 +72,29 @@ extension NCShare {
                 title: NSLocalizedString("_share_unshare_", comment: ""),
                 destructive: true,
                 icon: NCImagesRepository.menuIconUnshare,
-                action: { _ in
-                    Task {
-                        if share.shareType != NCShareCommon().SHARE_TYPE_LINK, let metadata = self.metadata, metadata.e2eEncrypted && capabilities.capabilityE2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
-                            let serverUrl = metadata.serverUrl + "/" + metadata.fileName
-                            if NCNetworkingE2EE().isInUpload(account: metadata.account, serverUrl: serverUrl) {
-                                let error = NKError(errorCode: NCGlobal.shared.errorE2EEUploadInProgress, errorDescription: NSLocalizedString("_e2e_in_upload_", comment: ""))
-                                return NCContentPresenter().showInfo(error: error)
-                            }
-                            let error = await NCNetworkingE2EE().uploadMetadata(serverUrl: serverUrl, addUserId: nil, removeUserId: share.shareWith, account: metadata.account)
-                            if error != .success {
-                                return NCContentPresenter().showError(error: error)
-                            }
-                        }
-                        self.networking?.unShare(idShare: share.idShare)
-                    }
-                }
+				sender: sender, action: { _ in
+					Task {
+						if share.shareType != NCShareCommon().SHARE_TYPE_LINK, let metadata = self.metadata, metadata.e2eEncrypted && capabilities.capabilityE2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
+							let serverUrl = metadata.serverUrl + "/" + metadata.fileName
+							if NCNetworkingE2EE().isInUpload(account: metadata.account, serverUrl: serverUrl) {
+								let error = NKError(errorCode: NCGlobal.shared.errorE2EEUploadInProgress, errorDescription: NSLocalizedString("_e2e_in_upload_", comment: ""))
+								return NCContentPresenter().showInfo(error: error)
+							}
+							let error = await NCNetworkingE2EE().uploadMetadata(serverUrl: serverUrl, addUserId: nil, removeUserId: share.shareWith, account: metadata.account)
+							if error != .success {
+								return NCContentPresenter().showError(error: error)
+							}
+						}
+						self.networking?.unShare(idShare: share.idShare)
+					}
+				}
             )
         )
 
-        self.presentMenu(with: actions)
+        self.presentMenu(with: actions, sender: sender)
     }
 
-    func toggleUserPermissionMenu(isDirectory: Bool, tableShare: tableShare) {
+    func toggleUserPermissionMenu(isDirectory: Bool, tableShare: tableShare, sender: Any?) {
         var actions = [NCMenuAction]()
         let permissions = NCPermissions()
 
@@ -103,6 +104,7 @@ extension NCShare {
                 icon: NCImagesRepository.menuIconReadOnly,
                 selected: tableShare.permissions == (permissions.permissionReadShare + permissions.permissionShareShare) || tableShare.permissions == permissions.permissionReadShare,
                 on: false,
+                sender: sender,
                 action: { _ in
                     let canShare = permissions.isPermissionToCanShare(tableShare.permissions)
                     let permissions = permissions.getPermission(canEdit: false, canCreate: false, canChange: false, canDelete: false, canShare: canShare, isDirectory: isDirectory)
@@ -117,6 +119,7 @@ extension NCShare {
                 icon:  NCImagesRepository.menuIconEdit,
                 selected: hasUploadPermission(tableShare: tableShare),
                 on: false,
+                sender: sender,
                 action: { _ in
                     let canShare = permissions.isPermissionToCanShare(tableShare.permissions)
                     let permissions = permissions.getPermission(canEdit: true, canCreate: true, canChange: true, canDelete: true, canShare: canShare, isDirectory: isDirectory)
@@ -125,7 +128,7 @@ extension NCShare {
             )
         )
 
-        self.presentMenu(with: actions)
+        self.presentMenu(with: actions, sender: sender)
     }
 
     fileprivate func hasUploadPermission(tableShare: tableShare) -> Bool {

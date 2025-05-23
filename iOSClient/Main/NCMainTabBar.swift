@@ -225,7 +225,7 @@ class NCMainTabBar: UITabBar {
                     return
                 }
 
-                self.appDelegate.toggleMenu(controller: controller)
+				self.appDelegate.toggleMenu(controller: controller, sender: nil)
             }
         }
 

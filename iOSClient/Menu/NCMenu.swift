@@ -34,16 +34,17 @@ extension Array where Element == NCMenuAction {
 }
 
 class NCMenu: UITableViewController {
-
     var actions = [NCMenuAction]()
     var menuColor: UIColor = NCBrandColor.shared.appBackgroundColor
 	var textColor = UIColor(resource: .FileMenu.text)
+    var controller: NCMainTabBarController?
 
-    static func makeNCMenu(with actions: [NCMenuAction], menuColor: UIColor, textColor: UIColor) -> NCMenu? {
+    static func makeNCMenu(with actions: [NCMenuAction], menuColor: UIColor, textColor: UIColor, controller: NCMainTabBarController?) -> NCMenu? {
         let menuViewController = UIStoryboard(name: "NCMenu", bundle: nil).instantiateInitialViewController() as? NCMenu
         menuViewController?.actions = actions
         menuViewController?.menuColor = menuColor
         menuViewController?.textColor = textColor
+        menuViewController?.controller = controller
         return menuViewController
     }
 
@@ -160,11 +161,11 @@ class NCMenu: UITableViewController {
 extension NCMenu: FloatingPanelControllerDelegate {
 
     func floatingPanel(_ fpc: FloatingPanelController, layoutFor size: CGSize) -> FloatingPanelLayout {
-        return NCMenuFloatingPanelLayout(actionsHeight: self.actions.listHeight)
+        return NCMenuFloatingPanelLayout(actionsHeight: self.actions.listHeight, controller: controller)
     }
 
     func floatingPanel(_ fpc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout {
-        return NCMenuFloatingPanelLayout(actionsHeight: self.actions.listHeight)
+        return NCMenuFloatingPanelLayout(actionsHeight: self.actions.listHeight, controller: controller)
     }
 
     func floatingPanel(_ fpc: FloatingPanelController, animatorForDismissingWith velocity: CGVector) -> UIViewPropertyAnimator {

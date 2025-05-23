@@ -28,8 +28,8 @@ import RealmSwift
 import NextcloudKit
 import EasyTipView
 
-class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UISearchResultsUpdating, UISearchControllerDelegate, UISearchBarDelegate, NCListCellDelegate, NCGridCellDelegate, NCPhotoCellDelegate, NCSectionFirstHeaderDelegate, NCSectionFooterDelegate, NCSectionFirstHeaderEmptyDataDelegate, NCAccountSettingsModelDelegate, UIAdaptivePresentationControllerDelegate, UIContextMenuInteractionDelegate {
-    
+class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UISearchResultsUpdating, UISearchControllerDelegate, UISearchBarDelegate, NCListCellDelegate, NCGridCellDelegate, NCPhotoCellDelegate, NCSectionFirstHeaderDelegate, NCSectionFooterDelegate, NCSectionFirstHeaderEmptyDataDelegate, NCAccountSettingsModelDelegate, NCTransferDelegate, UIAdaptivePresentationControllerDelegate, UIContextMenuInteractionDelegate {
+
     @IBOutlet weak var collectionView: UICollectionView!
 	@IBOutlet weak var headerTop: NSLayoutConstraint?
 	@IBOutlet weak var collectionViewTop: NSLayoutConstraint?
@@ -43,7 +43,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
     var dataSource = NCCollectionViewDataSource()
     let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
-
+	var tipViewAccounts: EasyTipView?
     var autoUploadFileName = ""
     var autoUploadDirectory = ""
     let refreshControl = UIRefreshControl()
@@ -308,6 +308,8 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        NCNetworking.shared.transferDelegate = self
+
         NotificationCenter.default.addObserver(self, selector: #selector(applicationWillResignActive(_:)), name: UIApplication.willResignActiveNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(closeRichWorkspaceWebView), name: NSNotification.Name(rawValue: global.notificationCenterCloseRichWorkspaceWebView), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(changeStatusFolderE2EE(_:)), name: NSNotification.Name(rawValue: global.notificationCenterChangeStatusFolderE2EE), object: nil)
@@ -347,6 +349,8 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+
+        NCNetworking.shared.transferDelegate = nil
 
         NotificationCenter.default.removeObserver(self, name: UIApplication.willResignActiveNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: global.notificationCenterCloseRichWorkspaceWebView), object: nil)
@@ -403,10 +407,16 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         tabBarSelect?.onViewWillLayoutSubviews()
     }
 
+    // MARK: - Transfer Delegate
+
+    func transferProgressDidUpdate(progress: Float, totalBytes: Int64, totalBytesExpected: Int64, fileName: String, serverUrl: String) { }
+
+    func tranferChange(status: String, metadata: tableMetadata, error: NKError) { }
+
     // MARK: - NotificationCenter
 
     @objc func applicationWillResignActive(_ notification: NSNotification) {
-        self.refreshControl.endRefreshing()
+        refreshControlEndRefreshing()
     }
 
     @objc func changeTheming(_ notification: NSNotification) {
@@ -717,6 +727,15 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
     
     func accountSettingsDidDismiss(tableAccount: tableAccount?, controller: NCMainTabBarController?) { }
 
+    func resetPlusButtonAlpha(animated: Bool = true) { }
+
+    func isHiddenPlusButton(_ isHidden: Bool) { }
+
+    func refreshControlEndRefreshing() {
+        refreshControl.endRefreshing()
+        resetPlusButtonAlpha()
+    }
+
     // MARK: - SEARCH
 
     func searchController(enabled: Bool) {
@@ -739,6 +758,8 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         self.reloadDataSource()
         // TIP
         dismissTip()
+        //
+        isHiddenPlusButton(true)
     }
 
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
@@ -754,6 +775,8 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         self.providers?.removeAll()
         self.dataSource.removeAll()
         self.reloadDataSource()
+        //
+        isHiddenPlusButton(false)
     }
 
     // MARK: - TAP EVENT
@@ -774,7 +797,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
     func tapMoreGridItem(with ocId: String, ocIdTransfer: String, image: UIImage?, sender: Any) {
         guard let metadata = self.database.getMetadataFromOcId(ocId) else { return }
-        toggleMenu(metadata: metadata, image: image)
+        toggleMenu(metadata: metadata, image: image, sender: sender)
     }
 
     func tapRichWorkspace(_ sender: Any) {
@@ -790,8 +813,8 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         }
     }
 
-    func tapRecommendationsButtonMenu(with metadata: tableMetadata, image: UIImage?) {
-        toggleMenu(metadata: metadata, image: image)
+    func tapRecommendationsButtonMenu(with metadata: tableMetadata, image: UIImage?, sender: Any?) {
+        toggleMenu(metadata: metadata, image: image, sender: sender)
     }
 
     func tapButtonSection(_ sender: Any, metadataForSection: NCMetadataForSection?) {
@@ -833,7 +856,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         becomeFirstResponder()
 
         if !serverUrl.isEmpty {
-            listMenuItems.append(UIMenuItem(title: NSLocalizedString("_paste_file_", comment: ""), action: #selector(pasteFilesMenu)))
+            listMenuItems.append(UIMenuItem(title: NSLocalizedString("_paste_file_", comment: ""), action: #selector(pasteFilesMenu(_:))))
         }
 
         if !listMenuItems.isEmpty {
@@ -845,21 +868,20 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
     // MARK: - Menu Item
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
-
-        if #selector(pasteFilesMenu) == action {
+        if #selector(pasteFilesMenu(_:)) == action {
             if !UIPasteboard.general.items.isEmpty, !(metadataFolder?.e2eEncrypted ?? false) {
                 return true
             }
-        } else if #selector(copyMenuFile) == action {
+        } else if #selector(copyMenuFile(_:)) == action {
             return true
-        } else if #selector(moveMenuFile) == action {
+        } else if #selector(moveMenuFile(_:)) == action {
             return true
         }
 
         return false
     }
 
-    @objc func pasteFilesMenu() {
+    @objc func pasteFilesMenu(_ sender: Any?) {
         NCActionCenter.shared.pastePasteboard(serverUrl: serverUrl, account: session.account, controller: self.controller)
     }
 
@@ -881,7 +903,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
             (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
             self.updateHeadersView()
-            self.refreshControl.endRefreshing()
+            self.refreshControlEndRefreshing()
         }
     }
 
@@ -895,7 +917,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         guard !session.account.isEmpty,
               let literalSearch = literalSearch,
               !literalSearch.isEmpty else {
-            return self.refreshControl.endRefreshing()
+            return self.refreshControlEndRefreshing()
         }
 
         self.networkSearchInProgress = true
@@ -907,15 +929,15 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
             NCNetworking.shared.unifiedSearchFiles(literal: literalSearch, account: session.account) { task in
                 self.dataSourceTask = task
                 self.reloadDataSource()
-            } providers: { _, searchProviders in
+            } providers: { account, searchProviders in
                 self.providers = searchProviders
                 self.searchResults = []
-                self.dataSource = NCCollectionViewDataSource(metadatas: [], layoutForView: self.layoutForView, providers: self.providers, searchResults: self.searchResults)
+                self.dataSource = NCCollectionViewDataSource(metadatas: [], layoutForView: self.layoutForView, providers: self.providers, searchResults: self.searchResults, account: account)
             } update: { _, _, searchResult, metadatas in
                 guard let metadatas, !metadatas.isEmpty, self.isSearchingMode, let searchResult else { return }
                 NCNetworking.shared.unifiedSearchQueue.addOperation(NCCollectionViewUnifiedSearch(collectionViewCommon: self, metadatas: metadatas, searchResult: searchResult))
             } completion: { _, _ in
-                self.refreshControl.endRefreshing()
+                self.refreshControlEndRefreshing()
                 self.reloadDataSource()
                 self.networkSearchInProgress = false
             }
@@ -925,14 +947,14 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
                 self.reloadDataSource()
             } completion: { metadatasSearch, error in
                 DispatchQueue.main.async {
-                    self.refreshControl.endRefreshing()
+                    self.refreshControlEndRefreshing()
                     self.reloadDataSource()
                 }
                 guard let metadatasSearch, error == .success, self.isSearchingMode else { return }
                 let ocId = metadatasSearch.map { $0.ocId }
-                let metadatas = self.database.getResultsMetadatasPredicate(NSPredicate(format: "ocId IN %@", ocId), layoutForView: self.layoutForView)
+                let metadatas = self.database.getResultsMetadatasPredicate(NSPredicate(format: "ocId IN %@", ocId), layoutForView: self.layoutForView, account: self.session.account)
 
-                self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: self.layoutForView, providers: self.providers, searchResults: self.searchResults)
+                self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: self.layoutForView, providers: self.providers, searchResults: self.searchResults, account: self.session.account)
                 self.networkSearchInProgress = false
             }
         }

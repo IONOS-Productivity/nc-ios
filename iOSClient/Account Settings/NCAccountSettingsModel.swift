@@ -94,28 +94,24 @@ class NCAccountSettingsModel: ObservableObject, ViewOnAppearHandling {
 
     /// Triggered when the view appears.
     func onViewAppear() {
-        var indexActiveAccount = 0
-        let tableAccounts = getAllAccountsOrderByEmail()
-        var alias = ""
+		var indexActiveAccount = 0
+		let tableAccounts = database.getAllTableAccount()
+		var alias = ""
 
-        for (index, account) in tableAccounts.enumerated() {
-            if account.active {
-                tblAccount = account
-                indexActiveAccount = index
-                alias = account.alias
-            }
-        }
+		for (index, account) in tableAccounts.enumerated() {
+			if account.active {
+				tblAccount = account
+				indexActiveAccount = index
+				alias = account.alias
+			}
+		}
 
-        self.indexActiveAccount = indexActiveAccount
-        self.tblAccounts = tableAccounts
-        self.tblAccount = tblAccount
-        self.alias = alias
+		self.indexActiveAccount = indexActiveAccount
+		self.tblAccounts = tableAccounts
+		self.tblAccount = tblAccount
+		self.alias = alias
     }
     
-    private func getAllAccountsOrderByEmail() -> [tableAccount] {
-        NCManageDatabase.shared.getAllAccountOrderByEmail()
-    }
-	
     /// Func to get the user display name + alias
     func getUserName() -> String {
         guard let tblAccount else { return "" }
@@ -128,12 +124,8 @@ class NCAccountSettingsModel: ObservableObject, ViewOnAppearHandling {
 
     /// Func to set alias
     func setAlias(_ value: String) {
-        guard let tblAccount else { return }
-		NCManageDatabase.shared.setAccountAlias(tblAccount.account, alias: alias) {
-			[weak self] in
-            guard let self = self else { return }
-            self.tblAccounts = getAllAccountsOrderByEmail()
-		}
+		guard let tblAccount else { return }
+		database.setAccountAlias(tblAccount.account, alias: alias)
     }
 
     /// Function to update the user data
@@ -188,17 +180,13 @@ class NCAccountSettingsModel: ObservableObject, ViewOnAppearHandling {
     }
 
     /// Function to delete the current account
-    func deleteAccount() {
-        if let tblAccount {
-			NCAccount().deleteAccount(tblAccount.account)
-            if let account = getAllAccountsOrderByEmail().first?.account {
-                NCAccount().changeAccount(account, userProfile: nil, controller: self.controller) {
-                    onViewAppear()
-                }
-            } else {
-                dismissView = true
-                appDelegate.openLogin(selector: NCGlobal.shared.introLogin)
-            }
-        }
-    }
+	func deleteAccount() {
+		if let tblAccount {
+			NCAccount().deleteAccount(tblAccount.account) {
+				let account = database.getAllTableAccount().first?.account
+				setAccount(account: account)
+				dismissView = true
+			}
+		}
+	}
 }
