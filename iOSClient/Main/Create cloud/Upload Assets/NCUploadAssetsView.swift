@@ -33,7 +33,8 @@ struct NCUploadAssetsView: View {
         NavigationView {
             ZStack(alignment: .top) {
                 List {
-                    Section(footer: Text(NSLocalizedString("_modify_image_desc_", comment: ""))) {
+                    Section(footer: Text(NSLocalizedString("_modify_image_desc_", comment: ""))
+						.font(.system(size: 16))) {
                         ScrollView(.horizontal) {
                             LazyHGrid(rows: gridItems, alignment: .center, spacing: 10) {
                                 ForEach(0..<model.previewStore.count, id: \.self) { index in
@@ -58,7 +59,7 @@ struct NCUploadAssetsView: View {
                                         }
                                         if item.data != nil {
                                             Button(action: {
-                                                if let image = model.previewStore[index].asset.fullResolutionImage?.resizeImage(size: CGSize(width: 300, height: 300), isAspectRation: true) {
+                                                if let image = model.previewStore[index].asset.fullResolutionImage?.resizeImage(size: CGSize(width: 240, height: 240), isAspectRation: true) {
                                                     model.previewStore[index].image = image
                                                     model.previewStore[index].data = nil
                                                     model.previewStore[index].assetType = model.previewStore[index].asset.type
@@ -133,6 +134,7 @@ struct NCUploadAssetsView: View {
                             }
                         }
                     }
+					.applyGlobalFormSectionStyle()
 
                     Section {
                         ///
@@ -171,7 +173,8 @@ struct NCUploadAssetsView: View {
                                         .renderingMode(.template)
                                         .resizable()
                                         .scaledToFit()
-                                        .foregroundColor(Color(NCBrandColor.shared.getElement(account: metadata?.account)))
+                                        .foregroundColor(Color(.Share.commonIconTint))
+                                    
                                 }
                             }
                             .contentShape(Rectangle())
@@ -180,7 +183,8 @@ struct NCUploadAssetsView: View {
                             }
                         }
                     }
-
+					.applyGlobalFormSectionStyle()
+					
                     Section {
                         Button(NSLocalizedString("_save_", comment: "")) {
                             if model.useAutoUploadFolder, model.useAutoUploadSubFolder {
@@ -198,12 +202,13 @@ struct NCUploadAssetsView: View {
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .buttonStyle(ButtonRounded(disabled: model.uploadInProgress, account: model.session.account))
-                        .listRowBackground(Color(UIColor.systemGroupedBackground))
+						.buttonStyle(SaveButtonStyle(maxWidth: 150))
+                        .listRowBackground(Color(UIColor.clear))
                         .disabled(model.uploadInProgress)
                         .hiddenConditionally(isHidden: model.hiddenSave)
                     }
                 }
+				.applyGlobalFormStyle()
             }
             .navigationTitle(NSLocalizedString("_upload_photos_videos_", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
@@ -247,11 +252,26 @@ struct NCUploadAssetsView: View {
             ZStack(alignment: .bottomTrailing) {
                 if index < model.previewStore.count {
                     let item = model.previewStore[index]
-                    Image(uiImage: item.image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 80, alignment: .center)
-                        .cornerRadius(10)
+                    if let image = item.image {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 80, height: 80, alignment: .center)
+                            .cornerRadius(10)
+                    } else {
+                        Color(.lightGray) // Placeholder
+                            .frame(width: 80, height: 80)
+                            .cornerRadius(10)
+                            .onAppear {
+                                DispatchQueue.main.async {
+                                    if let asset = item.asset.phAsset,
+                                       let image = model.lowResolutionImage(asset: asset) {
+                                        model.previewStore[index].image = image
+                                    }
+                                }
+                            }
+                    }
+
                     if item.assetType == .livePhoto && item.data == nil {
                         Image(systemName: "livephoto")
                             .resizable()

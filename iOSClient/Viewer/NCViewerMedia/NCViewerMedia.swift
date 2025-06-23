@@ -88,6 +88,7 @@ class NCViewerMedia: UIViewController {
         scrollView.delegate = self
         scrollView.maximumZoomScale = 4
         scrollView.minimumZoomScale = 1
+		scrollView.backgroundColor = metadata.isVideo ? .black : NCBrandColor.shared.appBackgroundColor
 
         view.addGestureRecognizer(doubleTapGestureRecognizer)
 

@@ -235,7 +235,6 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
         cell.fileOcId = metadata.ocId
         cell.fileOcIdTransfer = metadata.ocIdTransfer
         cell.fileUser = metadata.ownerId
-        cell.filePreviewImageView?.image = imageCache.getImageFile()
         cell.filePreviewImageView?.backgroundColor = nil
         cell.labelTitle.text = metadata.fileNameView
         cell.labelTitle.textColor = NCBrandColor.shared.textColor
@@ -243,64 +242,63 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
         var pathText = metadata.serverUrl.replacingOccurrences(of: serverUrlHome, with: "")
         if pathText.isEmpty { pathText = "/" }
         cell.labelPath.text = pathText
-        cell.setButtonMore(image: imageCache.getImageButtonStop())
-
-        /// Image item
-        if !metadata.iconName.isEmpty {
-            cell.filePreviewImageView?.image = utility.loadImage(named: metadata.iconName, useTypeIconFile: true, account: metadata.account)
+        cell.setButtonMore(image: UIImage(resource: .Transfers.stop))
+        
+        if metadata.iconName == NKCommon.TypeClassFile.directory.rawValue {
+            cell.filePreviewImageView?.image = UIImage(resource: .folder)
         } else {
-            cell.filePreviewImageView?.image = imageCache.getImageFile()
+            cell.filePreviewImageView?.image = UIImage(resource: .fileUnsupported)
         }
-
+        
         /// Status and Info
         let user = (metadata.user == session.user ? "" : " - " + metadata.account)
         switch metadata.status {
         case NCGlobal.shared.metadataStatusWaitCreateFolder:
-            cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileStatusImage?.image = UIImage(resource: .Transfers.waiting)
             cell.labelStatus.text = NSLocalizedString("_status_wait_create_folder_", comment: "") + user
             cell.labelInfo.text = ""
         case NCGlobal.shared.metadataStatusWaitDelete:
-            cell.fileStatusImage?.image = utility.loadImage(named: "trash.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileStatusImage?.image = UIImage(resource: .Transfers.trash)
             cell.labelStatus.text = NSLocalizedString("_status_wait_delete_", comment: "") + user
             cell.labelInfo.text = ""
         case NCGlobal.shared.metadataStatusWaitFavorite:
-            cell.fileStatusImage?.image = utility.loadImage(named: "star.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileStatusImage?.image = UIImage(resource: .Transfers.favorite)
             cell.labelStatus.text = NSLocalizedString("_status_wait_favorite_", comment: "") + user
             cell.labelInfo.text = ""
         case NCGlobal.shared.metadataStatusWaitCopy:
-            cell.fileStatusImage?.image = utility.loadImage(named: "c.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileStatusImage?.image = UIImage(resource: .Transfers.copy)
             cell.labelStatus.text = NSLocalizedString("_status_wait_copy_", comment: "") + user
             cell.labelInfo.text = ""
         case NCGlobal.shared.metadataStatusWaitMove:
-            cell.fileStatusImage?.image = utility.loadImage(named: "m.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileStatusImage?.image = UIImage(resource: .Transfers.move)
             cell.labelStatus.text = NSLocalizedString("_status_wait_move_", comment: "") + user
             cell.labelInfo.text = ""
         case NCGlobal.shared.metadataStatusWaitRename:
-            cell.fileStatusImage?.image = utility.loadImage(named: "a.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileStatusImage?.image = UIImage(resource: .Transfers.rename)
             cell.labelStatus.text = NSLocalizedString("_status_wait_rename_", comment: "") + user
             cell.labelInfo.text = ""
         case NCGlobal.shared.metadataStatusWaitDownload:
-            cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileStatusImage?.image = UIImage(resource: .Transfers.waitToDownload)
             cell.labelStatus.text = NSLocalizedString("_status_wait_download_", comment: "") + user
             cell.labelInfo.text = utilityFileSystem.transformedSize(metadata.size)
         case NCGlobal.shared.metadataStatusDownloading:
             if #available(iOS 17.0, *) {
-                cell.fileStatusImage?.image = utility.loadImage(named: "arrowshape.down.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+                cell.fileStatusImage?.image = UIImage(resource: .Transfers.downloading)
             }
             cell.labelStatus.text = NSLocalizedString("_status_downloading_", comment: "") + user
             cell.labelInfo.text = utilityFileSystem.transformedSize(metadata.size) + " - " + self.utilityFileSystem.transformedSize(transfer.totalBytes)
         case NCGlobal.shared.metadataStatusWaitUpload:
-            cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileStatusImage?.image = UIImage(resource: .Transfers.upload)
             cell.labelStatus.text = NSLocalizedString("_status_wait_upload_", comment: "") + user
             cell.labelInfo.text = ""
         case NCGlobal.shared.metadataStatusUploading:
             if #available(iOS 17.0, *) {
-                cell.fileStatusImage?.image = utility.loadImage(named: "arrowshape.up.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+                cell.fileStatusImage?.image = UIImage(resource: .Transfers.upload)
             }
             cell.labelStatus.text = NSLocalizedString("_status_uploading_", comment: "") + user
             cell.labelInfo.text = utilityFileSystem.transformedSize(metadata.size) + " - " + self.utilityFileSystem.transformedSize(transfer.totalBytes)
         case NCGlobal.shared.metadataStatusDownloadError, NCGlobal.shared.metadataStatusUploadError:
-            cell.fileStatusImage?.image = utility.loadImage(named: "exclamationmark.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileStatusImage?.image = UIImage(resource: .Transfers.error)
             cell.labelStatus.text = NSLocalizedString("_status_upload_error_", comment: "") + user
             cell.labelInfo.text = metadata.sessionError
         default:
@@ -334,12 +332,11 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
     // MARK: - DataSource
 
     override func reloadDataSource() {
-        if let results = self.database.getResultsMetadatas(predicate: NSPredicate(format: "status != %i", NCGlobal.shared.metadataStatusNormal), sortedByKeyPath: "sessionDate", ascending: true) {
+		self.dataSource.removeAll()
+		if let results = self.database.getResultsMetadatas(predicate: NSPredicate(format: "status != %i", NCGlobal.shared.metadataStatusNormal), sortedByKeyPath: "sessionDate", ascending: true) {
             self.dataSource = NCCollectionViewDataSource(metadatas: Array(results.freeze()), layoutForView: layoutForView)
-        } else {
-            self.dataSource.removeAll()
         }
-
+		
         if self.dataSource.isEmpty() {
             NCTransferProgress.shared.removeAll()
         }

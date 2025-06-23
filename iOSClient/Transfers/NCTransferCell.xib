@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -24,7 +25,7 @@
                         </constraints>
                     </imageView>
                     <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Lke-FT-z5B" userLabel="imageStatus">
-                        <rect key="frame" x="5" y="62.5" width="15" height="15"/>
+                        <rect key="frame" x="35" y="57.5" width="15" height="15"/>
                         <constraints>
                             <constraint firstAttribute="height" constant="15" id="OVp-IJ-vJW"/>
                             <constraint firstAttribute="width" constant="15" id="uDO-gm-VQC"/>
@@ -33,25 +34,25 @@
                     <label opaque="NO" userInteractionEnabled="NO" tag="101" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UtT-L6-mgW" userLabel="labelTitle">
                         <rect key="frame" x="60" y="10" width="470" height="18"/>
                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                        <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="textColor" name="Transfers/Cell/Title"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <label opaque="NO" userInteractionEnabled="NO" tag="102" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="headTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xC4-B0-Jx5" userLabel="labelPath">
                         <rect key="frame" x="60" y="33" width="470" height="15"/>
                         <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                        <color key="textColor" red="0.59999999999999998" green="0.59999999999999998" blue="0.59999999999999998" alpha="1" colorSpace="calibratedRGB"/>
+                        <color key="textColor" name="Transfers/Cell/Subtitle"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <label opaque="NO" userInteractionEnabled="NO" tag="102" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DKc-ve-Fut" userLabel="labelStatus">
                         <rect key="frame" x="60" y="53" width="470" height="15"/>
                         <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                        <color key="textColor" red="0.59999999999999998" green="0.59999999999999998" blue="0.59999999999999998" alpha="1" colorSpace="calibratedRGB"/>
+                        <color key="textColor" name="Transfers/Cell/Subtitle"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <label opaque="NO" userInteractionEnabled="NO" tag="102" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="AXX-71-9Q6" userLabel="labelInfo">
                         <rect key="frame" x="60" y="73" width="470" height="15"/>
                         <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                        <color key="textColor" red="0.59999999999999998" green="0.59999999999999998" blue="0.59999999999999998" alpha="1" colorSpace="calibratedRGB"/>
+                        <color key="textColor" name="Transfers/Cell/Subtitle"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yhy-xd-w5C" userLabel="buttonMore">
@@ -66,6 +67,7 @@
                     </button>
                     <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="dgL-g5-Nkc" userLabel="imageMore">
                         <rect key="frame" x="560" y="37.5" width="30" height="30"/>
+                        <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="30" id="05P-NL-pd8"/>
                             <constraint firstAttribute="height" constant="30" id="Jet-eo-x1M" userLabel="height = 20"/>
@@ -85,10 +87,10 @@
                 </subviews>
             </view>
             <constraints>
-                <constraint firstItem="Lke-FT-z5B" firstAttribute="bottom" secondItem="w2m-Vw-hpd" secondAttribute="bottom" constant="5" id="0bv-TH-AYR"/>
+                <constraint firstItem="Lke-FT-z5B" firstAttribute="bottom" secondItem="w2m-Vw-hpd" secondAttribute="bottom" id="0bv-TH-AYR"/>
                 <constraint firstItem="yhy-xd-w5C" firstAttribute="leading" secondItem="UtT-L6-mgW" secondAttribute="trailing" constant="20" id="0mZ-7F-0PA"/>
                 <constraint firstItem="DKc-ve-Fut" firstAttribute="leading" secondItem="w2m-Vw-hpd" secondAttribute="trailing" constant="10" id="1Wd-fR-dPa"/>
-                <constraint firstItem="Lke-FT-z5B" firstAttribute="leading" secondItem="w2m-Vw-hpd" secondAttribute="leading" constant="-5" id="2E3-Vh-1Xu"/>
+                <constraint firstItem="Lke-FT-z5B" firstAttribute="leading" secondItem="w2m-Vw-hpd" secondAttribute="trailing" constant="-15" id="2E3-Vh-1Xu"/>
                 <constraint firstItem="yhy-xd-w5C" firstAttribute="leading" secondItem="xC4-B0-Jx5" secondAttribute="trailing" constant="20" id="65A-rb-j0P"/>
                 <constraint firstAttribute="bottom" secondItem="Egg-cb-EhZ" secondAttribute="bottom" id="81D-sw-EaX"/>
                 <constraint firstItem="yhy-xd-w5C" firstAttribute="leading" secondItem="AXX-71-9Q6" secondAttribute="trailing" constant="20" id="8wT-RR-eUz"/>
@@ -129,4 +131,12 @@
             <point key="canvasLocation" x="97.599999999999994" y="144.3778110944528"/>
         </collectionViewCell>
     </objects>
+    <resources>
+        <namedColor name="Transfers/Cell/Subtitle">
+            <color red="0.27450980392156865" green="0.35294117647058826" blue="0.45882352941176469" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="Transfers/Cell/Title">
+            <color red="0.0" green="0.10588235294117647" blue="0.25490196078431371" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
 </document>
