@@ -118,7 +118,7 @@ class NCShareNetworking: NSObject {
                     self.updateShare(template, downloadLimit: downloadLimit)
                     // Download limit update should happen implicitly on share update.
                 } else {
-                    if case let .limited(limit, _) = downloadLimit {
+                    if case let .limited(limit, _) = downloadLimit, share.itemType != "folder" {
                         self.setShareDownloadLimit(limit, token: share.token)
                     }
                 }
@@ -158,11 +158,13 @@ class NCShareNetworking: NSObject {
                 self.database.addShare(account: self.metadata.account, home: home, shares: [share])
                 self.delegate?.readShareCompleted()
 
-                if case let .limited(limit, _) = downloadLimit {
-                    self.setShareDownloadLimit(limit, token: share.token)
-                } else {
-                    self.removeShareDownloadLimit(token: share.token)
-                }
+				if share.itemType != "folder" {
+					if case let .limited(limit, _) = downloadLimit {
+						self.setShareDownloadLimit(limit, token: share.token)
+					} else {
+						self.removeShareDownloadLimit(token: share.token)
+					}
+				}
 
                 NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterUpdateShare, userInfo: ["account": self.metadata.account, "serverUrl": self.metadata.serverUrl])
             } else {
