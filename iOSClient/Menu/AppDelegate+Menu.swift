@@ -29,21 +29,20 @@ import FloatingPanel
 import NextcloudKit
 
 extension AppDelegate {
-
     func toggleMenu(controller: NCMainTabBarController) {
         var actions: [NCMenuAction] = []
-        let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
-        let directEditingCreators = NCManageDatabase.shared.getDirectEditingCreators(account: appDelegate.account)
+        let session = NCSession.shared.getSession(controller: controller)
+        let directEditingCreators = NCManageDatabase.shared.getDirectEditingCreators(account: session.account)
         let serverUrl = controller.currentServerUrl()
-        let isDirectoryE2EE = NCUtilityFileSystem().isDirectoryE2EE(serverUrl: serverUrl, userBase: appDelegate)
-        let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", appDelegate.account, serverUrl))
+        let isDirectoryE2EE = NCUtilityFileSystem().isDirectoryE2EE(serverUrl: serverUrl, account: session.account)
+        let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", session.account, serverUrl))
         let utility = NCUtility()
 		let canCreateOfficeFiles = false
 		
         actions.append(
             NCMenuAction(
                 title: NSLocalizedString("_upload_photos_videos_", comment: ""), icon: NCImagesRepository.menuIconUploadPhotosVideos, action: { _ in
-                    NCAskAuthorization().askAuthorizationPhotoLibrary(viewController: controller) { hasPermission in
+                    NCAskAuthorization().askAuthorizationPhotoLibrary(controller: controller) { hasPermission in
                         if hasPermission {NCPhotosPickerViewController(controller: controller, maxSelectedAssets: 0, singleSelectedMode: false)
                         }
                     }
@@ -67,7 +66,7 @@ extension AppDelegate {
             )
         )
 
-        if NCKeychain().isEndToEndEnabled(account: appDelegate.account) {
+        if NCKeychain().isEndToEndEnabled(account: session.account) {
             actions.append(.seperator(order: 0))
         }
 
@@ -76,25 +75,25 @@ extension AppDelegate {
         actions.append(
             NCMenuAction(title: titleCreateFolder,
                          icon: imageCreateFolder, action: { _ in
-                             let alertController = UIAlertController.createFolder(serverUrl: serverUrl, userBaseUrl: appDelegate, sceneIdentifier: controller.sceneIdentifier)
+                             let alertController = UIAlertController.createFolder(serverUrl: serverUrl, session: session, sceneIdentifier: controller.sceneIdentifier)
                              controller.present(alertController, animated: true, completion: nil)
                          }
                         )
         )
 
         // Folder encrypted
-        if !isDirectoryE2EE && NCKeychain().isEndToEndEnabled(account: appDelegate.account) {
+        if !isDirectoryE2EE && NCKeychain().isEndToEndEnabled(account: session.account) {
             actions.append(
                 NCMenuAction(title: NSLocalizedString("_create_folder_e2ee_", comment: ""),
                              icon: NCImagesRepository.menuIconCreateFolder,
                              action: { _ in
-                                 let alertController = UIAlertController.createFolder(serverUrl: serverUrl, userBaseUrl: appDelegate, markE2ee: true, sceneIdentifier: controller.sceneIdentifier)
+                                 let alertController = UIAlertController.createFolder(serverUrl: serverUrl, session: session, markE2ee: true, sceneIdentifier: controller.sceneIdentifier)
                                  controller.present(alertController, animated: true, completion: nil)
                              })
             )
         }
 
-        if NCKeychain().isEndToEndEnabled(account: appDelegate.account) {
+        if NCKeychain().isEndToEndEnabled(account: session.account) {
             actions.append(.seperator(order: 0))
         }
 
@@ -111,11 +110,11 @@ extension AppDelegate {
                         let createDocument = NCCreateDocument()
 
                         Task {
-                            let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorOnlyoffice, templateId: NCGlobal.shared.templateDocument)
-                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: appDelegate.account, serverUrl: serverUrl)
-                            let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, urlBase: appDelegate.urlBase, userId: appDelegate.userId)
+                            let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorOnlyoffice, templateId: NCGlobal.shared.templateDocument, account: session.account)
+                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+                            let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
 
-                            createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorOnlyoffice, creatorId: directEditingCreator.identifier, templateId: templates.selectedTemplate.identifier)
+                            createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorOnlyoffice, creatorId: directEditingCreator.identifier, templateId: templates.selectedTemplate.identifier, account: session.account)
                         }
                     }
                 )
@@ -130,11 +129,11 @@ extension AppDelegate {
                         let createDocument = NCCreateDocument()
 
                         Task {
-                            let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorOnlyoffice, templateId: NCGlobal.shared.templateSpreadsheet)
-                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: appDelegate.account, serverUrl: serverUrl)
-                            let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, urlBase: appDelegate.urlBase, userId: appDelegate.userId)
+                            let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorOnlyoffice, templateId: NCGlobal.shared.templateSpreadsheet, account: session.account)
+                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+                            let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
 
-                            createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorOnlyoffice, creatorId: directEditingCreator.identifier, templateId: templates.selectedTemplate.identifier)
+                            createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorOnlyoffice, creatorId: directEditingCreator.identifier, templateId: templates.selectedTemplate.identifier, account: session.account)
                         }
                     }
                 )
@@ -149,18 +148,18 @@ extension AppDelegate {
                         let createDocument = NCCreateDocument()
 
                         Task {
-                            let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorOnlyoffice, templateId: NCGlobal.shared.templatePresentation)
-                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: appDelegate.account, serverUrl: serverUrl)
-                            let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, urlBase: appDelegate.urlBase, userId: appDelegate.userId)
+                            let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorOnlyoffice, templateId: NCGlobal.shared.templatePresentation, account: session.account)
+                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+                            let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
 
-                            createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorOnlyoffice, creatorId: directEditingCreator.identifier, templateId: templates.selectedTemplate.identifier)
+                            createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorOnlyoffice, creatorId: directEditingCreator.identifier, templateId: templates.selectedTemplate.identifier, account: session.account)
                         }
                     }
                 )
             )
         }
 
-        if NCGlobal.shared.capabilityRichDocumentsEnabled {
+        if NCCapabilities.shared.getCapabilities(account: session.account).capabilityRichDocumentsEnabled {
             if NextcloudKit.shared.isNetworkReachable() && !isDirectoryE2EE {
                 actions.append(
                     NCMenuAction(
@@ -168,11 +167,11 @@ extension AppDelegate {
                             let createDocument = NCCreateDocument()
 
                             Task {
-                                let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorCollabora, templateId: NCGlobal.shared.templateDocument)
-                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: appDelegate.account, serverUrl: serverUrl)
-                                let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, urlBase: appDelegate.urlBase, userId: appDelegate.userId)
+                                let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorCollabora, templateId: NCGlobal.shared.templateDocument, account: session.account)
+                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+                                let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
 
-                                createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorCollabora, templateId: templates.selectedTemplate.identifier)
+                                createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorCollabora, templateId: templates.selectedTemplate.identifier, account: session.account)
                             }
                         }
                     )
@@ -184,11 +183,11 @@ extension AppDelegate {
                             let createDocument = NCCreateDocument()
 
                             Task {
-                                let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorCollabora, templateId: NCGlobal.shared.templateSpreadsheet)
-                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: appDelegate.account, serverUrl: serverUrl)
-                                let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, urlBase: appDelegate.urlBase, userId: appDelegate.userId)
+                                let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorCollabora, templateId: NCGlobal.shared.templateSpreadsheet, account: session.account)
+                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+                                let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
 
-                                createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorCollabora, templateId: templates.selectedTemplate.identifier)
+                                createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorCollabora, templateId: templates.selectedTemplate.identifier, account: session.account)
                             }
                         }
                     )
@@ -200,11 +199,11 @@ extension AppDelegate {
                             let createDocument = NCCreateDocument()
 
                             Task {
-                                let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorCollabora, templateId: NCGlobal.shared.templatePresentation)
-                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: appDelegate.account, serverUrl: serverUrl)
-                                let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, urlBase: appDelegate.urlBase, userId: appDelegate.userId)
+                                let templates = await createDocument.getTemplate(editorId: NCGlobal.shared.editorCollabora, templateId: NCGlobal.shared.templatePresentation, account: session.account)
+                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+                                let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
 
-                                createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorCollabora, templateId: templates.selectedTemplate.identifier)
+                                createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: NCGlobal.shared.editorCollabora, templateId: templates.selectedTemplate.identifier, account: session.account)
                             }
                         }
                     )

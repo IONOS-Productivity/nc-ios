@@ -40,13 +40,13 @@ struct NCAccountSettingsView: View {
         NavigationView {
             Form {
                   Section {
-                    if let activeAccount = model.activeAccount {
+                      if let activeAccount = model.tblAccount {
                         let userStatus = model.getUserStatus()
                         AccountView(account: activeAccount, userStatus: userStatus).listRowSeparator(.hidden)
                         PersonalDataView(account: activeAccount)
                     }
                     changeAliasSection
-                    if NCGlobal.shared.capabilityUserStatusEnabled {
+                    if NCCapabilities.shared.getCapabilities(account: model.tblAccount?.account).capabilityUserStatusEnabled {
                         userStatusButtonView
                     }
                     if model.isAdminGroup() {
@@ -79,7 +79,7 @@ struct NCAccountSettingsView: View {
             }
         }
         .onDisappear {
-            model.delegate?.accountSettingsDidDismiss(tableAccount: model.activeAccount)
+            model.delegate?.accountSettingsDidDismiss(tableAccount: model.tblAccount, controller: model.controller)
         }
     }
 }
@@ -87,50 +87,50 @@ struct NCAccountSettingsView: View {
 extension NCAccountSettingsView {
     
     private var changeAliasSection: some View {
-        VStack {
-            HStack {
-                Text(NSLocalizedString("_alias_", comment: "") + ":")
-                    .font(.system(size: 17))
-                    .fontWeight(.medium)
-                Spacer()
-                TextField(NSLocalizedString("_alias_placeholder_", comment: ""), text: $model.alias)
-                    .font(.system(size: 16))
-                    .multilineTextAlignment(.trailing)
-                    .onChange(of: model.alias) { newValue in
-                        model.setAlias(newValue)
-                    }
-            }
-            Text(NSLocalizedString("_alias_footer_", comment: ""))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .font(.system(size: 12))
-                .lineLimit(2)
-                .foregroundStyle(Color(UIColor.lightGray))
-        }
+		VStack {
+			HStack {
+				Text(NSLocalizedString("_alias_", comment: "") + ":")
+					.fontWeight(.medium)
+				Spacer()
+				TextField(NSLocalizedString("_alias_placeholder_", comment: ""), text: $model.alias)
+					.font(.callout)
+					.multilineTextAlignment(.trailing)
+					.onChange(of: model.alias) { newValue in
+						model.setAlias(newValue)
+					}
+			}
+			Text(NSLocalizedString("_alias_footer_", comment: ""))
+				.frame(maxWidth: .infinity, alignment: .leading)
+				.font(.caption)
+				.lineLimit(2)
+				.foregroundStyle(Color(UIColor.lightGray))
+		}
     }
     
     private var userStatusButtonView: some View {
-        Button(action: {
-            showUserStatus = true
-        }, label: {
-            HStack {
-                Image(systemName: "moon.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .font(Font.system(.body).weight(.light))
-                    .frame(width: 20, height: 20)
-                    .foregroundStyle(Color(NCBrandColor.shared.iconImageColor))
-                Text(NSLocalizedString("_set_user_status_", comment: ""))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .foregroundStyle(Color(NCBrandColor.shared.textColor))
-                    .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
-            }
-            .font(.system(size: 14))
-        })
-        .sheet(isPresented: $showUserStatus) {
-            UserStatusView(showUserStatus: $showUserStatus)
-        }
-        .onChange(of: showUserStatus) { _ in }
+		Button(action: {
+			showUserStatus = true
+		}, label: {
+			HStack {
+				Image(systemName: "moon.fill")
+					.resizable()
+					.scaledToFit()
+					.font(Font.system(.body).weight(.light))
+					.frame(width: 20, height: 20)
+					.foregroundStyle(Color(NCBrandColor.shared.iconImageColor))
+				Text(NSLocalizedString("_set_user_status_", comment: ""))
+					.lineLimit(1)
+					.truncationMode(.middle)
+					.foregroundStyle(Color(NCBrandColor.shared.textColor))
+					.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
+			}
+		})
+		.sheet(isPresented: $showUserStatus) {
+			if let account = model.tblAccount?.account {
+				UserStatusView(showUserStatus: $showUserStatus, account: account)
+			}
+		}
+		.onChange(of: showUserStatus) { _ in }
     }
     
     private var sertificateDetailsButtonView: some View {
@@ -150,10 +150,9 @@ extension NCAccountSettingsView {
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
             }
-            .font(.system(size: 14))
         })
         .sheet(isPresented: $showServerCertificate) {
-            if let url = URL(string: model.activeAccount?.urlBase), let host = url.host {
+            if let url = URL(string: model.tblAccount?.urlBase), let host = url.host {
                 certificateDetailsView(host: host, title: NSLocalizedString("_certificate_view_", comment: ""))
             }
         }
@@ -176,7 +175,6 @@ extension NCAccountSettingsView {
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
             }
-            .font(.system(size: 14))
         })
         .sheet(isPresented: $showPushCertificate) {
             if let url = URL(string: NCBrandOptions.shared.pushNotificationServerProxy), let host = url.host {
@@ -186,13 +184,13 @@ extension NCAccountSettingsView {
     }
     
     private var switchAccountSection: some View {
-        let allAccounts = model.accounts
+        let allAccounts = model.tblAccounts
         return ForEach(0..<allAccounts.count, id: \.self) { index in
             let tableAccount = allAccounts[index]
             Button(action: {
                 model.setAccount(account: tableAccount.account)
             }) {
-                SwitchAccountRowView(account:tableAccount, isSelected: tableAccount.account == model.activeAccount?.account)
+                SwitchAccountRowView(account:tableAccount, isSelected: tableAccount.account == model.tblAccount?.account)
             }
         }
     }
@@ -214,7 +212,6 @@ extension NCAccountSettingsView {
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
             }
-            .font(.system(size: 16))
         })
     }
     
@@ -236,7 +233,6 @@ extension NCAccountSettingsView {
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
             }
-            .font(.system(size: 16))
         })
         .alert(NSLocalizedString("_want_delete_account_", comment: ""), isPresented: $showDeleteAccountAlert) {
             Button(NSLocalizedString("_remove_local_account_", comment: ""), role: .destructive) {
@@ -258,14 +254,13 @@ struct AccountView: View {
         VStack {
             UserImageView(avatar: userAvatar, onlineStatus: userStatus.statusImage)
             Text(account.displayName)
-                .font(.system(size: 16))
             Spacer().frame(height: 10)
             Text(userStatus.statusMessage)
-                .font(.system(size: 10))
             Spacer().frame(height: 20)
-        }.font(.system(size: 14))
+        }
     }
 }
+
 
 struct PersonalDataView: View {
     let account: tableAccount
@@ -281,7 +276,7 @@ struct PersonalDataView: View {
             if !account.address.isEmpty {
                 PersonalDataRow(icon: "house", data: account.address)
             }
-         }.font(.system(size: 14))
+         }
     }
 }
 
@@ -339,7 +334,7 @@ struct SwitchAccountRowView: View {
 
     var body: some View {
         let userName = account.alias.isEmpty ? account.displayName : account.alias
-        let userAvatar = NCUtility().userImage
+        let userAvatar = NCUtility().loadUserImage(for: account.user, displayName: account.displayName, urlBase: account.urlBase)
         
         HStack {
             Image(uiImage: UIImage(resource:.accountCheckmark))
@@ -352,11 +347,10 @@ struct SwitchAccountRowView: View {
                 Text(userName)
                     .foregroundStyle(Color(NCBrandColor.shared.textColor))
                     .padding(.trailing, 20)
-                    .font(.system(size: 17))
                 Text(account.email)
+					.font(.callout)
                     .foregroundStyle(Color(UIColor.lightGray))
                     .padding(.trailing, 20)
-                    .font(.system(size: 16))
             }
             .lineLimit(1)
             Spacer()
@@ -366,10 +360,9 @@ struct SwitchAccountRowView: View {
                 .frame(width: 35, height: 35)
                 .foregroundStyle(Color(NCBrandColor.shared.iconImageColor))
         }
-        .font(.system(size: 14))
     }
 }
 
 #Preview {
-    NCAccountSettingsView(model: NCAccountSettingsModel(delegate: nil))
+    NCAccountSettingsView(model: NCAccountSettingsModel(controller: nil, delegate: nil))
 }

@@ -33,7 +33,7 @@
                     <rect key="frame" x="177.66666666666666" y="5" width="20" height="20"/>
                 </activityIndicatorView>
                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="s2m-yO-4x0" userLabel="separator">
-                    <rect key="frame" x="50" y="30" width="275" height="1"/>
+                    <rect key="frame" x="0.0" y="30" width="375" height="1"/>
                     <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                     <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                     <constraints>
@@ -47,22 +47,21 @@
                     <nil key="highlightedColor"/>
                 </label>
             </subviews>
-            <viewLayoutGuide key="safeArea" id="EFn-SN-cxu"/>
             <constraints>
-                <constraint firstItem="qWG-SR-Qly" firstAttribute="centerX" secondItem="EFn-SN-cxu" secondAttribute="centerX" id="18M-RP-YIn"/>
-                <constraint firstItem="EFn-SN-cxu" firstAttribute="trailing" secondItem="TK1-KX-Qe0" secondAttribute="trailing" constant="10" id="PoY-CD-99O"/>
+                <constraint firstItem="qWG-SR-Qly" firstAttribute="centerX" secondItem="Vin-9E-7nW" secondAttribute="centerX" id="18M-RP-YIn"/>
+                <constraint firstAttribute="trailing" secondItem="TK1-KX-Qe0" secondAttribute="trailing" constant="10" id="PoY-CD-99O"/>
                 <constraint firstAttribute="trailing" secondItem="gzy-cT-Gjn" secondAttribute="trailing" constant="10" id="QzY-ac-CRO"/>
-                <constraint firstItem="EFn-SN-cxu" firstAttribute="leading" secondItem="s2m-yO-4x0" secondAttribute="leading" id="ai4-Qy-YWi"/>
+                <constraint firstAttribute="leading" secondItem="s2m-yO-4x0" secondAttribute="leading" id="ai4-Qy-YWi"/>
                 <constraint firstItem="gzy-cT-Gjn" firstAttribute="centerY" secondItem="Vin-9E-7nW" secondAttribute="centerY" constant="-30" id="avP-sX-JB5">
                     <variation key="heightClass=compact-widthClass=regular" constant="-15"/>
                     <variation key="heightClass=regular-widthClass=compact" constant="-15"/>
                 </constraint>
                 <constraint firstItem="qWG-SR-Qly" firstAttribute="centerY" secondItem="TK1-KX-Qe0" secondAttribute="centerY" id="baS-g9-E8a"/>
-                <constraint firstItem="EFn-SN-cxu" firstAttribute="trailing" secondItem="s2m-yO-4x0" secondAttribute="trailing" id="dWj-wQ-cfb"/>
+                <constraint firstAttribute="trailing" secondItem="s2m-yO-4x0" secondAttribute="trailing" id="dWj-wQ-cfb"/>
                 <constraint firstItem="TK1-KX-Qe0" firstAttribute="bottom" secondItem="s2m-yO-4x0" secondAttribute="bottom" constant="-1" id="ekM-Ii-N58"/>
                 <constraint firstItem="gzy-cT-Gjn" firstAttribute="leading" secondItem="Vin-9E-7nW" secondAttribute="leading" constant="10" id="hZz-MT-pHg"/>
-                <constraint firstItem="TK1-KX-Qe0" firstAttribute="top" secondItem="EFn-SN-cxu" secondAttribute="top" id="qRR-61-ojt"/>
-                <constraint firstItem="TK1-KX-Qe0" firstAttribute="leading" secondItem="EFn-SN-cxu" secondAttribute="leading" constant="10" id="xqA-FX-AlG"/>
+                <constraint firstItem="TK1-KX-Qe0" firstAttribute="top" secondItem="Vin-9E-7nW" secondAttribute="top" id="qRR-61-ojt"/>
+                <constraint firstItem="TK1-KX-Qe0" firstAttribute="leading" secondItem="Vin-9E-7nW" secondAttribute="leading" constant="10" id="xqA-FX-AlG"/>
             </constraints>
             <connections>
                 <outlet property="activityIndicatorSection" destination="qWG-SR-Qly" id="t9x-qH-lxP"/>

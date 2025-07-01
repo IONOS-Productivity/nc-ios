@@ -28,7 +28,7 @@ import NextcloudKit
 
 extension NCShare {
     func toggleShareMenu(for share: tableShare) {
-
+        let capabilities = NCCapabilities.shared.getCapabilities(account: self.metadata.account)
         var actions = [NCMenuAction]()
 
         if share.shareType == 3, canReshare {
@@ -47,6 +47,7 @@ extension NCShare {
             NCMenuAction(
                 title: NSLocalizedString("_details_", comment: ""),
                 icon: NCImagesRepository.menuIconDetails,
+                accessibilityIdentifier: "shareMenu/details",
                 action: { _ in
                     guard
                         let advancePermission = UIStoryboard(name: "NCShare", bundle: nil).instantiateViewController(withIdentifier: "NCShareAdvancePermission") as? NCShareAdvancePermission,
@@ -55,6 +56,11 @@ extension NCShare {
                     advancePermission.share = tableShare(value: share)
                     advancePermission.oldTableShare = tableShare(value: share)
                     advancePermission.metadata = self.metadata
+
+                    if let downloadLimit = try? self.database.getDownloadLimit(byAccount: self.metadata.account, shareToken: share.token) {
+                        advancePermission.downloadLimit = .limited(limit: downloadLimit.limit, count: downloadLimit.count)
+                    }
+
                     navigationController.pushViewController(advancePermission, animated: true)
                 }
             )
@@ -67,13 +73,13 @@ extension NCShare {
                 icon: NCImagesRepository.menuIconUnshare,
                 action: { _ in
                     Task {
-                        if share.shareType != NCShareCommon().SHARE_TYPE_LINK, let metadata = self.metadata, metadata.e2eEncrypted && NCGlobal.shared.capabilityE2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
+                        if share.shareType != NCShareCommon().SHARE_TYPE_LINK, let metadata = self.metadata, metadata.e2eEncrypted && capabilities.capabilityE2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
                             let serverUrl = metadata.serverUrl + "/" + metadata.fileName
                             if NCNetworkingE2EE().isInUpload(account: metadata.account, serverUrl: serverUrl) {
                                 let error = NKError(errorCode: NCGlobal.shared.errorE2EEUploadInProgress, errorDescription: NSLocalizedString("_e2e_in_upload_", comment: ""))
                                 return NCContentPresenter().showInfo(error: error)
                             }
-                            let error = await NCNetworkingE2EE().uploadMetadata(account: metadata.account, serverUrl: serverUrl, userId: metadata.userId, addUserId: nil, removeUserId: share.shareWith)
+                            let error = await NCNetworkingE2EE().uploadMetadata(serverUrl: serverUrl, addUserId: nil, removeUserId: share.shareWith, account: metadata.account)
                             if error != .success {
                                 return NCContentPresenter().showError(error: error)
                             }
@@ -135,6 +141,18 @@ extension NCShare {
     func updateSharePermissions(share: tableShare, permissions: Int) {
         let updatedShare = tableShare(value: share)
         updatedShare.permissions = permissions
-        networking?.updateShare(option: updatedShare)
+
+        var downloadLimit: DownloadLimitViewModel = .unlimited
+
+        do {
+            if let model = try database.getDownloadLimit(byAccount: metadata.account, shareToken: updatedShare.token) {
+                downloadLimit = .limited(limit: model.limit, count: model.count)
+            }
+        } catch {
+            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Failed to get download limit from database!")
+            return
+        }
+
+        networking?.updateShare(updatedShare, downloadLimit: downloadLimit)
     }
 }

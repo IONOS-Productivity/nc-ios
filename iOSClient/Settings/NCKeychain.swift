@@ -41,6 +41,18 @@ import KeychainAccess
         }
     }
 
+    var showRecommendedFiles: Bool {
+        get {
+            if let value = try? keychain.get("showRecommendedFiles"), let result = Bool(value) {
+                return result
+            }
+            return true
+        }
+        set {
+            keychain["showRecommendedFiles"] = String(newValue)
+        }
+    }
+
     var typeFilterScanDocument: NCGlobal.TypeFilterScanDocument {
         get {
             if let rawValue = try? keychain.get("ScanDocumentTypeFilter"), let value = NCGlobal.TypeFilterScanDocument(rawValue: rawValue) {
@@ -355,6 +367,30 @@ import KeychainAccess
         }
     }
 
+    var screenAwakeMode: AwakeMode {
+        get {
+            if let value = try? keychain.get("screenAwakeMode") {
+                if value == "off" {
+                    return .off
+                } else if value == "on" {
+                    return .on
+                } else {
+                    return .whileCharging
+                }
+            }
+            return .off
+        }
+        set {
+            if newValue == .off {
+                keychain["screenAwakeMode"] = "off"
+            } else if newValue == .on {
+                keychain["screenAwakeMode"] = "on"
+            } else {
+                keychain["screenAwakeMode"] = "whileCharging"
+            }
+        }
+    }
+
     var fileNameType: Bool {
         get {
             if let value = try? keychain.get("fileNameType"), let result = Bool(value) {
@@ -419,6 +455,22 @@ import KeychainAccess
         }
     }
 
+    /* OBSOLETE
+    func setDirectoryOnTop(account: String, value: Bool) {
+        let key = "directoryOnTop" + account
+        keychain[key] = String(value)
+    }
+
+    func getDirectoryOnTop(account: String) -> Bool {
+        let key = "directoryOnTop" + account
+        if let value = try? keychain.get(key), let result = Bool(value) {
+            return result
+        } else {
+            return true
+        }
+    }
+    */
+
     // MARK: - E2EE
 
     func getEndToEndCertificate(account: String) -> String? {
@@ -466,11 +518,12 @@ import KeychainAccess
     }
 
     func isEndToEndEnabled(account: String) -> Bool {
+        let capabilities = NCCapabilities.shared.getCapabilities(account: account)
         guard let certificate = getEndToEndCertificate(account: account), !certificate.isEmpty,
               let publicKey = getEndToEndPublicKey(account: account), !publicKey.isEmpty,
               let privateKey = getEndToEndPrivateKey(account: account), !privateKey.isEmpty,
               let passphrase = getEndToEndPassphrase(account: account), !passphrase.isEmpty,
-              NCGlobal.shared.e2eeVersions.contains(NCGlobal.shared.capabilityE2EEApiVersion) else { return false }
+              NCGlobal.shared.e2eeVersions.contains(capabilities.capabilityE2EEApiVersion) else { return false }
         return true
     }
 
@@ -570,6 +623,18 @@ import KeychainAccess
         let password = keychain[key]
 
         return (data, password)
+    }
+
+    // MARK: - Albums
+
+    func setAutoUploadAlbumIds(account: String, albumIds: [String]) {
+        let key = "AlbumIds" + account
+        keychain[key] = albumIds.joined(separator: ",")
+    }
+
+    func getAutoUploadAlbumIds(account: String) -> [String] {
+        let key = "AlbumIds" + account
+        return (try? keychain.get(key)?.components(separatedBy: ",")) ?? []
     }
 
     // MARK: -

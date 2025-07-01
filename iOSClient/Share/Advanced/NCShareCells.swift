@@ -26,29 +26,29 @@ import UIKit
 
 protocol NCShareCellConfig {
     var title: String { get }
-    func getCell(for share: NCTableShareable) -> UITableViewCell
-    func didSelect(for share: NCTableShareable)
+    func getCell(for share: Shareable) -> UITableViewCell
+    func didSelect(for share: Shareable)
 }
 
 protocol NCToggleCellConfig: NCShareCellConfig {
-    func isOn(for share: NCTableShareable) -> Bool
-    func didChange(_ share: NCTableShareable, to newValue: Bool)
+    func isOn(for share: Shareable) -> Bool
+    func didChange(_ share: Shareable, to newValue: Bool)
 }
 
 extension NCToggleCellConfig {
-    func getCell(for share: NCTableShareable) -> UITableViewCell {
+    func getCell(for share: Shareable) -> UITableViewCell {
         return NCShareToggleCell(isOn: isOn(for: share), customIcons: (.checkmarkIcon, nil))
     }
 
-    func didSelect(for share: NCTableShareable) {
+    func didSelect(for share: Shareable) {
         didChange(share, to: !isOn(for: share))
     }
 }
 
 protocol NCPermission: NCToggleCellConfig {
     static var forDirectory: [Self] { get }
-    static var forDirectoryE2EE: [Self] { get }
     static var forFile: [Self] { get }
+    static func forDirectoryE2EE(account: String) -> [NCPermission]
     func hasResharePermission(for parentPermission: Int) -> Bool
     func hasDownload() -> Bool
 }
@@ -73,7 +73,7 @@ enum NCUserPermission: CaseIterable, NCPermission {
         }
     }
 
-    func didChange(_ share: NCTableShareable, to newValue: Bool) {
+    func didChange(_ share: Shareable, to newValue: Bool) {
         if self == .download {
             share.attributes = NCManageDatabase.shared.setAttibuteDownload(state: newValue)
         } else {
@@ -81,7 +81,7 @@ enum NCUserPermission: CaseIterable, NCPermission {
         }
     }
 
-    func isOn(for share: NCTableShareable) -> Bool {
+    func isOn(for share: Shareable) -> Bool {
         if self == .download {
             return NCManageDatabase.shared.isAttributeDownloadEnabled(attributes: share.attributes)
         } else {
@@ -89,9 +89,15 @@ enum NCUserPermission: CaseIterable, NCPermission {
         }
     }
 
+    static func forDirectoryE2EE(account: String) -> [NCPermission] {
+        if NCCapabilities.shared.getCapabilities(account: account).capabilityE2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
+            return NCUserPermission.allCases
+        }
+        return []
+    }
+
     case reshare, edit, create, delete, download
     static let forDirectory: [NCUserPermission] = NCUserPermission.allCases
-    static let forDirectoryE2EE: [NCUserPermission] = NCGlobal.shared.capabilityE2EEApiVersion == NCGlobal.shared.e2eeVersionV20 ? NCUserPermission.allCases : []
     static let forFile: [NCUserPermission] = [.reshare, .edit]
 
     var title: String {
@@ -106,8 +112,7 @@ enum NCUserPermission: CaseIterable, NCPermission {
 }
 
 enum NCLinkPermission: NCPermission {
-
-    func didChange(_ share: NCTableShareable, to newValue: Bool) {
+    func didChange(_ share: Shareable, to newValue: Bool) {
         guard self != .allowEdit || newValue else {
             share.permissions = NCPermissions().permissionReadShare
             return
@@ -158,7 +163,7 @@ enum NCLinkPermission: NCPermission {
         }
     }
 
-    func isOn(for share: NCTableShareable) -> Bool {
+    func isOn(for share: Shareable) -> Bool {
         let permissions = NCPermissions()
         switch self {
         case .allowEdit: return permissions.isAnyPermissionToEdit(share.permissions)
@@ -167,6 +172,10 @@ enum NCLinkPermission: NCPermission {
         case .fileDrop: return share.permissions == permissions.permissionCreateShare
         case .secureFileDrop: return share.permissions == permissions.permissionCreateShare
         }
+    }
+
+    static func forDirectoryE2EE(account: String) -> [NCPermission] {
+        return [NCLinkPermission.secureFileDrop]
     }
 
     var title: String {
@@ -182,13 +191,16 @@ enum NCLinkPermission: NCPermission {
     case allowEdit, viewOnly, uploadEdit, fileDrop, secureFileDrop
     static let forDirectory: [NCLinkPermission] = [.viewOnly, .uploadEdit, .fileDrop]
     static let forFile: [NCLinkPermission] = [.allowEdit]
-    static let forDirectoryE2EE: [NCLinkPermission] = [.secureFileDrop]
 }
 
+///
+/// Individual aspects of share.
+///
 enum NCShareDetails: CaseIterable, NCShareCellConfig {
-    func didSelect(for share: NCTableShareable) {
+    func didSelect(for share: Shareable) {
         switch self {
         case .hideDownload: share.hideDownload.toggle()
+        case .limitDownload: return
         case .expirationDate: return
         case .password: return
         case .note: return
@@ -196,10 +208,15 @@ enum NCShareDetails: CaseIterable, NCShareCellConfig {
         }
     }
 
-    func getCell(for share: NCTableShareable) -> UITableViewCell {
+    func getCell(for share: Shareable) -> UITableViewCell {
         switch self {
         case .hideDownload:
             return NCShareToggleCell(isOn: share.hideDownload, customIcons: (.checkmarkIcon, nil))
+        case .limitDownload:
+            let cell = UITableViewCell(style: .value1, reuseIdentifier: "downloadLimit")
+            cell.accessibilityIdentifier = "downloadLimit"
+            cell.accessoryType = .disclosureIndicator
+            return cell
         case .expirationDate:
             return NCShareDateCell(share: share)
         case .password: return NCShareToggleCell(isOn: !share.password.isEmpty, customIcons: (.itemLock, .itemLockOpen))
@@ -218,6 +235,7 @@ enum NCShareDetails: CaseIterable, NCShareCellConfig {
     var title: String {
         switch self {
         case .hideDownload: return NSLocalizedString("_share_hide_download_", comment: "")
+        case .limitDownload: return NSLocalizedString("_share_limit_download_", comment: "")
         case .expirationDate: return NSLocalizedString("_share_expiration_date_", comment: "")
         case .password: return NSLocalizedString("_share_password_protect_", comment: "")
         case .note: return NSLocalizedString("_share_note_recipient_", comment: "")
@@ -225,7 +243,7 @@ enum NCShareDetails: CaseIterable, NCShareCellConfig {
         }
     }
 
-    case label, hideDownload, expirationDate, password, note
+    case label, hideDownload, limitDownload, expirationDate, password, note
     static let forLink: [NCShareDetails] = NCShareDetails.allCases
     static let forUser: [NCShareDetails] = [.expirationDate, .note]
 }
@@ -233,15 +251,29 @@ enum NCShareDetails: CaseIterable, NCShareCellConfig {
 struct NCShareConfig {
     let permissions: [NCPermission]
     let advanced: [NCShareDetails]
-    let share: NCTableShareable
+    let share: Shareable
     let resharePermission: Int
 
-    init(parentMetadata: tableMetadata, share: NCTableShareable) {
+    init(parentMetadata: tableMetadata, share: Shareable) {
         self.share = share
         self.resharePermission = parentMetadata.sharePermissionsCollaborationServices
         let type: NCPermission.Type = share.shareType == NCShareCommon().SHARE_TYPE_LINK ? NCLinkPermission.self : NCUserPermission.self
-        self.permissions = parentMetadata.directory ? (parentMetadata.e2eEncrypted ? type.forDirectoryE2EE : type.forDirectory) : type.forFile
-        self.advanced = share.shareType == NCShareCommon().SHARE_TYPE_LINK ? NCShareDetails.forLink : NCShareDetails.forUser
+        self.permissions = parentMetadata.directory ? (parentMetadata.e2eEncrypted ? type.forDirectoryE2EE(account: parentMetadata.account) : type.forDirectory) : type.forFile
+
+        if share.shareType == NCShareCommon().SHARE_TYPE_LINK {
+            let hasDownloadLimitCapability = NCCapabilities
+                .shared
+                .getCapabilities(account: parentMetadata.account)
+                .capabilityFileSharingDownloadLimit
+
+            if parentMetadata.isDirectory || hasDownloadLimitCapability == false {
+                self.advanced = NCShareDetails.forLink.filter { $0 != .limitDownload }
+            } else {
+                self.advanced = NCShareDetails.forLink
+            }
+        } else {
+            self.advanced = NCShareDetails.forUser
+        }
     }
 
     func cellFor(indexPath: IndexPath) -> UITableViewCell? {
@@ -267,121 +299,5 @@ struct NCShareConfig {
         } else if indexPath.section == 1, indexPath.row < advanced.count {
             return advanced[indexPath.row]
         } else { return nil }
-    }
-}
-
-class NCShareToggleCell: UITableViewCell {
-    typealias CustomToggleIcon = (onIconName: ImageResource?, offIconName: ImageResource?)
-    init(isOn: Bool, customIcons: CustomToggleIcon? = nil) {
-        super.init(style: .default, reuseIdentifier: "toggleCell")
-        self.accessibilityValue = isOn ? NSLocalizedString("_on_", comment: "") : NSLocalizedString("_off_", comment: "")
-        self.tintColor = NCBrandColor.shared.brandElement
-        
-        guard let customIcons = customIcons,
-              let iconName = isOn ? customIcons.onIconName : customIcons.offIconName else {
-            
-            self.accessoryType = isOn ? .checkmark : .none
-            return
-        }
-        let checkmark = UIImage(resource: iconName).withTintColor(NCBrandColor.shared.brandElement)
-        let imageView = UIImageView(image: checkmark)
-        imageView.frame = CGRect(x: 0, y: 0, width: 19, height: 19)
-        imageView.contentMode = .scaleAspectFit
-        self.accessoryView = imageView
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-}
-
-class NCShareDateCell: UITableViewCell {
-    let picker = UIDatePicker()
-    let textField = UITextField()
-    var shareType: Int
-    var onReload: (() -> Void)?
-    let shareCommon = NCShareCommon()
-
-    init(share: NCTableShareable) {
-        self.shareType = share.shareType
-        super.init(style: .value1, reuseIdentifier: "shareExpDate")
-
-        picker.datePickerMode = .date
-        picker.minimumDate = Date()
-        picker.preferredDatePickerStyle = .wheels
-        picker.action(for: .valueChanged) { datePicker in
-            guard let datePicker = datePicker as? UIDatePicker else { return }
-            self.detailTextLabel?.text = DateFormatter.shareExpDate.string(from: datePicker.date)
-        }
-        accessoryView = textField
-
-        let toolbar = UIToolbar.toolbar {
-            self.resignFirstResponder()
-            share.expirationDate = nil
-            self.onReload?()
-        } onDone: {
-            self.resignFirstResponder()
-            share.expirationDate = self.picker.date as NSDate
-            self.onReload?()
-        }
-
-        textField.isAccessibilityElement = false
-        textField.accessibilityElementsHidden = true
-        textField.inputAccessoryView = toolbar.wrappedSafeAreaContainer
-        textField.inputView = picker
-
-        if let expDate = share.expirationDate {
-            detailTextLabel?.text = DateFormatter.shareExpDate.string(from: expDate as Date)
-        }
-    }
-
-    required public init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    func checkMaximumDate(account: String) {
-        let defaultExpDays = defaultExpirationDays(account: account)
-        if defaultExpDays > 0 && isExpireDateEnforced(account: account) {
-            let enforcedInSecs = TimeInterval(defaultExpDays * 24 * 60 * 60)
-            self.picker.maximumDate = Date().advanced(by: enforcedInSecs)
-        }
-    }
-
-    private func isExpireDateEnforced(account: String) -> Bool {
-        switch self.shareType {
-        case shareCommon.SHARE_TYPE_LINK,
-            shareCommon.SHARE_TYPE_EMAIL,
-            shareCommon.SHARE_TYPE_GUEST:
-            return NCGlobal.shared.capabilityFileSharingPubExpireDateEnforced
-        case shareCommon.SHARE_TYPE_USER,
-            shareCommon.SHARE_TYPE_GROUP,
-            shareCommon.SHARE_TYPE_CIRCLE,
-            shareCommon.SHARE_TYPE_ROOM:
-            return NCGlobal.shared.capabilityFileSharingInternalExpireDateEnforced
-        case shareCommon.SHARE_TYPE_REMOTE,
-            shareCommon.SHARE_TYPE_REMOTE_GROUP:
-            return NCGlobal.shared.capabilityFileSharingRemoteExpireDateEnforced
-        default:
-            return false
-        }
-    }
-
-    private func defaultExpirationDays(account: String) -> Int {
-        switch self.shareType {
-        case shareCommon.SHARE_TYPE_LINK,
-            shareCommon.SHARE_TYPE_EMAIL,
-            shareCommon.SHARE_TYPE_GUEST:
-            return NCGlobal.shared.capabilityFileSharingPubExpireDateDays
-        case shareCommon.SHARE_TYPE_USER,
-            shareCommon.SHARE_TYPE_GROUP,
-            shareCommon.SHARE_TYPE_CIRCLE,
-            shareCommon.SHARE_TYPE_ROOM:
-            return NCGlobal.shared.capabilityFileSharingInternalExpireDateDays
-        case shareCommon.SHARE_TYPE_REMOTE,
-            shareCommon.SHARE_TYPE_REMOTE_GROUP:
-            return NCGlobal.shared.capabilityFileSharingRemoteExpireDateDays
-        default:
-            return 0
-        }
     }
 }

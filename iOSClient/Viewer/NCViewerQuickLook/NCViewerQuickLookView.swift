@@ -70,12 +70,26 @@ struct NCViewerQuickLookView: UIViewControllerRepresentable {
 
         init(parent: NCViewerQuickLookView) {
             self.parent = parent
+            super.init()
+
+            NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
+                parent.model.stopTimer()
+            }
+
+            NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { [weak self] _ in
+                guard let self = self,
+                      let navigationItem = self.viewController?.navigationItem else {
+                    return
+                }
+                parent.model.startTimer(navigationItem: navigationItem)
+            }
         }
 
         @objc func dismiss() {
             parent.model.stopTimer()
             parent.isPresentedQuickLook = false
-            if let imageData = image, let image = image?.resizeImage(size: CGSize(width: 300, height: 300), isAspectRation: true) {
+            if let imageData = image,
+               let image = image?.resizeImage(size: CGSize(width: 240, height: 240), isAspectRation: true) {
                 parent.model.previewStore[parent.index].image = image
                 parent.model.previewStore[parent.index].data = imageData.jpegData(compressionQuality: 0.9)
             }

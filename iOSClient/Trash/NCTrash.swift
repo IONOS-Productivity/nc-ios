@@ -29,37 +29,41 @@ import NextcloudKit
 import RealmSwift
 
 class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegate {
+    @IBOutlet weak var collectionView: UICollectionView!
 
-	@IBOutlet weak var vHeader: FileActionsHeader!
-	@IBOutlet weak var collectionView: UICollectionView!
-
+    @IBOutlet weak var vHeader: FileActionsHeader!
+    
     var filePath = ""
     var titleCurrentFolder = NSLocalizedString("_trash_view_", comment: "")
     var blinkFileId: String?
     var dataSourceTask: URLSessionTask?
-    let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     let utilityFileSystem = NCUtilityFileSystem()
+    let database = NCManageDatabase.shared
     let utility = NCUtility()
 	var isEditMode = false {
 		didSet {
 			vHeader.setIsEditingMode(isEditingMode: isEditMode)
+            updateSelectionToolbar()
 		}
 	}
     var selectOcId: [String] = []
-    var selectionToolbar: NCTrashSelectToolBar!
-    var datasource: [tableTrash] = []
+    var selectionToolbar: HiDriveCollectionViewCommonSelectToolbar!
+    var datasource: Results<tableTrash>?
     var layoutForView: NCDBLayoutForView?
     var listLayout: NCListLayout!
     var gridLayout: NCGridLayout!
     var layoutKey = NCGlobal.shared.layoutViewTrash
     let refreshControl = UIRefreshControl()
     var filename: String?
+    var session: NCSession.Session {
+        NCSession.shared.getSession(controller: tabBarController)
+    }
 
     // MARK: - View Life Cycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        selectionToolbar = NCTrashSelectToolBar(containerView: view, placeholderFrame: selectToolBarFrame, delegate: self)
+        selectionToolbar = HiDriveCollectionViewCommonSelectToolbar(controller: nil, delegate: self, displayedButtons: [.restore, .delete])
 
         view.backgroundColor = NCBrandColor.shared.appBackgroundColor
         self.navigationController?.navigationBar.prefersLargeTitles = false
@@ -89,6 +93,7 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
 	private func updateHeadersView() {
 		vHeader?.setIsEditingMode(isEditingMode: isEditMode)
 		vHeader?.setViewModeMenu(viewMenuElements: createViewModeMenuActions(), image: viewModeImage?.templateRendered())
+        vHeader?.enableSelection(enable: !(datasource?.isEmpty ?? true))
 		
 		vHeader?.onSelectModeChange = { [weak self] isSelectionMode in
 			self?.setEditMode(isSelectionMode)
@@ -105,16 +110,13 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
 		updateSelectionToolbar()
 	}
 	
-	private var selectToolBarFrame: CGRect {
-		let toolbarHeight = AppScreenConstants.toolbarHeight
-		return CGRect(x: 0, y: view.bounds.size.height - toolbarHeight, width: view.bounds.size.width, height: toolbarHeight)
-	}
-	
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
         navigationController?.setNavigationBarAppearance()
         navigationItem.title = titleCurrentFolder
-        layoutForView = NCManageDatabase.shared.getLayoutForView(account: appDelegate.account, key: NCGlobal.shared.layoutViewTrash, serverUrl: "")
+
+        layoutForView = self.database.getLayoutForView(account: session.account, key: NCGlobal.shared.layoutViewTrash, serverUrl: "")
 
         if layoutForView?.layout == NCGlobal.shared.layoutList {
             collectionView.collectionViewLayout = listLayout
@@ -129,6 +131,11 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
         reloadDataSource()
         loadListingTrash()
     }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        selectionToolbar.controller = mainTabBarController
+    }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
@@ -138,24 +145,16 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
         dataSourceTask?.cancel()
     }
 
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-
-        coordinator.animate(alongsideTransition: nil) { _ in
-            self.collectionView?.collectionViewLayout.invalidateLayout()
-        }
-    }
-
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
-		selectionToolbar.hostingController?.view.frame = selectToolBarFrame
+        selectionToolbar.onViewWillLayoutSubviews()
     }
 
     // MARK: - Layout
 
     func updateSelectionToolbar() {
         if isEditMode {
-            selectionToolbar.update(selectOcId: selectOcId)
+            selectionToolbar.update(fileSelect: selectOcId)
             selectionToolbar.show()
         } else if navigationItem.rightBarButtonItems == nil || (!isEditMode && !selectionToolbar.isHidden()) {
             selectionToolbar.hide()
@@ -178,7 +177,6 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
     // MARK: TAP EVENT
 
     func tapRestoreListItem(with ocId: String, image: UIImage?, sender: Any) {
-
         if !isEditMode {
             restoreItem(with: ocId)
         } else if let button = sender as? UIView {
@@ -189,7 +187,6 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
     }
 
     func tapMoreListItem(with objectId: String, image: UIImage?, sender: Any) {
-
         if !isEditMode {
             toggleMenuMore(with: objectId, image: image, isGridCell: false)
         } else if let button = sender as? UIView {
@@ -199,8 +196,7 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
         } // else: undefined sender
     }
 
-    func tapMoreGridItem(with objectId: String, namedButtonMore: String, image: UIImage?, indexPath: IndexPath, sender: Any) {
-
+    func tapMoreGridItem(with objectId: String, image: UIImage?, sender: Any) {
         if !isEditMode {
             toggleMenuMore(with: objectId, image: image, isGridCell: true)
         } else if let button = sender as? UIView {
@@ -212,18 +208,17 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
 
     func longPressGridItem(with objectId: String, gestureRecognizer: UILongPressGestureRecognizer) { }
 
-    func longPressMoreGridItem(with objectId: String, namedButtonMore: String, gestureRecognizer: UILongPressGestureRecognizer) { }
+    func longPressMoreGridItem(with objectId: String, gestureRecognizer: UILongPressGestureRecognizer) { }
 
     // MARK: - DataSource
 
     @objc func reloadDataSource(withQueryDB: Bool = true) {
-
-        datasource = NCManageDatabase.shared.getTrash(filePath: getFilePath(), account: appDelegate.account)
+        datasource = self.database.getResultsTrash(filePath: getFilePath(), account: session.account)
         collectionView.reloadData()
         updateHeadersView()
 
-        guard let blinkFileId = blinkFileId else { return }
-        for itemIx in 0..<self.datasource.count where self.datasource[itemIx].fileId.contains(blinkFileId) {
+        guard let blinkFileId, let datasource else { return }
+        for itemIx in 0..<datasource.count where datasource[itemIx].fileId.contains(blinkFileId) {
             let indexPath = IndexPath(item: itemIx, section: 0)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 UIView.animate(withDuration: 0.3) {
@@ -242,8 +237,8 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
 
     func getFilePath() -> String {
         if filePath.isEmpty {
-            guard let userId = (appDelegate.userId as NSString).addingPercentEncoding(withAllowedCharacters: NSCharacterSet.urlFragmentAllowed) else { return "" }
-            let filePath = appDelegate.urlBase + "/" + NextcloudKit.shared.nkCommonInstance.dav + "/trashbin/" + userId + "/trash"
+            guard let userId = (session.userId as NSString).addingPercentEncoding(withAllowedCharacters: NSCharacterSet.urlFragmentAllowed) else { return "" }
+            let filePath = session.urlBase + "/remote.php/dav/trashbin/" + userId + "/trash"
             return filePath + "/"
         } else {
             return filePath + "/"

@@ -24,7 +24,7 @@
 import SwiftUI
 
 struct NCFileNameView: View {
-    @ObservedObject var model = NCFileNameModel()
+    @ObservedObject var model: NCFileNameModel
 
     var body: some View {
         Form {
@@ -105,5 +105,5 @@ struct NCFileNameView: View {
 }
 
 #Preview {
-    NCFileNameView(model: NCFileNameModel())
+    NCFileNameView(model: NCFileNameModel(controller: nil))
 }

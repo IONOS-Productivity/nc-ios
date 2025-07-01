@@ -33,6 +33,7 @@ class NCMainTabBar: UITabBar {
     private var shapeLayer: CALayer?
     private let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     private let centerButtonY: CGFloat = -28
+    public var color = NCBrandColor.shared.customer
 
 	private var centerButtonColor: UIColor {
         UIColor(resource: .Tabbar.fabButton)
@@ -63,7 +64,6 @@ class NCMainTabBar: UITabBar {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
 
-        NotificationCenter.default.addObserver(self, selector: #selector(changeTheming), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeTheming), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(updateBadgeNumber(_:)), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterUpdateBadgeNumber), object: nil)
 
         changeTheming()
@@ -151,7 +151,7 @@ class NCMainTabBar: UITabBar {
 
         // File
         if let item = items?[0] {
-            item.title = NSLocalizedString("_home_dir_", comment: "")
+            item.title = NSLocalizedString("_home_", comment: "")
             item.image = UIImage(named: "home")
             item.selectedImage = item.image
         }
@@ -196,17 +196,19 @@ class NCMainTabBar: UITabBar {
 
         centerButton.setTitle("", for: .normal)
         centerButton.setImage(imagePlus, for: .normal)
-        centerButton.backgroundColor = centerButtonColor
+        centerButton.backgroundColor = color
         centerButton.tintColor = UIColor.white
         centerButton.tag = 99
         centerButton.accessibilityLabel = NSLocalizedString("_accessibility_add_upload_", comment: "")
         centerButton.layer.cornerRadius = centerButton.frame.size.width / 2.0
         centerButton.layer.masksToBounds = false
-        centerButton.action(for: .touchUpInside) { [self] _ in
-
+        centerButton.layer.shadowOffset = CGSize(width: 0, height: 0)
+        centerButton.layer.shadowRadius = 3.0
+        centerButton.layer.shadowOpacity = 0.5
+        centerButton.action(for: .touchUpInside) { _ in
             if let controller = self.window?.rootViewController as? NCMainTabBarController {
                 let serverUrl = controller.currentServerUrl()
-                if let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", self.appDelegate.account, serverUrl)) {
+                if let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", NCSession.shared.getSession(controller: controller).account, serverUrl)) {
                     if !directory.permissions.contains("CK") {
                         let error = NKError(errorCode: NCGlobal.shared.errorInternalError, errorDescription: "_no_permission_add_file_")
                         NCContentPresenter().showWarning(error: error)
@@ -214,10 +216,10 @@ class NCMainTabBar: UITabBar {
                     }
                 }
 
-                let fileFolderPath = NCUtilityFileSystem().getFileNamePath("", serverUrl: serverUrl, urlBase: appDelegate.urlBase, userId: appDelegate.userId)
+                let fileFolderPath = NCUtilityFileSystem().getFileNamePath("", serverUrl: serverUrl, session: NCSession.shared.getSession(controller: controller))
                 let fileFolderName = (serverUrl as NSString).lastPathComponent
 
-                if !FileNameValidator.shared.checkFolderPath(folderPath: fileFolderPath) {
+                if !FileNameValidator.checkFolderPath(fileFolderPath, account: controller.account) {
                     controller.present(UIAlertController.warning(message: "\(String(format: NSLocalizedString("_file_name_validator_error_reserved_name_", comment: ""), fileFolderName)) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
 
                     return
@@ -231,17 +233,15 @@ class NCMainTabBar: UITabBar {
     }
 
     @objc func updateBadgeNumber(_ notification: NSNotification) {
-        DispatchQueue.main.async {
-            guard let userInfo = notification.userInfo as NSDictionary?,
-                  let counterDownload = userInfo["counterDownload"] as? Int,
-                  let counterUpload = userInfo["counterUpload"] as? Int
+        guard let userInfo = notification.userInfo as NSDictionary?,
+              let counterDownload = userInfo["counterDownload"] as? Int,
+              let counterUpload = userInfo["counterUpload"] as? Int
             else { return }
-            self.updateBadgeNumberUI(counterDownload: counterDownload, counterUpload: counterUpload)
-        }
+
+        self.updateBadgeNumberUI(counterDownload: counterDownload, counterUpload: counterUpload)
     }
 
     func updateBadgeNumberUI(counterDownload: Int, counterUpload: Int) {
-
         UIApplication.shared.applicationIconBadgeNumber = counterDownload + counterUpload
 
         if let item = self.items?[0] {

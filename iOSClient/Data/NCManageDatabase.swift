@@ -27,31 +27,36 @@ import RealmSwift
 import NextcloudKit
 import CoreMedia
 import Photos
+import CommonCrypto
 
 protocol DateCompareable {
     var dateKey: Date { get }
 }
 
-class NCManageDatabase: NSObject {
-    @objc static let shared: NCManageDatabase = {
-        let instance = NCManageDatabase()
-        return instance
-    }()
+final class NCManageDatabase: Sendable {
+    static let shared = NCManageDatabase()
+
     let utilityFileSystem = NCUtilityFileSystem()
 
-    override init() {
+    init() {
         func migrationSchema(_ migration: Migration, _ oldSchemaVersion: UInt64) {
-            if oldSchemaVersion < 354 {
-                migration.deleteData(forType: NCDBLayoutForView.className())
+            if oldSchemaVersion < 365 {
+                migration.deleteData(forType: tableMetadata.className())
+                migration.enumerateObjects(ofType: tableDirectory.className()) { _, newObject in
+                    newObject?["etag"] = ""
+                }
+            }
+            if oldSchemaVersion < databaseSchemaVersion {
+                // automatic conversion for delete object / properties
             }
         }
 
         func compactDB(_ totalBytes: Int, _ usedBytes: Int) -> Bool {
-            // totalBytes refers to the size of the file on disk in bytes (data + free space)
-            // usedBytes refers to the number of bytes used by data in the file
-            // Compact if the file is over 100MB in size and less than 50% 'used'
-            let oneHundredMB = 100 * 1024 * 1024
-            return (totalBytes > oneHundredMB) && (Double(usedBytes) / Double(totalBytes)) < 0.5
+            let usedPercentage = (Double(usedBytes) / Double(totalBytes)) * 100
+            /// Compact the database if more than 25% of the space is free
+            let shouldCompact = (usedPercentage < 75.0) && (totalBytes > 100 * 1024 * 1024)
+
+            return shouldCompact
         }
         var realm: Realm?
         let dirGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: NCBrandOptions.shared.capabilitiesGroup)
@@ -60,13 +65,13 @@ class NCManageDatabase: NSObject {
         let bundlePathExtension: String = bundleUrl.pathExtension
         let bundleFileName: String = (bundleUrl.path as NSString).lastPathComponent
         let isAppex: Bool = bundlePathExtension == "appex"
-        var objectTypesAppex = [tableMetadata.self,
+        var objectTypesAppex = [NCKeyValue.self,
+                                tableMetadata.self,
                                 tableLocalFile.self,
                                 tableDirectory.self,
                                 tableTag.self,
                                 tableAccount.self,
                                 tableCapabilities.self,
-                                tablePhotoLibrary.self,
                                 tableE2eEncryption.self,
                                 tableE2eEncryptionLock.self,
                                 tableE2eMetadata12.self,
@@ -94,45 +99,76 @@ class NCManageDatabase: NSObject {
 
         if isAppex {
             if bundleFileName == "File Provider Extension.appex" {
-                objectTypesAppex = [tableMetadata.self,
+                objectTypesAppex = [NCKeyValue.self,
+                                    tableMetadata.self,
                                     tableLocalFile.self,
                                     tableDirectory.self,
                                     tableTag.self,
                                     tableAccount.self,
-                                    tableCapabilities.self]
+                                    tableCapabilities.self,
+                                    tableE2eEncryption.self]
             }
+
+            Realm.Configuration.defaultConfiguration =
+            Realm.Configuration(fileURL: databaseFileUrlPath,
+                                schemaVersion: databaseSchemaVersion,
+                                migrationBlock: { migration, oldSchemaVersion in
+                                    migrationSchema(migration, oldSchemaVersion)
+                                }, shouldCompactOnLaunch: { totalBytes, usedBytes in
+                                    compactDB(totalBytes, usedBytes)
+                                }, objectTypes: objectTypesAppex)
+
             do {
-                Realm.Configuration.defaultConfiguration =
-                Realm.Configuration(fileURL: databaseFileUrlPath,
-                                    schemaVersion: databaseSchemaVersion,
-                                    migrationBlock: { migration, oldSchemaVersion in
-                                        migrationSchema(migration, oldSchemaVersion)
-                                    }, shouldCompactOnLaunch: { totalBytes, usedBytes in
-                                        compactDB(totalBytes, usedBytes)
-                                    }, objectTypes: objectTypesAppex)
                 realm = try Realm()
                 if let realm, let url = realm.configuration.fileURL {
                     print("Realm is located at: \(url)")
                 }
             } catch let error {
-                NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] DATABASE ERROR: \(error.localizedDescription)")
+                NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] DATABASE: \(error.localizedDescription)")
             }
         } else {
+            Realm.Configuration.defaultConfiguration =
+            Realm.Configuration(fileURL: databaseFileUrlPath,
+                                schemaVersion: databaseSchemaVersion,
+                                migrationBlock: { migration, oldSchemaVersion in
+                                    migrationSchema(migration, oldSchemaVersion)
+                                }, shouldCompactOnLaunch: { totalBytes, usedBytes in
+                                    compactDB(totalBytes, usedBytes)
+                                })
             do {
-                Realm.Configuration.defaultConfiguration =
-                Realm.Configuration(fileURL: databaseFileUrlPath,
-                                    schemaVersion: databaseSchemaVersion,
-                                    migrationBlock: { migration, oldSchemaVersion in
-                                        migrationSchema(migration, oldSchemaVersion)
-                                    }, shouldCompactOnLaunch: { totalBytes, usedBytes in
-                                        compactDB(totalBytes, usedBytes)
-                                    })
                 realm = try Realm()
                 if let realm, let url = realm.configuration.fileURL {
                     print("Realm is located at: \(url)")
                 }
+
+                backupTableAccountToFile()
+
             } catch let error {
-                NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] DATABASE ERROR: \(error.localizedDescription)")
+                NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] DATABASE: \(error.localizedDescription)")
+
+                if let realmURL = databaseFileUrlPath {
+                    let filesToDelete = [
+                        realmURL,
+                        realmURL.appendingPathExtension("lock"),
+                        realmURL.appendingPathExtension("note"),
+                        realmURL.appendingPathExtension("management")
+                    ]
+
+                    for file in filesToDelete {
+                        do {
+                            try FileManager.default.removeItem(at: file)
+                        } catch { }
+                    }
+                }
+
+                do {
+                    _ = try Realm()
+
+                    restoreTableAccountFromFile()
+
+                } catch let error {
+                    NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Account restoration: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -145,7 +181,6 @@ class NCManageDatabase: NSObject {
             let realm = try Realm()
             try realm.write {
                 var results: Results<Object>
-
                 if let account = account {
                     results = realm.objects(table).filter("account == %@", account)
                 } else {
@@ -159,7 +194,7 @@ class NCManageDatabase: NSObject {
         }
     }
 
-    func clearDatabase(account: String?, removeAccount: Bool) {
+    func clearDatabase(account: String? = nil, removeAccount: Bool = false) {
         if removeAccount {
             self.clearTable(tableAccount.self, account: account)
         }
@@ -184,13 +219,18 @@ class NCManageDatabase: NSObject {
         self.clearTable(TableGroupfoldersGroups.self, account: account)
         self.clearTable(tableLocalFile.self, account: account)
         self.clearTable(tableMetadata.self, account: account)
-        self.clearTable(tablePhotoLibrary.self, account: account)
         self.clearTable(tableShare.self, account: account)
         self.clearTable(TableSecurityGuardDiagnostics.self, account: account)
         self.clearTable(tableTag.self, account: account)
         self.clearTable(tableTrash.self, account: account)
         self.clearTable(tableUserStatus.self, account: account)
         self.clearTable(tableVideo.self, account: account)
+        self.clearTable(TableDownloadLimit.self, account: account)
+        self.clearTable(tableRecommendedFiles.self, account: account)
+        self.clearTable(NCDBLayoutForView.self, account: account)
+        if account == nil {
+            self.clearTable(NCKeyValue.self)
+        }
     }
 
     func clearTablesE2EE(account: String?) {
@@ -214,6 +254,24 @@ class NCManageDatabase: NSObject {
             NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not write to database: \(error)")
         }
         return nil
+    }
+
+    func realmRefresh() {
+        do {
+            let realm = try Realm()
+            realm.refresh()
+        } catch let error as NSError {
+            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not refresh database: \(error)")
+        }
+    }
+
+    func sha256Hash(_ input: String) -> String {
+        let data = Data(input.utf8)
+        var digest = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+        data.withUnsafeBytes {
+            _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &digest)
+        }
+        return digest.map { String(format: "%02hhx", $0) }.joined()
     }
 
     // MARK: -
@@ -250,17 +308,22 @@ class NCManageDatabase: NSObject {
         /// Account
         let account = "marinofaggiana https://cloudtest.nextcloud.com"
         let account2 = "mariorossi https://cloudtest.nextcloud.com"
-        NCManageDatabase.shared.addAccount(account, urlBase: "https://cloudtest.nextcloud.com", user: "marinofaggiana", userId: "marinofaggiana", password: "password")
-        NCManageDatabase.shared.addAccount(account2, urlBase: "https://cloudtest.nextcloud.com", user: "mariorossi", userId: "mariorossi", password: "password")
+        addAccount(account, urlBase: "https://cloudtest.nextcloud.com", user: "marinofaggiana", userId: "marinofaggiana", password: "password")
+        addAccount(account2, urlBase: "https://cloudtest.nextcloud.com", user: "mariorossi", userId: "mariorossi", password: "password")
         let userProfile = NKUserProfile()
         userProfile.displayName = "Marino Faggiana"
         userProfile.address = "Hirschstrasse 26, 70192 Stuttgart, Germany"
         userProfile.phone = "+49 (711) 252 428 - 90"
         userProfile.email = "cloudtest@nextcloud.com"
-        NCManageDatabase.shared.setAccountUserProfile(account: account, userProfile: userProfile)
+        setAccountUserProfile(account: account, userProfile: userProfile)
         let userProfile2 = NKUserProfile()
         userProfile2.displayName = "Mario Rossi"
         userProfile2.email = "cloudtest@nextcloud.com"
-        NCManageDatabase.shared.setAccountUserProfile(account: account2, userProfile: userProfile2)
+        setAccountUserProfile(account: account2, userProfile: userProfile2)
     }
+}
+
+class NCKeyValue: Object {
+    @Persisted var key: String = ""
+    @Persisted var value: String?
 }

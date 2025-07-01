@@ -32,6 +32,7 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     @IBOutlet weak var imageLocal: UIImageView!
     @IBOutlet weak var labelTitle: UILabel!
     @IBOutlet weak var labelInfo: UILabel!
+    @IBOutlet weak var labelInfoSeparator: UILabel!
     @IBOutlet weak var labelSubinfo: UILabel!
     @IBOutlet weak var imageShared: UIImageView!
     @IBOutlet weak var buttonShared: UIButton!
@@ -47,9 +48,9 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     @IBOutlet weak var titleTrailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var subInfoTrailingConstraint: NSLayoutConstraint!
 
-    private var objectId = ""
-    private var user = ""
-    var indexPath = IndexPath()
+    var ocId = ""
+    var ocIdTransfer = ""
+    var user = ""
 
     weak var listCellDelegate: NCListCellDelegate?
     var namedButtonMore = ""
@@ -61,9 +62,13 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     var fileAvatarImageView: UIImageView? {
         return imageShared
     }
-    var fileObjectId: String? {
-        get { return objectId }
-        set { objectId = newValue ?? "" }
+    var fileOcId: String? {
+        get { return ocId }
+        set { ocId = newValue ?? "" }
+    }
+    var fileOcIdTransfer: String? {
+        get { return ocIdTransfer }
+        set { ocIdTransfer = newValue ?? "" }
     }
     var filePreviewImageView: UIImageView? {
         get { return imageItem }
@@ -85,10 +90,6 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         get { return labelSubinfo }
         set { labelSubinfo = newValue }
     }
-    var fileProgressView: UIProgressView? {
-        get { return progressView }
-        set { progressView = newValue }
-    }
     var fileStatusImage: UIImageView? {
         get { return imageStatus }
         set { imageStatus = newValue }
@@ -103,7 +104,9 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     }
     var fileSharedImage: UIImageView? {
         get { return imageShared }
-        set { imageShared = newValue }
+		set {
+			imageShared = newValue
+		}
     }
     var fileMoreImage: UIImageView? {
         get { return imageMore }
@@ -114,21 +117,51 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         set { separator = newValue }
     }
 
+    override var accessibilityIdentifier: String? {
+        get {
+            super.accessibilityIdentifier
+        }
+        set {
+            super.accessibilityIdentifier = newValue
+
+            if let newValue {
+                buttonShared.accessibilityIdentifier = "\(newValue)/shareButton"
+            }
+        }
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
+        initCell()
+    }
 
-        imageItem.layer.cornerRadius = 6
-        imageItem.layer.masksToBounds = true
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        initCell()
+    }
 
-        // use entire cell as accessibility element
+    func initCell() {
         accessibilityHint = nil
         accessibilityLabel = nil
         accessibilityValue = nil
         isAccessibilityElement = true
 
-        progressView.tintColor = NCBrandColor.shared.brandElement
-        progressView.transform = CGAffineTransform(scaleX: 1.0, y: 0.5)
-        progressView.trackTintColor = .clear
+        imageItem.image = nil
+        imageItem.layer.cornerRadius = 6
+        imageItem.layer.masksToBounds = true
+        imageItem.backgroundColor = nil
+        imageStatus.image = nil
+        imageFavorite.image = nil
+        imageLocal.image = nil
+        labelTitle.text = ""
+        labelInfo.text = ""
+        labelSubinfo.text = ""
+        imageShared.image = nil
+        imageMore.image = nil
+        separatorHeightConstraint.constant = 0.5
+        tag0.text = ""
+        tag1.text = ""
+        titleInfoTrailingDefault()
 
         let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(longPress(gestureRecognizer:)))
         longPressedGesture.minimumPressDuration = 0.5
@@ -147,40 +180,30 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         labelSubinfo.textColor = UIColor(resource: .ListCell.subtitle)
     }
 
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        imageItem.backgroundColor = nil
-
-        accessibilityHint = nil
-        accessibilityLabel = nil
-        accessibilityValue = nil
-    }
-
     override func snapshotView(afterScreenUpdates afterUpdates: Bool) -> UIView? {
         return nil
     }
 
     @IBAction func touchUpInsideShare(_ sender: Any) {
-        listCellDelegate?.tapShareListItem(with: objectId, indexPath: indexPath, sender: sender)
+        listCellDelegate?.tapShareListItem(with: ocId, ocIdTransfer: ocIdTransfer, sender: sender)
     }
 
     @IBAction func touchUpInsideMore(_ sender: Any) {
-        listCellDelegate?.tapMoreListItem(with: objectId, namedButtonMore: namedButtonMore, image: imageItem.image, indexPath: indexPath, sender: sender)
+        listCellDelegate?.tapMoreListItem(with: ocId, ocIdTransfer: ocIdTransfer, image: imageItem.image, sender: sender)
     }
 
     @objc func longPress(gestureRecognizer: UILongPressGestureRecognizer) {
-        listCellDelegate?.longPressListItem(with: objectId, indexPath: indexPath, gestureRecognizer: gestureRecognizer)
+        listCellDelegate?.longPressListItem(with: ocId, ocIdTransfer: ocIdTransfer, gestureRecognizer: gestureRecognizer)
     }
 
     fileprivate func setA11yActions() {
-        let moreName = namedButtonMore == NCGlobal.shared.buttonMoreStop ? "_cancel_" : "_more_"
         self.accessibilityCustomActions = [
             UIAccessibilityCustomAction(
                 name: NSLocalizedString("_share_", comment: ""),
                 target: self,
                 selector: #selector(touchUpInsideShare)),
             UIAccessibilityCustomAction(
-                name: NSLocalizedString(moreName, comment: ""),
+                name: NSLocalizedString("_more_", comment: ""),
                 target: self,
                 selector: #selector(touchUpInsideMore))
         ]
@@ -188,18 +211,14 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
 
     func titleInfoTrailingFull() {
         titleTrailingConstraint.constant = 10
-        subInfoTrailingConstraint.constant = 10
     }
 
     func titleInfoTrailingDefault() {
         titleTrailingConstraint.constant = 90
-        subInfoTrailingConstraint.constant = 90
     }
 
-    func setButtonMore(named: String, image: UIImage) {
-        namedButtonMore = named
+    func setButtonMore(image: UIImage) {
         imageMore.image = image
-
         setA11yActions()
     }
 
@@ -237,16 +256,16 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
             setA11yActions()
         }
         if isSelected {
-            imageSelect.image = NCImageCache.images.checkedYes?.withTintColor(NCBrandColor.shared.brandElement)
+            imageSelect.image = NCImageCache.shared.getImageCheckedYes().withTintColor(NCBrandColor.shared.brandElement)
         } else {
-            imageSelect.image = NCImageCache.images.checkedNo?.withTintColor(UIColor(resource: .FileSelection.listItemDeselected))
+            imageSelect.image = NCImageCache.shared.getImageCheckedNo().withTintColor(UIColor(resource: .FileSelection.listItemDeselected))
         }
 
     }
 
     func writeInfoDateSize(date: NSDate, size: Int64) {
-        labelInfo.text = NCUtility().dateDiff(date as Date)
-        labelSubinfo.text = " · " + NCUtilityFileSystem().transformedSize(size)
+        labelInfo.text = NCUtility().getRelativeDateTitle(date as Date)
+        labelSubinfo.text = NCUtilityFileSystem().transformedSize(size)
     }
 
     func setAccessibility(label: String, value: String) {
@@ -286,9 +305,9 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
 }
 
 protocol NCListCellDelegate: AnyObject {
-    func tapShareListItem(with objectId: String, indexPath: IndexPath, sender: Any)
-    func tapMoreListItem(with objectId: String, namedButtonMore: String, image: UIImage?, indexPath: IndexPath, sender: Any)
-    func longPressListItem(with objectId: String, indexPath: IndexPath, gestureRecognizer: UILongPressGestureRecognizer)
+    func tapShareListItem(with ocId: String, ocIdTransfer: String, sender: Any)
+    func tapMoreListItem(with ocId: String, ocIdTransfer: String, image: UIImage?, sender: Any)
+    func longPressListItem(with ocId: String, ocIdTransfer: String, gestureRecognizer: UILongPressGestureRecognizer)
 }
 
 // MARK: - List Layout
