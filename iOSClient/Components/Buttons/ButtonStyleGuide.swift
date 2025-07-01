@@ -99,6 +99,43 @@ extension ButtonStyle where Self == ButtonStyleSecondary {
 	}
 }
 
+// MARK SaveButtonStyle
+struct SaveButtonStyle: ButtonStyle {
+	@Environment(\.isEnabled) private var isEnabled: Bool
+	
+	var maxWidth: CGFloat? = nil
+	
+	private func foregroundColor(for configuration: Configuration) -> Color {
+		isEnabled ? Color(.Button.Primary.Text.normal) : Color(.Button.Primary.Text.disabled)
+	}
+	
+	private func backgroundColor(for configuration: Configuration) -> Color {
+		isEnabled ? Color(.Button.Primary.Background.selected) : Color(.Button.Primary.Background.disabled)
+	}
+	
+	func makeBody(configuration: Configuration) -> some View {
+		configuration.label
+			.font(CommonButtonConstants.defaultFont)
+			.frame(maxWidth: maxWidth,
+				   minHeight: CommonButtonConstants.defaultHeight)
+			.padding([.leading, .trailing], 24)
+			.foregroundStyle(foregroundColor(for: configuration))
+			.background{
+				Capsule(style: .circular)
+					.stroke(backgroundColor(for: configuration), lineWidth: CommonButtonConstants.defaultBorderWidth)
+					.background(content: {
+						Capsule().fill(backgroundColor(for: configuration))
+					})
+			}
+	}
+}
+
+extension ButtonStyle where Self == SaveButtonStyle {
+	static var saveButton: Self {
+		return .init()
+	}
+}
+
 #Preview {
     VStack(spacing: 30) {
         VStack {

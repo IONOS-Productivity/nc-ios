@@ -152,7 +152,7 @@ class NCSearchUserDropDownCell: DropDownCell, NCCellProtocol {
         set { user = newValue ?? "" }
     }
 
-    func setupCell(sharee: NKSharee, userBaseUrl: NCUserBaseUrl) {
+    func setupCell(sharee: NKSharee, session: NCSession.Session) {
         let utility = NCUtility()
         imageItem.image = NCShareCommon().getImageShareType(shareType: sharee.shareType)
         imageShareeType.image = NCShareCommon().getImageShareType(shareType: sharee.shareType)?
@@ -172,6 +172,6 @@ class NCSearchUserDropDownCell: DropDownCell, NCCellProtocol {
             centerTitle.constant = 0
         }
 
-        imageItem.image = utility.userImage
+        imageItem.image = utility.loadUserImage(for: sharee.shareWith, displayName: nil, urlBase: session.urlBase)
     }
 }

@@ -24,6 +24,7 @@
 import UIKit
 import FileProvider
 import NextcloudKit
+import Alamofire
 
 extension FileProviderExtension {
     override func fetchThumbnails(for itemIdentifiers: [NSFileProviderItemIdentifier], requestedSize size: CGSize, perThumbnailCompletionHandler: @escaping (NSFileProviderItemIdentifier, Data?, Error?) -> Void, completionHandler: @escaping (Error?) -> Void) -> Progress {
@@ -31,19 +32,23 @@ extension FileProviderExtension {
         var counterProgress: Int64 = 0
 
         for itemIdentifier in itemIdentifiers {
-            guard let metadata = providerUtility.getTableMetadataFromItemIdentifier(itemIdentifier), metadata.hasPreview else {
+            guard let metadata = providerUtility.getTableMetadataFromItemIdentifier(itemIdentifier),
+                  metadata.hasPreview
+            else {
                 counterProgress += 1
-                if counterProgress == progress.totalUnitCount { completionHandler(nil) }
+                if counterProgress == progress.totalUnitCount {
+                    completionHandler(nil)
+                }
                 continue
             }
-            let fileNameIconLocalPath = utilityFileSystem.getDirectoryProviderStorageIconOcId(metadata.ocId, etag: metadata.etag)
 
-            NextcloudKit.shared.downloadPreview(fileId: metadata.fileId, widthPreview: Int(size.width), heightPreview: Int(size.height), etag: metadata.etag, account: metadata.account) { _ in
-            } completion: { _, data, error in
-                if error == .success, let data {
-                    do {
-                        try data.write(to: URL(fileURLWithPath: fileNameIconLocalPath), options: .atomic)
-                    } catch { }
+            NextcloudKit.shared.downloadPreview(fileId: metadata.fileId,
+                                                width: Int(NCGlobal.shared.size512.width),
+                                                height: Int(NCGlobal.shared.size512.height),
+                                                etag: metadata.etag,
+                                                account: metadata.account) { _ in
+            } completion: { _, _, _, _, responseData, error in
+                if error == .success, let data = responseData?.data {
                     perThumbnailCompletionHandler(itemIdentifier, data, nil)
                 } else {
                     perThumbnailCompletionHandler(itemIdentifier, nil, NSFileProviderError(.serverUnreachable))
@@ -54,6 +59,7 @@ extension FileProviderExtension {
                 }
             }
         }
+
         return progress
     }
 }

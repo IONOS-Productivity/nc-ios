@@ -53,23 +53,11 @@ class NCImagesRepository: NSObject {
     
     private static let utility = NCUtility()
     
-    static var favorite: UIImage {
-        utility.loadImage(
-            named: ImageName.favorite.rawValue,
-            colors: [NCBrandColor.shared.brandElement])
-    }
-    
     static var shareHeaderFavorite: UIImage {
         utility.loadImage(
             named: ImageName.favorite.rawValue,
             colors: [NCBrandColor.shared.brandElement],
             size: 20)
-    }
-    
-    static var livePhoto: UIImage {
-        utility.loadImage(
-            named: ImageName.livePhoto.rawValue,
-            colors: [NCBrandColor.shared.iconImageColor])
     }
     
     static var trash: UIImage {

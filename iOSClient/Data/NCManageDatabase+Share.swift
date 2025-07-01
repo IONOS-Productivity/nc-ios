@@ -22,6 +22,7 @@
 //
 
 import Foundation
+import UIKit
 import RealmSwift
 import NextcloudKit
 
@@ -53,6 +54,10 @@ class tableShareV2: Object {
     @objc dynamic var primaryKey = ""
     @objc dynamic var sendPasswordByTalk: Bool = false
     @objc dynamic var serverUrl = ""
+
+    ///
+    /// See [OCS Share API documentation](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-share-api.html) for semantic definitions of the different possible values.
+    ///
     @objc dynamic var shareType: Int = 0
     @objc dynamic var shareWith = ""
     @objc dynamic var shareWithDisplayname = ""
@@ -132,10 +137,16 @@ extension NCManageDatabase {
         }
     }
 
+    ///
+    /// Fetch all available shares of an item identified by the given metadata.
+    ///
+    /// - Returns: A tuple consisting of the first public share link and any _additional_ shares that might be there.
+    ///            It is possible that there is no public share link but still shares of other types.
+    ///            In the latter case, all shares are returned as the second tuple value.
+    ///
     func getTableShares(account: String) -> [tableShare] {
         do {
             let realm = try Realm()
-            realm.refresh()
             let sortProperties = [SortDescriptor(keyPath: "shareType", ascending: false), SortDescriptor(keyPath: "idShare", ascending: false)]
             let results = realm.objects(tableShare.self).filter("account == %@", account).sorted(by: sortProperties)
             return Array(results.map { tableShare.init(value: $0) })
@@ -148,7 +159,6 @@ extension NCManageDatabase {
     func getTableShares(metadata: tableMetadata) -> (firstShareLink: tableShare?, share: [tableShare]?) {
         do {
             let realm = try Realm()
-            realm.refresh()
             let sortProperties = [SortDescriptor(keyPath: "shareType", ascending: false), SortDescriptor(keyPath: "idShare", ascending: false)]
             let firstShareLink = realm.objects(tableShare.self).filter("account == %@ AND serverUrl == %@ AND fileName == %@ AND shareType == 3", metadata.account, metadata.serverUrl, metadata.fileName).first
             if let firstShareLink = firstShareLink {
@@ -167,7 +177,6 @@ extension NCManageDatabase {
     func getTableShare(account: String, idShare: Int) -> tableShare? {
         do {
             let realm = try Realm()
-            realm.refresh()
             guard let result = realm.objects(tableShare.self).filter("account = %@ AND idShare = %d", account, idShare).first else { return nil }
             return tableShare.init(value: result)
         } catch let error as NSError {
@@ -179,7 +188,6 @@ extension NCManageDatabase {
     func getTableShares(account: String, serverUrl: String) -> [tableShare] {
         do {
             let realm = try Realm()
-            realm.refresh()
             let sortProperties = [SortDescriptor(keyPath: "shareType", ascending: false), SortDescriptor(keyPath: "idShare", ascending: false)]
             let results = realm.objects(tableShare.self).filter("account == %@ AND serverUrl == %@", account, serverUrl).sorted(by: sortProperties)
             return Array(results.map { tableShare.init(value: $0) })
@@ -189,10 +197,12 @@ extension NCManageDatabase {
         return []
     }
 
+    ///
+    /// Fetch all shares of a file regardless of type.
+    ///
     func getTableShares(account: String, serverUrl: String, fileName: String) -> [tableShare] {
         do {
             let realm = try Realm()
-            realm.refresh()
             let sortProperties = [SortDescriptor(keyPath: "shareType", ascending: false), SortDescriptor(keyPath: "idShare", ascending: false)]
             let results = realm.objects(tableShare.self).filter("account == %@ AND serverUrl == %@ AND fileName == %@", account, serverUrl, fileName).sorted(by: sortProperties)
             return Array(results.map { tableShare.init(value: $0) })

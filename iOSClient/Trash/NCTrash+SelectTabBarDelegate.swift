@@ -20,15 +20,15 @@
 //
 
 import Foundation
+import UIKit
 
-extension NCTrash: NCTrashSelectTabBarDelegate {
+extension NCTrash: HiDriveCollectionViewCommonSelectToolbarDelegate {
     func onListSelected() {
         if layoutForView?.layout == NCGlobal.shared.layoutGrid {
             layoutForView?.layout = NCGlobal.shared.layoutList
-            NCManageDatabase.shared.setLayoutForView(account: appDelegate.account, key: layoutKey, serverUrl: "", layout: layoutForView?.layout)
+            self.database.setLayoutForView(account: session.account, key: layoutKey, serverUrl: "", layout: layoutForView?.layout)
 
             self.collectionView.reloadData()
-            self.collectionView.collectionViewLayout.invalidateLayout()
             self.collectionView.setCollectionViewLayout(self.listLayout, animated: true)
         }
     }
@@ -36,21 +36,21 @@ extension NCTrash: NCTrashSelectTabBarDelegate {
     func onGridSelected() {
         if layoutForView?.layout == NCGlobal.shared.layoutList {
             layoutForView?.layout = NCGlobal.shared.layoutGrid
-            NCManageDatabase.shared.setLayoutForView(account: appDelegate.account, key: layoutKey, serverUrl: "", layout: layoutForView?.layout)
+            self.database.setLayoutForView(account: session.account, key: layoutKey, serverUrl: "", layout: layoutForView?.layout)
 
             self.collectionView.reloadData()
-            self.collectionView.collectionViewLayout.invalidateLayout()
             self.collectionView.setCollectionViewLayout(self.gridLayout, animated: true)
         }
     }
 
     func selectAll() {
+        guard let datasource else { return }
         if !selectOcId.isEmpty, datasource.count == selectOcId.count {
             selectOcId = []
         } else {
-            selectOcId = self.datasource.compactMap({ $0.fileId })
+            selectOcId = datasource.compactMap({ $0.fileId })
         }
-        selectionToolbar.update(selectOcId: selectOcId)
+        selectionToolbar.update(fileSelect: selectOcId)
         collectionView.reloadData()
     }
 

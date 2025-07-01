@@ -43,15 +43,13 @@ struct NCSettingsAdvancedView: View {
                     .onChange(of: model.showHiddenFiles) { _ in
                         model.updateShowHiddenFiles()
                 }
-                .font(.system(size: 16))
-            }, footer: { }).applyGlobalFormSectionStyle()
+            }).applyGlobalFormSectionStyle()
             /// file name
             Section(content: {
                NavigationLink(destination: LazyView {
-                   NCFileNameView(model: NCFileNameModel())
+                   NCFileNameView(model: NCFileNameModel(controller: model.controller))
                }) {
                    Text(NSLocalizedString("_filenamemask_", comment: ""))
-                       .font(.system(size: 16))
                }
             }, footer: {
                 Text(NSLocalizedString("_filenamemask_footer_", comment: "")).listRowBackground(Color.clear)
@@ -59,26 +57,23 @@ struct NCSettingsAdvancedView: View {
             /// Most Compatible & Enable Live Photo
             Section(content: {
                 Toggle(NSLocalizedString("_format_compatibility_", comment: ""), isOn: $model.mostCompatible)
-                    .tint(Color(NCBrandColor.shared.switchColor))
+                    .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
                     .onChange(of: model.mostCompatible) { _ in
                         model.updateMostCompatible()
                 }
-                .font(.system(size: 16))
                 Toggle(NSLocalizedString("_upload_mov_livephoto_", comment: ""), isOn: $model.livePhoto)
-                    .tint(Color(NCBrandColor.shared.switchColor))
+                    .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
                     .onChange(of: model.livePhoto) { _ in
                         model.updateLivePhoto()
                 }
-                .font(.system(size: 16))
             }).applyGlobalFormSectionStyle()
             /// Remove from Camera Roll
             Section(content: {
                 Toggle(NSLocalizedString("_remove_photo_CameraRoll_", comment: ""), isOn: $model.removeFromCameraRoll)
-                    .tint(Color(NCBrandColor.shared.switchColor))
+                    .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
                     .onChange(of: model.removeFromCameraRoll) { _ in
                         model.updateRemoveFromCameraRoll()
                 }
-                .font(.system(size: 16))
             }).applyGlobalFormSectionStyle()
             /// Section : Files App
             if !NCBrandOptions.shared.disable_openin_file {
@@ -88,7 +83,8 @@ struct NCSettingsAdvancedView: View {
                         .onChange(of: model.appIntegration) { _ in
                             model.updateAppIntegration()
                     }
-                    .font(.system(size: 16))
+                }, footer: {
+                    Text(NSLocalizedString("_disable_files_app_footer_", comment: ""))
                 }).applyGlobalFormSectionStyle()
             }
             /// Section: Privacy
@@ -100,7 +96,6 @@ struct NCSettingsAdvancedView: View {
                             model.updateCrashReporter()
                             showCrashReporter.toggle()
                     }
-                    .font(.system(size: 16))
                     .alert(NSLocalizedString("_crashservice_title_", comment: ""), isPresented: $showCrashReporter, actions: {
                         Button(NSLocalizedString("OK", comment: ""), role: .cancel) {
                             model.exitNextCloud(ext: showCrashReporter)
@@ -127,7 +122,6 @@ struct NCSettingsAdvancedView: View {
                                 .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                             Text(NSLocalizedString("_view_log_", comment: ""))
                         }
-                        .font(.system(size: 16))
                     })
                     .tint(Color(UIColor.label))
                     /// Set Log Level()
@@ -136,7 +130,6 @@ struct NCSettingsAdvancedView: View {
                             Text(level.displayText).tag(level)
                         }
                     }
-                    .font(.system(size: 16))
                     .onChange(of: model.selectedLogLevel) { _ in
                         model.updateSelectedLogLevel()
                     }
@@ -152,7 +145,6 @@ struct NCSettingsAdvancedView: View {
                                 .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                             Text(NSLocalizedString("_clear_log_", comment: ""))
                         }
-                        .font(.system(size: 16))
                     })
                     .tint(Color(UIColor.label))
                     .alert(NSLocalizedString("_log_file_clear_alert_", comment: ""), isPresented: $model.logFileCleared) {
@@ -165,7 +157,7 @@ struct NCSettingsAdvancedView: View {
                 if model.isAdminGroup {
                     Section(content: {
                         NavigationLink(destination: LazyView {
-                            NCCapabilitiesView(model: NCCapabilitiesModel())
+                            NCCapabilitiesView(model: NCCapabilitiesModel(controller: model.controller))
                         }) {
                             HStack {
 								Image(.Settings.bulletlist)
@@ -175,7 +167,6 @@ struct NCSettingsAdvancedView: View {
                                     .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                                 Text(NSLocalizedString("_capabilities_", comment: ""))
                             }
-                            .font(.system(size: 16))
                         }
                     }, header: {
                         Text(NSLocalizedString("_capabilities_", comment: "")).listRowBackground(Color.clear)
@@ -191,11 +182,10 @@ struct NCSettingsAdvancedView: View {
                         Text(interval.displayText).tag(interval)
                     }
                 }
-                .font(.system(size: 16))
-                    .pickerStyle(.automatic)
-                    .onChange(of: model.selectedInterval) { _ in
-                        model.updateSelectedInterval()
-                    }
+                .pickerStyle(.automatic)
+                .onChange(of: model.selectedInterval) { _ in
+                    model.updateSelectedInterval()
+                }
                 Button(action: {
                     showCacheAlert.toggle()
                 }, label: {
@@ -207,7 +197,6 @@ struct NCSettingsAdvancedView: View {
                             .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                         Text(NSLocalizedString("_clear_cache_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 })
                 .tint(Color(UIColor.label))
                 .alert(NSLocalizedString("_want_delete_cache_", comment: ""), isPresented: $showCacheAlert) {
@@ -220,7 +209,6 @@ struct NCSettingsAdvancedView: View {
                 Text(NSLocalizedString("_delete_files_desc_", comment: "")).listRowBackground(Color.clear)
             }, footer: {
                 Text(model.footerTitle)
-                    .font(.system(size: 12))
                     .multilineTextAlignment(.leading).listRowBackground(Color.clear)
             }).applyGlobalFormSectionStyle()
             /// Reset Application
@@ -237,7 +225,6 @@ struct NCSettingsAdvancedView: View {
                         Text(NSLocalizedString("_exit_", comment: ""))
 							.foregroundColor(Color(UIColor(resource: .destructiveAction)))
                     }
-                    .font(.system(size: 16))
                 })
                 .tint(Color(UIColor.label))
                 .alert(NSLocalizedString("_want_exit_", comment: ""), isPresented: $showExitAlert) {
@@ -252,17 +239,33 @@ struct NCSettingsAdvancedView: View {
                 +
                 Text("\n\n")
                )
-                    .font(.system(size: 12))
                     .listRowBackground(Color.clear)
                     .multilineTextAlignment(.leading)
             }).applyGlobalFormSectionStyle()
         }
         .navigationBarTitle(NSLocalizedString("_advanced_", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
         .defaultViewModifier(model)
         .applyGlobalFormStyle()
+    }
+
+    private var fileNameMaskFooter: AttributedString {
+        let boldPart = NSLocalizedString("_filenamemask_format_", comment: "")
+        let localizedString = String(
+            format: NSLocalizedString("_filenamemask_footer_", comment: ""),
+            boldPart
+        )
+
+        var attributedString = AttributedString(localizedString)
+
+        if let range = attributedString.range(of: boldPart) {
+            attributedString[range].font = .footnote.weight(.semibold)
+        }
+
+        return attributedString
     }
 }
 
 #Preview {
-    NCSettingsAdvancedView(model: NCSettingsAdvancedModel(viewController: nil), showExitAlert: false, showCacheAlert: false)
+    NCSettingsAdvancedView(model: NCSettingsAdvancedModel(controller: nil), showExitAlert: false, showCacheAlert: false)
 }

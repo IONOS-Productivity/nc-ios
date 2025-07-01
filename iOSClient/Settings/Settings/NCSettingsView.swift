@@ -32,6 +32,8 @@ struct NCSettingsView: View {
     @State private var showAcknowledgements = false
     /// State to control the visibility of the passcode view
     @State private var showPasscode = false
+    /// State to contorl the visibility of the change passcode view
+    @State private var showChangePasscode = false
     /// State to control the visibility of the Policy view
     @State private var showBrowser = false
     /// State to control the visibility of the Source Code  view
@@ -40,11 +42,12 @@ struct NCSettingsView: View {
     @ObservedObject var model: NCSettingsModel
 
     var body: some View {
+        let capabilities = NCCapabilities.shared.getCapabilities(account: model.controller?.account)
         Form {
             /// `Auto Upload` Section
             Section(content: {
                 NavigationLink(destination: LazyView {
-                    NCAutoUploadView(model: NCAutoUploadModel(viewController: model.controller?.currentViewController()))
+                    NCAutoUploadView(model: NCAutoUploadModel(controller: model.controller), albumModel: AlbumModel(controller: model.controller))
                 }) {
                     HStack {
                         Image(.Settings.camera)
@@ -54,9 +57,9 @@ struct NCSettingsView: View {
                             .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                         Text(NSLocalizedString("_settings_autoupload_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 }
-            }).listRowBackground(Color(NCBrandColor.shared.formRowBackgroundColor))
+            })
+            .listRowBackground(Color(NCBrandColor.shared.formRowBackgroundColor))
             /// `Privacy` Section
             Section(content: {
                 Button(action: {
@@ -68,25 +71,20 @@ struct NCSettingsView: View {
                             .scaledToFit()
                             .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                             .frame(width: 20, height: 20)
+                            .opacity(NCBrandOptions.shared.enforce_passcode_lock ? 0.5 : 1)
                         Text(model.isLockActive ? NSLocalizedString("_lock_active_", comment: "") : NSLocalizedString("_lock_not_active_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 })
                 .tint(Color(NCBrandColor.shared.textColor))
-                .sheet(isPresented: $showPasscode) {
-                    PasscodeView(isLockActive: $model.isLockActive)
-                }
                 /// Enable Touch ID
                 Toggle(NSLocalizedString("_enable_touch_face_id_", comment: ""), isOn: $model.enableTouchID)
                     .tint(Color(NCBrandColor.shared.switchColor))
-                    .font(.system(size: 16))
                     .onChange(of: model.enableTouchID) { _ in
                         model.updateTouchIDSetting()
                     }
                 /// Reset app wrong attempts
                 Toggle(NSLocalizedString("_reset_wrong_passcode_", comment: ""), isOn: $model.resetWrongAttempts)
                     .tint(Color(NCBrandColor.shared.switchColor))
-                    .font(.system(size: 16))
                     .onChange(of: model.resetWrongAttempts) { _ in
                         model.updateResetWrongAttemptsSetting()
                     }
@@ -94,7 +92,6 @@ struct NCSettingsView: View {
                 Text(NSLocalizedString("_privacy_", comment: "")).listRowBackground(Color.clear)
             }, footer: {
                 Text(String(format: NSLocalizedString("_reset_wrong_passcode_desc_", comment: ""), NCBrandOptions.shared.resetAppPasscodeAttempts))
-                    .font(.system(size: 12))
                     .listRowBackground(Color.clear)
                     .lineSpacing(1)
             }).applyGlobalFormSectionStyle()
@@ -112,7 +109,6 @@ struct NCSettingsView: View {
                                 .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                             Text(NSLocalizedString("_mobile_config_", comment: ""))
                         }
-                        .font(.system(size: 16))
                     })
                     .tint(Color(NCBrandColor.shared.textColor))
                 }, header: {
@@ -120,10 +116,8 @@ struct NCSettingsView: View {
                 }, footer: {
                     VStack(alignment: .leading) {
                         Text(NSLocalizedString("_calendar_contacts_footer_warning_", comment: ""))
-                            .font(.system(size: 12))
                         Spacer()
                         Text(NSLocalizedString("_calendar_contacts_footer_", comment: ""))
-                            .font(.system(size: 12))
                     }.listRowBackground(Color.clear)
 
                 }).applyGlobalFormSectionStyle()
@@ -131,9 +125,7 @@ struct NCSettingsView: View {
             /// `Advanced` Section
             Section {
                 NavigationLink(destination: LazyView {
-                    NCSettingsAdvancedView(model: NCSettingsAdvancedModel(viewController: model.controller?.currentViewController()),
-                                           showExitAlert: false,
-                                           showCacheAlert: false)
+                    NCSettingsAdvancedView(model: NCSettingsAdvancedModel(controller: model.controller), showExitAlert: false, showCacheAlert: false)
                 }) {
                     HStack {
 						Image(.Settings.gear)
@@ -143,7 +135,6 @@ struct NCSettingsView: View {
                             .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                         Text(NSLocalizedString("_advanced_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 }
                 
                 NavigationLink(destination: LazyView {
@@ -157,7 +148,6 @@ struct NCSettingsView: View {
                             .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                         Text(NSLocalizedString("_data_protection_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 }
             }.applyGlobalFormSectionStyle()
             /// `Information` Section
@@ -174,7 +164,6 @@ struct NCSettingsView: View {
 							.foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                         Text(NSLocalizedString("_acknowledgements_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 })
                 .tint(Color(NCBrandColor.shared.textColor))
                 .sheet(isPresented: $showAcknowledgements) {
@@ -192,7 +181,6 @@ struct NCSettingsView: View {
                             .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                         Text(NSLocalizedString("_privacy_legal_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 })
                 .tint(Color(NCBrandColor.shared.textColor))
                 .sheet(isPresented: $showBrowser) {
@@ -209,7 +197,6 @@ struct NCSettingsView: View {
                             .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                         Text(NSLocalizedString("_source_code_", comment: ""))
                     }
-                    .font(.system(size: 16))
                 })
                 .tint(Color(NCBrandColor.shared.textColor))
                 .sheet(isPresented: $showSourceCode) {
@@ -222,17 +209,23 @@ struct NCSettingsView: View {
                 Text(model.footerApp).listRowBackground(Color.clear)
             }).applyGlobalFormSectionStyle()
         }
-        .navigationBarTitle(NSLocalizedString("_settings_", comment: ""))
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    model.dismiss()
-                }, label: {
-                    Text(NSLocalizedString("_close_", comment: ""))
-                        .foregroundStyle(Color(NCBrandColor.shared.iconImageColor))
-                })
-            }
+        .sheet(isPresented: $showPasscode) {
+            SetupPasscodeView(isLockActive: $model.isLockActive)
         }
+        .sheet(isPresented: $showChangePasscode) {
+            SetupPasscodeView(isLockActive: $model.isLockActive, changePasscode: true)
+        }
+        .navigationBarTitle(NSLocalizedString("_settings_", comment: ""))
+		.toolbar {
+					ToolbarItem(placement: .navigationBarLeading) {
+						Button(action: {
+							model.dismiss()
+						}, label: {
+							Text(NSLocalizedString("_close_", comment: ""))
+								.foregroundStyle(Color(NCBrandColor.shared.iconImageColor))
+						})
+					}
+				}
         .defaultViewModifier(model)
         .applyGlobalFormStyle()
     }
@@ -248,18 +241,16 @@ struct E2EESection: View {
     var body: some View {
         Section(header: Text(NSLocalizedString("_e2e_settings_title_", comment: "")), content: {
             NavigationLink(destination: LazyView {
-                NCManageE2EEView(model: NCManageE2EE(viewController: model.controller?.currentViewController()))
+                NCManageE2EEView(model: NCManageE2EE(controller: model.controller))
             }) {
                 HStack {
                     Image(systemName: "lock")
                         .resizable()
                         .scaledToFit()
-                        .font(Font.system(.body).weight(.light))
                         .frame(width: 20, height: 20)
                         .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                     Text(NSLocalizedString("_e2e_settings_", comment: ""))
                 }
-                .font(.system(size: 16))
             }
         })
     }

@@ -82,7 +82,9 @@ class NCMenu: UITableViewController {
 			cell.backgroundColor = UIColor(resource: .ListCell.separator)
             return cell
         }
+
         let cell = tableView.dequeueReusableCell(withIdentifier: "menuActionCell", for: indexPath)
+        cell.accessibilityIdentifier = action.accessibilityIdentifier
         cell.tintColor = NCBrandColor.shared.customer
         cell.backgroundColor = menuColor
 		
@@ -136,7 +138,7 @@ class NCMenu: UITableViewController {
 		}
         
         if (action.selectable && action.selected) {
-            let checkmarkImage = UIImage(named: "checkmarkIcon")
+			let checkmarkImage = UIImage(named: "checkmarkIcon")?.templateRendered()?.withTintColor(NCBrandColor.shared.brandElement)
             let checkmarkImageView = UIImageView(image: checkmarkImage)
             checkmarkImageView.frame = CGRect(x: 0, y: 0, width: 19, height: 19)
             checkmarkImageView.contentMode = .scaleAspectFit

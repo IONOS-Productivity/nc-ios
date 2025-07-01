@@ -22,92 +22,69 @@
 //
 
 import UIKit
-import JGProgressHUD
 import NextcloudKit
 import Alamofire
 import Queuer
 
 extension NCNetworking {
-    func uploadLivePhoto(metadata: tableMetadata, userInfo aUserInfo: [AnyHashable: Any]) {
-        guard let metadata1 = NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "account == %@ AND urlBase == %@ AND path == %@ AND fileName == %@", metadata.account, metadata.urlBase, metadata.path, metadata.livePhotoFile)) else {
+    func createLivePhoto(metadata: tableMetadata, userInfo aUserInfo: [AnyHashable: Any]? = nil) {
+        database.realmRefresh()
+        guard let metadataLast = database.getMetadata(predicate: NSPredicate(format: "account == %@ AND urlBase == %@ AND path == %@ AND fileNameView == %@",
+                                                                             metadata.account,
+                                                                             metadata.urlBase,
+                                                                             metadata.path,
+                                                                             metadata.livePhotoFile)) else {
             metadata.livePhotoFile = ""
-            NCManageDatabase.shared.addMetadata(metadata)
-            return NotificationCenter.default.post(name: Notification.Name(rawValue: NCGlobal.shared.notificationCenterUploadedLivePhoto),
-                                                   object: nil,
-                                                   userInfo: aUserInfo)
+            self.database.addMetadata(metadata)
+            return NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterUploadedLivePhoto,
+                                                               object: nil,
+                                                               userInfo: aUserInfo,
+                                                               second: 0.5)
         }
-        if metadata1.status != NCGlobal.shared.metadataStatusNormal { return }
+        if metadataLast.status != self.global.metadataStatusNormal {
+            return NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Upload set LivePhoto for files (NO Status Normal) " + (metadataLast.fileName as NSString).deletingPathExtension)
+        }
 
         Task {
-            let serverUrlfileNamePath = metadata.urlBase + metadata.path + metadata.fileName
-            var livePhotoFile = metadata1.fileId
-            let results = await setLivephoto(serverUrlfileNamePath: serverUrlfileNamePath, livePhotoFile: livePhotoFile, account: metadata.account)
-            if results.error == .success {
-                NCManageDatabase.shared.setMetadataLivePhotoByServer(account: metadata.account, ocId: metadata.ocId, livePhotoFile: livePhotoFile)
-            } else {
-                NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Uplod set LivePhoto with error \(results.error.errorCode)")
-            }
-
-            let serverUrlfileNamePath1 = metadata1.urlBase + metadata1.path + metadata1.fileName
-            livePhotoFile = metadata.fileId
-            let results1 = await setLivephoto(serverUrlfileNamePath: serverUrlfileNamePath1, livePhotoFile: livePhotoFile, account: metadata1.account)
-            if results1.error == .success {
-                NCManageDatabase.shared.setMetadataLivePhotoByServer(account: metadata1.account, ocId: metadata1.ocId, livePhotoFile: livePhotoFile)
-            } else {
-                NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Upload set LivePhoto with error \(results.error.errorCode)")
-            }
-            if results.error == .success, results1.error == .success {
-                NextcloudKit.shared.nkCommonInstance.writeLog("[INFO] Upload set LivePhoto for files " + (metadata.fileName as NSString).deletingPathExtension)
-
-            }
-            NotificationCenter.default.post(name: Notification.Name(rawValue: NCGlobal.shared.notificationCenterUploadedLivePhoto),
-                                            object: nil,
-                                            userInfo: aUserInfo)
+            await setLivePhoto(metadataFirst: metadata, metadataLast: metadataLast, userInfo: aUserInfo)
         }
     }
 
-    func convertLivePhoto(metadata: tableMetadata) {
-        guard metadata.status == NCGlobal.shared.metadataStatusNormal else { return }
-        let account = metadata.account
-        let livePhotoFile = metadata.livePhotoFile
-        let serverUrlfileNamePath = metadata.urlBase + metadata.path + metadata.fileName
-        let ocId = metadata.ocId
+    func setLivePhoto(metadataFirst: tableMetadata?, metadataLast: tableMetadata?, userInfo aUserInfo: [AnyHashable: Any]? = nil, livePhoto: Bool = true) async {
+        guard let metadataFirst, let metadataLast = metadataLast else { return }
+        var livePhotoFileId = ""
 
-        DispatchQueue.global().async {
-            if let result = NCManageDatabase.shared.getResultMetadata(predicate: NSPredicate(format: "account == %@ AND status == %d AND (fileName == %@ || fileId == %@)", account, NCGlobal.shared.metadataStatusNormal, livePhotoFile, livePhotoFile)) {
-                if livePhotoFile == result.fileId { return }
-                for case let operation as NCOperationConvertLivePhoto in self.convertLivePhotoQueue.operations where operation.serverUrlfileNamePath == serverUrlfileNamePath { continue }
-                self.convertLivePhotoQueue.addOperation(NCOperationConvertLivePhoto(serverUrlfileNamePath: serverUrlfileNamePath, livePhotoFile: result.fileId, account: account, ocId: ocId))
-            }
+        /// METADATA FIRST
+        let serverUrlfileNamePathFirst = metadataFirst.urlBase + metadataFirst.path + metadataFirst.fileName
+        if livePhoto {
+            livePhotoFileId = metadataLast.fileId
         }
-    }
-}
-
-class NCOperationConvertLivePhoto: ConcurrentOperation {
-    var serverUrlfileNamePath, livePhotoFile, account, ocId: String
-
-    init(serverUrlfileNamePath: String, livePhotoFile: String, account: String, ocId: String) {
-        self.serverUrlfileNamePath = serverUrlfileNamePath
-        self.livePhotoFile = livePhotoFile
-        self.account = account
-        self.ocId = ocId
-    }
-
-    override func start() {
-        guard !isCancelled else {
-            return self.finish()
+        let resultsMetadataFirst = await setLivephoto(serverUrlfileNamePath: serverUrlfileNamePathFirst, livePhotoFile: livePhotoFileId, account: metadataFirst.account)
+        if resultsMetadataFirst.error == .success {
+            database.setMetadataLivePhotoByServer(account: metadataFirst.account, ocId: metadataFirst.ocId, livePhotoFile: livePhotoFileId)
         }
 
-        NextcloudKit.shared.setLivephoto(serverUrlfileNamePath: serverUrlfileNamePath, livePhotoFile: livePhotoFile, account: account, options: NKRequestOptions(queue: NextcloudKit.shared.nkCommonInstance.backgroundQueue)) { _, error in
-            if error == .success {
-                NCManageDatabase.shared.setMetadataLivePhotoByServer(account: self.account, ocId: self.ocId, livePhotoFile: self.livePhotoFile)
-            } else {
-                NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Convert LivePhoto with error \(error.errorCode)")
-            }
-            self.finish()
-            if NCNetworking.shared.convertLivePhotoQueue.operationCount == 0 {
-                NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterReloadDataSource, second: 0.1)
-            }
+        ///  METADATA LAST
+        let serverUrlfileNamePathLast = metadataLast.urlBase + metadataLast.path + metadataLast.fileName
+        if livePhoto {
+            livePhotoFileId = metadataFirst.fileId
+        }
+        let resultsMetadataLast = await setLivephoto(serverUrlfileNamePath: serverUrlfileNamePathLast, livePhotoFile: livePhotoFileId, account: metadataLast.account)
+        if resultsMetadataLast.error == .success {
+            database.setMetadataLivePhotoByServer(account: metadataLast.account, ocId: metadataLast.ocId, livePhotoFile: livePhotoFileId)
+        }
+
+        if resultsMetadataFirst.error == .success, resultsMetadataLast.error == .success {
+            NextcloudKit.shared.nkCommonInstance.writeLog("[INFO] Upload set LivePhoto for files " + (metadataFirst.fileName as NSString).deletingPathExtension)
+        } else {
+            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Upload set LivePhoto with error \(resultsMetadataFirst.error.errorCode) - \(resultsMetadataLast.error.errorCode)")
+        }
+
+        if let aUserInfo {
+            NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterUploadedLivePhoto,
+                                                        object: nil,
+                                                        userInfo: aUserInfo,
+                                                        second: 0.5)
         }
     }
 }

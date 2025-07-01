@@ -26,13 +26,9 @@ import SwiftUI
 import WidgetKit
 
 struct DashboardWidgetView: View {
-
     var entry: DashboardDataEntry
-
     var body: some View {
-
         GeometryReader { geo in
-
             if entry.isEmpty {
 				EmptyWidgetContentView()
 					.frame(width: geo.size.width, height: geo.size.height)
@@ -107,11 +103,11 @@ struct DashboardWidgetView: View {
 										VStack(alignment: .leading, spacing: 2) {
 											Text(element.title)
 												.font(WidgetConstants.elementTileFont)
-												.foregroundStyle(Color(UIColor(resource: .title)))
+                                                .foregroundStyle(Color(.title))
                                             if !element.subTitle.isEmpty {
                                                 Text(element.subTitle)
                                                     .font(WidgetConstants.elementSubtitleFont)
-                                                    .foregroundStyle(Color(UIColor(resource: .subtitle)))
+                                                    .foregroundStyle(Color(.subtitle))
                                             }
                                         }
                                         Spacer()
@@ -121,7 +117,7 @@ struct DashboardWidgetView: View {
                                 }
                                 if element != entry.datas.last {
                                     Divider()
-										.overlay(Color(UIColor(resource: .divider)))
+                                        .overlay(Color(.divider))
                                 }
                             }
                         }
@@ -134,8 +130,8 @@ struct DashboardWidgetView: View {
 
                     HStack(spacing: 10) {
 
-                        let brandColor = Color(UIColor(resource: .brandElement))
-                        let brandTextColor = Color(NCBrandColor.shared.brandText)
+                        let brandColor = Color(NCBrandColor.shared.brandElement)
+                        let brandTextColor = Color(.text)
 
                         ForEach(buttons, id: \.index) { element in
                             Link(destination: URL(string: element.link)!, label: {
@@ -154,17 +150,17 @@ struct DashboardWidgetView: View {
                     .frame(width: geo.size.width - 10, height: geo.size.height - 25, alignment: .bottomTrailing)
                 }
 
-				FooterView(imageName: entry.footerImage,
-						   text: entry.footerText,
-						   isPlaceholder: entry.isPlaceholder)
-					.padding(.horizontal, 15.0)
-					.padding(.bottom, 10.0)
-					.frame(maxWidth: geo.size.width,
-						   maxHeight: geo.size.height - 2,
-						   alignment: .bottomTrailing)
+                FooterView(imageName: entry.footerImage,
+                           text: entry.footerText,
+                           isPlaceholder: entry.isPlaceholder)
+                    .padding(.horizontal, 15.0)
+                    .padding(.bottom, 10.0)
+                    .frame(maxWidth: geo.size.width,
+                           maxHeight: geo.size.height - 2,
+                           alignment: .bottomTrailing)
             }
         }
-		.widgetBackground(Color(UIColor(resource: .background)))
+        .widgetBackground(Color(.background))
     }
 }
 
@@ -173,7 +169,7 @@ struct DashboardWidget_Previews: PreviewProvider {
         let datas = Array(dashboardDatasTest[0...4])
         let title = "Dashboard"
         let titleImage = UIImage(named: "widget")!
-        let entry = DashboardDataEntry(date: Date(), datas: datas, dashboard: nil, buttons: nil, isPlaceholder: false, isEmpty: true, titleImage: titleImage, title: title, footerImage: "Cloud_Checkmark", footerText: "Nextcloud widget")
+        let entry = DashboardDataEntry(date: Date(), datas: datas, dashboard: nil, buttons: nil, isPlaceholder: false, isEmpty: true, titleImage: titleImage, title: title, footerImage: "Cloud_Checkmark", footerText: "Nextcloud widget", account: "")
         DashboardWidgetView(entry: entry).previewContext(WidgetPreviewContext(family: .systemLarge))
     }
 }
