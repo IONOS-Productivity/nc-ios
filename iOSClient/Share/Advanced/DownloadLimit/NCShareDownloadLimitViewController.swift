@@ -20,7 +20,8 @@ class NCShareDownloadLimitViewController: UIViewController, NCShareNavigationTit
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setNavigationTitle()
-
+		self.navigationController?.setNavigationBarAppearance(backround: UIColor(resource: .Share.Advanced.background))
+		
         // Set up header view.
 
         guard let headerView = (Bundle.main.loadNibNamed("NCShareHeader", owner: self, options: nil)?.first as? NCShareHeader) else { return }

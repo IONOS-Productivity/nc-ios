@@ -38,6 +38,12 @@ class NCShareDownloadLimitTableViewController: UITableViewController {
     @IBOutlet var limitSwitch: UISwitch!
     @IBOutlet var limitTextField: UITextField!
 
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		tableView.backgroundColor = UIColor(resource: .Share.Advanced.background)
+		tableView.separatorColor = UIColor(resource: .Share.Advanced.tableCellSeparator)
+	}
+	
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
