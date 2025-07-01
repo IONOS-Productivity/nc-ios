@@ -64,6 +64,7 @@ class NCShareHeader: UIView {
         tagListView.addTags(Array(metadata.tags))
         
         tagListView.backgroundColor = .clear
+		backgroundColor =  UIColor(resource: .Share.Advanced.background)
 
         setNeedsLayout()
         layoutIfNeeded()
