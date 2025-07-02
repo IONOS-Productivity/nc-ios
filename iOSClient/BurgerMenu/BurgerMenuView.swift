@@ -225,8 +225,9 @@ private extension View {
 
 #Preview {
     class BurgerMenuViewModelMock: BurgerMenuViewModel {
-        override init(delegate: (any BurgerMenuViewModelDelegate)?) {
-            super.init(delegate: delegate)
+        override init(delegate: (any BurgerMenuViewModelDelegate)?,
+                      controller: NCMainTabBarController?) {
+            super.init(delegate: delegate, controller: nil)
             progressUsedSpace = 0.3
             messageUsedSpace = "62,5 MB of 607,21 GB used"
             isVisible = true
@@ -234,7 +235,7 @@ private extension View {
     }
     
     struct CustomPreviewView: View {
-        @StateObject var viewModel = BurgerMenuViewModelMock(delegate: nil)
+        @StateObject var viewModel = BurgerMenuViewModelMock(delegate: nil, controller: nil)
         var body: some View {
             return NavigationView {
                 BurgerMenuView(viewModel: viewModel)

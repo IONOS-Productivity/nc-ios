@@ -23,36 +23,16 @@
 
 import SwiftUI
 
-struct TextFieldClearButton: ViewModifier {
-
-    @Binding var text: String
-
-    func body(content: Content) -> some View {
-        HStack {
-            content
-            if !text.isEmpty {
-                Button(
-                    action: { self.text = "" },
-                    label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(Color(UIColor.placeholderText))
-                    }
-                ).buttonStyle(BorderlessButtonStyle())
-            }
-        }
-    }
-}
-
 struct ButtonRounded: ButtonStyle {
-
     var disabled = false
+    var account = ""
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(.horizontal, 40)
             .padding(.vertical, 10)
-            .background(disabled ? Color(UIColor.placeholderText) : Color(NCBrandColor.shared.brandElement))
-            .foregroundColor(disabled ? Color(UIColor.placeholderText) : Color(NCBrandColor.shared.brandText))
+            .background(disabled ? Color(UIColor.placeholderText) : Color(NCBrandColor.shared.getElement(account: account)))
+            .foregroundColor(disabled ? Color(UIColor.placeholderText) : Color(NCBrandColor.shared.getText(account: account)))
             .clipShape(Capsule())
             .opacity(configuration.isPressed ? 0.5 : 1.0)
     }

@@ -45,7 +45,7 @@ class NCTrashListCell: UICollectionViewCell, NCTrashCellProtocol {
 
     weak var delegate: NCTrashListCellDelegate?
     var objectId = ""
-    var indexPath = IndexPath()
+    var account = ""
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -88,8 +88,8 @@ class NCTrashListCell: UICollectionViewCell, NCTrashCellProtocol {
     @IBAction func touchUpInsideRestore(_ sender: Any) {
         delegate?.tapRestoreListItem(with: objectId, image: imageItem.image, sender: sender)
     }
-	
-    func selected(_ isSelected: Bool, isEditMode: Bool) {
+
+    func selected(_ status: Bool, isEditMode: Bool, account: String) {
         if isEditMode {
             imageItemLeftConstraint.constant = 45
             imageSelect.isHidden = false
@@ -106,10 +106,10 @@ class NCTrashListCell: UICollectionViewCell, NCTrashCellProtocol {
             buttonMore.isHidden = false
             backgroundView = nil
         }
-        if isSelected {
-            imageSelect.image = NCImageCache.images.checkedYes?.withTintColor(NCBrandColor.shared.brandElement)
+        if status {
+            imageSelect.image = NCImageCache.shared.getImageCheckedYes().withTintColor(NCBrandColor.shared.brandElement)
         } else {
-            imageSelect.image = NCImageCache.images.checkedNo?.withTintColor(UIColor(resource: .FileSelection.listItemDeselected))
+            imageSelect.image = NCImageCache.shared.getImageCheckedNo().withTintColor(UIColor(resource: .FileSelection.listItemDeselected))
         }
 
     }

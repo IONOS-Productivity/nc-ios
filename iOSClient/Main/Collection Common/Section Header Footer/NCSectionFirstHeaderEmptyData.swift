@@ -23,22 +23,12 @@
 
 import UIKit
 import MarkdownKit
+import RealmSwift
 
 protocol NCSectionFirstHeaderEmptyDataDelegate: AnyObject {
-    func tapButtonTransfer(_ sender: Any)
 }
 
 class NCSectionFirstHeaderEmptyData: UICollectionReusableView {
-
-    @IBOutlet weak var viewTransfer: UIView!
-    @IBOutlet weak var viewTransferHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var buttonTransfer: UIButton!
-    @IBOutlet weak var imageButtonTransfer: UIImageView!
-    @IBOutlet weak var labelTransfer: UILabel!
-    @IBOutlet weak var progressTransfer: UIProgressView!
-    @IBOutlet weak var transferSeparatorBottom: UIView!
-    @IBOutlet weak var transferSeparatorBottomHeightConstraint: NSLayoutConstraint!
-
     @IBOutlet weak var emptyImage: UIImageView!
     @IBOutlet weak var emptyTitle: UILabel!
     @IBOutlet weak var emptyDescription: UILabel!
@@ -56,56 +46,20 @@ class NCSectionFirstHeaderEmptyData: UICollectionReusableView {
     }
 
     func initHeader() {
-        viewTransferHeightConstraint.constant = 0
-        viewTransfer.isHidden = true
-        buttonTransfer.backgroundColor = .clear
-        buttonTransfer.setImage(nil, for: .normal)
-        buttonTransfer.layer.cornerRadius = 6
-        buttonTransfer.layer.masksToBounds = true
-        imageButtonTransfer.image = NCUtility().loadImage(named: "stop.circle")
-        imageButtonTransfer.tintColor = .white
-        labelTransfer.text = ""
-        progressTransfer.progress = 0
-        progressTransfer.tintColor = NCBrandColor.shared.brandElement
-        progressTransfer.trackTintColor = NCBrandColor.shared.brandElement.withAlphaComponent(0.2)
-        transferSeparatorBottom.backgroundColor = .separator
-        transferSeparatorBottomHeightConstraint.constant = 0.5
         emptyImage.image = nil
         emptyTitle.text = ""
         emptyDescription.text = ""
     }
 
-    // MARK: - Action
+    // MARK: -
 
-    @IBAction func touchUpTransfer(_ sender: Any) {
-       delegate?.tapButtonTransfer(sender)
-    }
-
-    // MARK: - Transfer
-
-    func setViewTransfer(isHidden: Bool, ocId: String? = nil, text: String? = nil, progress: Float? = nil) {
-        labelTransfer.text = text
-        viewTransfer.isHidden = isHidden
-        progressTransfer.progress = 0
-
-        if isHidden {
-            viewTransferHeightConstraint.constant = 0
-        } else {
-            var image: UIImage?
-            if let ocId,
-               let metadata = NCManageDatabase.shared.getMetadataFromOcId(ocId) {
-                image = NCUtility().getIcon(metadata: metadata)?.darken()
-                if image == nil {
-                    image = NCUtility().loadImage(named: metadata.iconName, useTypeIconFile: true)
-                    buttonTransfer.backgroundColor = .lightGray
-                } else {
-                    buttonTransfer.backgroundColor = .clear
-                }
-            }
-            viewTransferHeightConstraint.constant = NCGlobal.shared.heightHeaderTransfer
-            if let progress {
-                progressTransfer.progress = progress
-            }
-        }
+    func setContent(emptyImage: UIImage?,
+                    emptyTitle: String?,
+                    emptyDescription: String?,
+                    delegate: NCSectionFirstHeaderEmptyDataDelegate?) {
+        self.delegate = delegate
+        self.emptyImage.image = emptyImage
+        self.emptyTitle.text = emptyTitle
+        self.emptyDescription.text = emptyDescription
     }
 }

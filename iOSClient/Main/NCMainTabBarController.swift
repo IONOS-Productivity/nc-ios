@@ -23,6 +23,8 @@
 //
 
 import UIKit
+import SwiftUI
+import NextcloudKit
 
 struct NavigationCollectionViewCommon {
     var serverUrl: String
@@ -31,15 +33,62 @@ struct NavigationCollectionViewCommon {
 }
 
 class NCMainTabBarController: UITabBarController {
+    var account = ""
+    var availableNotifications: Bool = false
     var documentPickerViewController: NCDocumentPickerViewController?
     let navigationCollectionViewCommon = ThreadSafeArray<NavigationCollectionViewCommon>()
-    let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     private var previousIndex: Int?
-    private(set) var burgerMenuController: BurgerMenuAttachController?
+    private let groupDefaults = UserDefaults(suiteName: NCBrandOptions.shared.capabilitiesGroup)
+    private var checkUserDelaultErrorInProgress: Bool = false
+    private var timer: Timer?
+    private var unauthorizedAccountInProgress: Bool = false
+    private var unavailableAccountInProgress: Bool = false
     
+    private(set) var burgerMenuController: BurgerMenuAttachController?
+
     override func viewDidLoad() {
         super.viewDidLoad()
         delegate = self
+
+        if #available(iOS 17.0, *) {
+            traitOverrides.horizontalSizeClass = .compact
+        }
+
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeTheming), object: nil, queue: .main) { [weak self] notification in
+            if let userInfo = notification.userInfo as? NSDictionary,
+               let account = userInfo["account"] as? String,
+               let tabBar = self?.tabBar as? NCMainTabBar,
+               self?.account == account {
+                let color = NCBrandColor.shared.getElement(account: account)
+                tabBar.color = color
+                tabBar.tintColor = color
+                tabBar.setNeedsDisplay()
+            }
+        }
+
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterCheckUserDelaultErrorDone), object: nil, queue: nil) { notification in
+            if let userInfo = notification.userInfo,
+               let account = userInfo["account"] as? String,
+               let controller = userInfo["controller"] as? NCMainTabBarController,
+               account == self.account,
+               controller == self {
+                self.checkUserDelaultErrorInProgress = false
+            }
+        }
+
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
+            self.timer?.invalidate()
+            self.timer = nil
+        }
+
+        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                if UIApplication.shared.applicationState == .active {
+                    self.timerCheckServerError()
+                }
+            }
+        }
+        
 		setupTabBarView()
         burgerMenuController = BurgerMenuAttachController(with: self)
     }
@@ -47,6 +96,14 @@ class NCMainTabBarController: UITabBarController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         DataProtectionAgreementManager.shared.showAgreement(viewController: self)
+        
+        previousIndex = selectedIndex
+        if NCBrandOptions.shared.enforce_passcode_lock && NCKeychain().passcode.isEmptyOrNil {
+            let vc = UIHostingController(rootView: SetupPasscodeView(isLockActive: .constant(false)))
+            vc.isModalInPresentation = true
+
+            present(vc, animated: true)
+        }
     }
 	
 	private func setupTabBarView() {
@@ -67,6 +124,14 @@ class NCMainTabBarController: UITabBarController {
         return presentedViewController as? UINavigationController
     }
 
+    private func timerCheckServerError() {
+        self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false, block: { _ in
+            NCNetworking.shared.checkServerError(account: self.account, controller: self) {
+                self.timerCheckServerError()
+            }
+        })
+    }
+
     func currentViewController() -> UIViewController? {
         if let navVC = presentedNavigationController() {
             return navVC.topViewController
@@ -75,16 +140,13 @@ class NCMainTabBarController: UITabBarController {
     }
 
     func currentServerUrl() -> String {
-        var serverUrl = NCUtilityFileSystem().getHomeServer(urlBase: self.appDelegate.urlBase, userId: self.appDelegate.userId)
+        let session = NCSession.shared.getSession(account: account)
+        var serverUrl = NCUtilityFileSystem().getHomeServer(session: session)
         let viewController = currentViewController()
         if let collectionViewCommon = viewController as? NCCollectionViewCommon {
             if !collectionViewCommon.serverUrl.isEmpty {
                 serverUrl = collectionViewCommon.serverUrl
             }
-        } else if let media = viewController as? NCMedia {
-            serverUrl = media.serverUrl
-        } else if let viewerMediaPage = viewController as? NCViewerMediaPage {
-            serverUrl = viewerMediaPage.metadatas[viewerMediaPage.currentIndex].serverUrl
         }
         return serverUrl
     }

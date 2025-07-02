@@ -22,6 +22,7 @@
 //
 
 import Foundation
+import UIKit
 import RealmSwift
 import NextcloudKit
 
@@ -66,7 +67,6 @@ extension NCManageDatabase {
     func getTags(predicate: NSPredicate) -> [tableTag] {
         do {
             let realm = try Realm()
-            realm.refresh()
             let results = realm.objects(tableTag.self).filter(predicate)
             return Array(results.map { tableTag.init(value: $0) })
         } catch let error as NSError {
@@ -78,7 +78,6 @@ extension NCManageDatabase {
     func getTag(predicate: NSPredicate) -> tableTag? {
         do {
             let realm = try Realm()
-            realm.refresh()
             guard let result = realm.objects(tableTag.self).filter(predicate).first else { return nil }
             return tableTag.init(value: result)
         } catch let error as NSError {

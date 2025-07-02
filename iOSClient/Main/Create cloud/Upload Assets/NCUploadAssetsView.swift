@@ -8,9 +8,11 @@
 
 import SwiftUI
 import NextcloudKit
+import UniformTypeIdentifiers
 
 struct NCUploadAssetsView: View {
     @ObservedObject var model: NCUploadAssetsModel
+
     @State private var showSelect = false
     @State private var showUploadConflict = false
     @State private var showQuickLook = false
@@ -23,16 +25,16 @@ struct NCUploadAssetsView: View {
     var metadata: tableMetadata?
     let gridItems: [GridItem] = [GridItem()]
     let fileNamePath = NSTemporaryDirectory() + "Photo.jpg"
+    let utilityFileSystem = NCUtilityFileSystem()
 
     @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
-        let utilityFileSystem = NCUtilityFileSystem()
-
         NavigationView {
             ZStack(alignment: .top) {
                 List {
-                    Section(footer: Text(NSLocalizedString("_modify_image_desc_", comment: ""))) {
+                    Section(footer: Text(NSLocalizedString("_modify_image_desc_", comment: ""))
+						.font(.system(size: 16))) {
                         ScrollView(.horizontal) {
                             LazyHGrid(rows: gridItems, alignment: .center, spacing: 10) {
                                 ForEach(0..<model.previewStore.count, id: \.self) { index in
@@ -57,7 +59,7 @@ struct NCUploadAssetsView: View {
                                         }
                                         if item.data != nil {
                                             Button(action: {
-                                                if let image = model.previewStore[index].asset.fullResolutionImage?.resizeImage(size: CGSize(width: 300, height: 300), isAspectRation: true) {
+                                                if let image = model.previewStore[index].asset.fullResolutionImage?.resizeImage(size: CGSize(width: 240, height: 240), isAspectRation: true) {
                                                     model.previewStore[index].image = image
                                                     model.previewStore[index].data = nil
                                                     model.previewStore[index].assetType = model.previewStore[index].asset.type
@@ -77,6 +79,21 @@ struct NCUploadAssetsView: View {
                                                 model.previewStore[index].assetType = .livePhoto
                                             }) {
                                                 Label(NSLocalizedString("_enable_livephoto_", comment: ""), systemImage: "livephoto")
+                                            }
+                                        }
+                                        if item.data == nil && (item.uti == UTType.heic.identifier || item.uti == UTType.heif.identifier) {
+                                            if model.previewStore[index].nativeFormat {
+                                                Button(action: {
+                                                    model.previewStore[index].nativeFormat = false
+                                                }) {
+                                                    Label(NSLocalizedString("_Upload_native_format_yes_", comment: ""), systemImage: "eye")
+                                                }
+                                            } else {
+                                                Button(action: {
+                                                    model.previewStore[index].nativeFormat = true
+                                                }) {
+                                                    Label(NSLocalizedString("_Upload_native_format_no_", comment: ""), systemImage: "eye.slash")
+                                                }
                                             }
                                         }
                                         Button(role: .destructive, action: {
@@ -107,7 +124,7 @@ struct NCUploadAssetsView: View {
                                             }
                                     }
                                     .onChange(of: renameFileName) { newValue in
-                                        if let error = FileNameValidator.shared.checkFileName(newValue) {
+                                        if let error = FileNameValidator.checkFileName(newValue, account: model.controller?.account) {
                                             renameError = error.errorDescription
                                         } else {
                                             renameError = ""
@@ -117,27 +134,32 @@ struct NCUploadAssetsView: View {
                             }
                         }
                     }
-                    .applyGlobalFormSectionStyle()
+					.applyGlobalFormSectionStyle()
 
                     Section {
-                        Toggle(isOn: $model.useAutoUploadFolder, label: {
-                            Text(NSLocalizedString("_use_folder_auto_upload_", comment: ""))
-                                .font(.system(size: 15))
-                        })
-                        .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.switchColor)))
-
-                        if model.useAutoUploadFolder {
+                        ///
+                        /// Auto upload requires creating folders and subfolders which are difficult to manage offline
+                        /// 
+                        if NCNetworking.shared.isOnline {
                             Toggle(isOn: $model.useAutoUploadFolder, label: {
-                                Text(NSLocalizedString("_autoupload_create_subfolder_", comment: ""))
+                                Text(NSLocalizedString("_use_folder_auto_upload_", comment: ""))
                                     .font(.system(size: 15))
                             })
-                            .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.switchColor)))
+                            .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.getElement(account: metadata?.account))))
+
+                            if model.useAutoUploadFolder {
+                                Toggle(isOn: $model.useAutoUploadSubFolder, label: {
+                                    Text(NSLocalizedString("_autoupload_create_subfolder_", comment: ""))
+                                        .font(.system(size: 15))
+                                })
+                                .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.getElement(account: metadata?.account))))
+                            }
                         }
 
                         if !model.useAutoUploadFolder {
                             HStack {
                                 Label {
-                                    if utilityFileSystem.getHomeServer(urlBase: model.userBaseUrl.urlBase, userId: model.userBaseUrl.userId) == model.serverUrl {
+                                    if utilityFileSystem.getHomeServer(session: model.session) == model.serverUrl {
                                         Text("/")
                                             .font(.system(size: 15))
                                             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -161,47 +183,49 @@ struct NCUploadAssetsView: View {
                             }
                         }
                     }
-                    .applyGlobalFormSectionStyle()
-
-                    Button(NSLocalizedString("_save_", comment: "")) {
-                        if model.useAutoUploadFolder, model.useAutoUploadSubFolder {
-                            model.showHUD = true
-                        }
-                        model.uploadInProgress.toggle()
-                        model.save { metadatasNOConflict, metadatasUploadInConflict in
-                            if metadatasUploadInConflict.isEmpty {
-                                model.dismissCreateFormUploadConflict(metadatas: metadatasNOConflict)
-                            } else {
-                                model.metadatasNOConflict = metadatasNOConflict
-                                model.metadatasUploadInConflict = metadatasUploadInConflict
-                                showUploadConflict = true
+					.applyGlobalFormSectionStyle()
+					
+                    Section {
+                        Button(NSLocalizedString("_save_", comment: "")) {
+                            if model.useAutoUploadFolder, model.useAutoUploadSubFolder {
+                                model.showHUD = true
+                            }
+                            model.uploadInProgress.toggle()
+                            model.save { metadatasNOConflict, metadatasUploadInConflict in
+                                if metadatasUploadInConflict.isEmpty {
+                                    model.dismissCreateFormUploadConflict(metadatas: metadatasNOConflict)
+                                } else {
+                                    model.metadatasNOConflict = metadatasNOConflict
+                                    model.metadatasUploadInConflict = metadatasUploadInConflict
+                                    showUploadConflict = true
+                                }
                             }
                         }
+                        .frame(maxWidth: .infinity)
+						.buttonStyle(SaveButtonStyle(maxWidth: 150))
+                        .listRowBackground(Color(UIColor.clear))
+                        .disabled(model.uploadInProgress)
+                        .hiddenConditionally(isHidden: model.hiddenSave)
                     }
-                    .frame(maxWidth: .infinity)
-                    .buttonStyle(.primary)
-                    .listRowBackground(Color.clear)
-                    .disabled(model.uploadInProgress)
-                    .hiddenConditionally(isHidden: model.hiddenSave)
                 }
-                .navigationTitle(NSLocalizedString("_upload_photos_videos_", comment: ""))
-                .navigationBarTitleDisplayMode(.inline)
-                .navigationBarItems(trailing: Button(action: {
-                    presentationMode.wrappedValue.dismiss()
-                }) {
-                    Image(systemName: "xmark")
-                        .font(Font.system(.body).weight(.light))
-                        .foregroundStyle(Color(NCBrandColor.shared.iconImageColor))
-                })
-                HUDView(showHUD: $model.showHUD, textLabel: NSLocalizedString("_wait_", comment: ""), image: "doc.badge.arrow.up")
-                    .offset(y: model.showHUD ? 5 : -200)
-                    .animation(.easeOut, value: model.showHUD)
+				.applyGlobalFormStyle()
             }
-            .applyGlobalFormStyle()
+            .navigationTitle(NSLocalizedString("_upload_photos_videos_", comment: ""))
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(trailing: Button(action: {
+                model.dismissView = true
+            }) {
+                Image(systemName: "xmark")
+                    .font(Font.system(.body).weight(.light))
+                    .foregroundStyle(Color(NCBrandColor.shared.iconImageColor))
+            })
+            NCHUDView(showHUD: $model.showHUD, textLabel: NSLocalizedString("_wait_", comment: ""), image: "doc.badge.arrow.up", color: NCBrandColor.shared.getElement(account: model.session.account))
+                .offset(y: model.showHUD ? 5 : -200)
+                .animation(.easeOut, value: model.showHUD)
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .sheet(isPresented: $showSelect) {
-            SelectView(serverUrl: $model.serverUrl)
+            SelectView(serverUrl: $model.serverUrl, session: model.session)
         }
         .sheet(isPresented: $showUploadConflict) {
             UploadConflictView(delegate: model, serverUrl: model.serverUrl, metadatasUploadInConflict: model.metadatasUploadInConflict, metadatasNOConflict: model.metadatasNOConflict)
@@ -214,9 +238,6 @@ struct NCUploadAssetsView: View {
             if newValue {
                 presentationMode.wrappedValue.dismiss()
             }
-        }
-        .onTapGesture {
-            SceneManager.shared.getWindow(controller: model.controller)?.endEditing(true)
         }
         .onDisappear {
             model.dismissView = true
@@ -231,11 +252,26 @@ struct NCUploadAssetsView: View {
             ZStack(alignment: .bottomTrailing) {
                 if index < model.previewStore.count {
                     let item = model.previewStore[index]
-                    Image(uiImage: item.image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 80, alignment: .center)
-                        .cornerRadius(10)
+                    if let image = item.image {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 80, height: 80, alignment: .center)
+                            .cornerRadius(10)
+                    } else {
+                        Color(.lightGray) // Placeholder
+                            .frame(width: 80, height: 80)
+                            .cornerRadius(10)
+                            .onAppear {
+                                DispatchQueue.main.async {
+                                    if let asset = item.asset.phAsset,
+                                       let image = model.lowResolutionImage(asset: asset) {
+                                        model.previewStore[index].image = image
+                                    }
+                                }
+                            }
+                    }
+
                     if item.assetType == .livePhoto && item.data == nil {
                         Image(systemName: "livephoto")
                             .resizable()
@@ -260,5 +296,5 @@ struct NCUploadAssetsView: View {
 }
 
 #Preview {
-    NCUploadAssetsView(model: NCUploadAssetsModel(assets: [], serverUrl: "/", userBaseUrl: (UIApplication.shared.delegate as? AppDelegate)!, controller: nil))
+    NCUploadAssetsView(model: NCUploadAssetsModel(assets: [], serverUrl: "/", controller: nil))
 }

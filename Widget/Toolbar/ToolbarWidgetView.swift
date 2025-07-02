@@ -50,8 +50,8 @@ struct ToolbarWidgetView: View {
 						Image(uiImage: UIImage(resource: .media))
                             .resizable()
                             .renderingMode(.template)
-                            .foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandText))
-							.background(entry.isPlaceholder ? Color(.systemGray4) : Color(UIColor(resource: .brandElement)))
+                            .foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(.text))
+                            .background(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandElement))
                             .clipShape(Circle())
                             .scaledToFit()
                             .frame(width: width, height: height)
@@ -62,8 +62,8 @@ struct ToolbarWidgetView: View {
                             .resizable()
                             .renderingMode(.template)
                             .font(Font.system(.body).weight(.light))
-                            .foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandText))
-							.background(entry.isPlaceholder ? Color(.systemGray4) : Color(UIColor(resource: .brandElement)))
+                            .foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(.text))
+                            .background(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandElement))
                             .clipShape(Circle())
                             .scaledToFit()
                             .frame(width: width, height: height)
@@ -72,8 +72,8 @@ struct ToolbarWidgetView: View {
 					Link(destination: entry.isPlaceholder ? linkNoAction : linkActionVoiceMemo, label: {
 						Image(uiImage: UIImage(resource: .mic))
 							.resizable()
-							.foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandText))
-							.background(entry.isPlaceholder ? Color(.systemGray4) : Color(UIColor(resource: .brandElement)))
+							.foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(.text))
+							.background(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandElement))
 							.clipShape(Circle())
 							.scaledToFit()
 							.frame(width: width, height: height)
@@ -83,23 +83,23 @@ struct ToolbarWidgetView: View {
 				.padding(.vertical, geo.size.height / 2 * -0.25)
                 .redacted(reason: entry.isPlaceholder ? .placeholder : [])
 
-				FooterView(imageName: entry.footerImage,
-						   text: entry.footerText,
-						   isPlaceholder: entry.isPlaceholder)
-					.padding(.horizontal, 15.0)
-					.padding(.bottom, 10.0)
-					.frame(maxWidth: geo.size.width - 5, 
-						   maxHeight: geo.size.height - 2,
-						   alignment: .bottomTrailing)
+                FooterView(imageName: entry.footerImage,
+                           text: entry.footerText,
+                           isPlaceholder: entry.isPlaceholder)
+                    .padding(.horizontal, 15.0)
+                    .padding(.bottom, 10.0)
+                    .frame(maxWidth: geo.size.width - 5,
+                           maxHeight: geo.size.height - 2,
+                           alignment: .bottomTrailing)
             }
         }
-		.widgetBackground(Color(UIColor(resource: .background)))
+        .widgetBackground(Color(.background))
     }
 }
 
 struct ToolbarWidget_Previews: PreviewProvider {
     static var previews: some View {
-        let entry = ToolbarDataEntry(date: Date(), isPlaceholder: false, userId: "", url: "", footerImage: "Cloud_Checkmark", footerText: NCBrandOptions.shared.brand + " toolbar")
+        let entry = ToolbarDataEntry(date: Date(), isPlaceholder: false, userId: "", url: "", account: "", footerImage: "Cloud_Checkmark", footerText: NCBrandOptions.shared.brand + " toolbar")
         ToolbarWidgetView(entry: entry).previewContext(WidgetPreviewContext(family: .systemMedium))
     }
 }

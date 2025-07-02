@@ -29,22 +29,9 @@ import CoreMedia
 import Photos
 import Alamofire
 
-class NCUtility: NSObject {
+final class NCUtility: NSObject, Sendable {
     let utilityFileSystem = NCUtilityFileSystem()
-
-    func isSimulatorOrTestFlight() -> Bool {
-        guard let path = Bundle.main.appStoreReceiptURL?.path else {
-            return false
-        }
-        return path.contains("CoreSimulator") || path.contains("sandboxReceipt")
-    }
-
-    func isSimulator() -> Bool {
-        guard let path = Bundle.main.appStoreReceiptURL?.path else {
-            return false
-        }
-        return path.contains("CoreSimulator")
-    }
+    let global = NCGlobal.shared
 
     func isTypeFileRichDocument(_ metadata: tableMetadata) -> Bool {
         guard metadata.fileNameView != "." else { return false }
@@ -52,14 +39,14 @@ class NCUtility: NSObject {
         guard !fileExtension.isEmpty else { return false }
         guard let mimeType = UTType(tag: fileExtension.uppercased(), tagClass: .filenameExtension, conformingTo: nil)?.identifier else { return false }
         /// contentype
-        if !NCGlobal.shared.capabilityRichDocumentsMimetypes.filter({ $0.contains(metadata.contentType) || $0.contains("text/plain") }).isEmpty {
+        if !NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityRichDocumentsMimetypes.filter({ $0.contains(metadata.contentType) || $0.contains("text/plain") }).isEmpty {
             return true
         }
         /// mimetype
-        if !NCGlobal.shared.capabilityRichDocumentsMimetypes.isEmpty && mimeType.components(separatedBy: ".").count > 2 {
+        if !NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityRichDocumentsMimetypes.isEmpty && mimeType.components(separatedBy: ".").count > 2 {
             let mimeTypeArray = mimeType.components(separatedBy: ".")
             let mimeType = mimeTypeArray[mimeTypeArray.count - 2] + "." + mimeTypeArray[mimeTypeArray.count - 1]
-            if !NCGlobal.shared.capabilityRichDocumentsMimetypes.filter({ $0.contains(mimeType) }).isEmpty {
+            if !NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityRichDocumentsMimetypes.filter({ $0.contains(mimeType) }).isEmpty {
                 return true
             }
         }
@@ -284,9 +271,19 @@ class NCUtility: NSObject {
 
     func removeForbiddenCharacters(_ fileName: String) -> String {
         var fileName = fileName
-        for character in NCGlobal.shared.forbiddenCharacters {
+        for character in global.forbiddenCharacters {
             fileName = fileName.replacingOccurrences(of: character, with: "")
         }
         return fileName
+    }
+
+    func getHeightHeaderEmptyData(view: UIView, portraitOffset: CGFloat, landscapeOffset: CGFloat) -> CGFloat {
+        var height: CGFloat = 0
+        if UIDevice.current.orientation.isPortrait {
+            height = (view.frame.height / 2) - (view.safeAreaInsets.top / 2) + portraitOffset
+        } else {
+            height = (view.frame.height / 2) + landscapeOffset
+        }
+        return height
     }
 }

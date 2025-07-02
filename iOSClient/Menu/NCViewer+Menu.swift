@@ -27,24 +27,23 @@ import FloatingPanel
 import NextcloudKit
 
 extension NCViewer {
-
-    func toggleMenu(viewController: UIViewController, metadata: tableMetadata, webView: Bool, imageIcon: UIImage?, indexPath: IndexPath = IndexPath()) {
-        guard let metadata = NCManageDatabase.shared.getMetadataFromOcId(metadata.ocId),
-              let sceneIdentifier = viewController.sceneIdentifier else { return }
+    func toggleMenu(controller: NCMainTabBarController?, metadata: tableMetadata, webView: Bool, imageIcon: UIImage?, indexPath: IndexPath = IndexPath()) {
+        guard let metadata = self.database.getMetadataFromOcId(metadata.ocId),
+              let controller else { return }
         var actions = [NCMenuAction]()
-        let localFile = NCManageDatabase.shared.getTableLocalFile(predicate: NSPredicate(format: "ocId == %@", metadata.ocId))
+        let localFile = self.database.getTableLocalFile(predicate: NSPredicate(format: "ocId == %@", metadata.ocId))
         let isOffline = localFile?.offline == true
 
         //
         // DETAIL
         //
-        if !NCGlobal.shared.disableSharesView {
+        if !NCCapabilities.shared.disableSharesView(account: metadata.account) {
             actions.append(
                 NCMenuAction(
                     title: NSLocalizedString("_details_", comment: ""),
                     icon: NCImagesRepository.menuIconDetails,
                     action: { _ in
-                        NCActionCenter.shared.openShare(viewController: viewController, metadata: metadata, page: .activity)
+                        NCActionCenter.shared.openShare(viewController: controller, metadata: metadata, page: .activity)
                     }
                 )
             )
@@ -59,7 +58,7 @@ extension NCViewer {
                     title: NSLocalizedString("_view_in_folder_", comment: ""),
                     icon: NCImagesRepository.menuIconViewInFolder,
                     action: { _ in
-                       NCActionCenter.shared.openFileViewInFolder(serverUrl: metadata.serverUrl, fileNameBlink: metadata.fileName, fileNameOpen: nil, sceneIdentifier: sceneIdentifier)
+                        NCActionCenter.shared.openFileViewInFolder(serverUrl: metadata.serverUrl, fileNameBlink: metadata.fileName, fileNameOpen: nil, sceneIdentifier: controller.sceneIdentifier!)
                     }
                 )
             )
@@ -89,21 +88,21 @@ extension NCViewer {
         // OFFLINE
         //
         if !webView, metadata.canSetAsAvailableOffline {
-            actions.append(.setAvailableOfflineAction(selectedMetadatas: [metadata], isAnyOffline: isOffline, viewController: viewController))
+            actions.append(.setAvailableOfflineAction(selectedMetadatas: [metadata], isAnyOffline: isOffline, viewController: controller))
         }
 
         //
         // SHARE
         //
         if !webView, metadata.canShare {
-            actions.append(.share(selectedMetadatas: [metadata], viewController: viewController))
+            actions.append(.share(selectedMetadatas: [metadata], controller: controller))
         }
 
         //
         // SAVE LIVE PHOTO
         //
-        if let metadataMOV = NCManageDatabase.shared.getMetadataLivePhoto(metadata: metadata),
-           let hudView = viewController.view {
+        if let metadataMOV = self.database.getMetadataLivePhoto(metadata: metadata),
+           let hudView = controller.view {
             actions.append(
                 NCMenuAction(
                     title: NSLocalizedString("_livephoto_save_", comment: ""),
@@ -125,18 +124,20 @@ extension NCViewer {
                     icon: NCImagesRepository.menuIconSaveAsScan,
                     action: { _ in
                         if self.utilityFileSystem.fileProviderStorageExists(metadata) {
-                            NotificationCenter.default.post(
-                                name: Notification.Name(rawValue: NCGlobal.shared.notificationCenterDownloadedFile),
-                                object: nil,
-                                userInfo: ["ocId": metadata.ocId,
-                                           "selector": NCGlobal.shared.selectorSaveAsScan,
-                                           "error": NKError(),
-                                           "account": metadata.account])
+                            NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDownloadedFile,
+                                                                        object: nil,
+                                                                        userInfo: ["ocId": metadata.ocId,
+                                                                                   "ocIdTransfer": metadata.ocIdTransfer,
+                                                                                   "session": metadata.session,
+                                                                                   "selector": NCGlobal.shared.selectorSaveAsScan,
+                                                                                   "error": NKError(),
+                                                                                   "account": metadata.account],
+                                                                        second: 0.5)
                         } else {
-                            guard let metadata = NCManageDatabase.shared.setMetadatasSessionInWaitDownload(metadatas: [metadata],
-                                                                                                           session: NextcloudKit.shared.nkCommonInstance.sessionIdentifierDownload,
-                                                                                                           selector: NCGlobal.shared.selectorSaveAsScan,
-                                                                                                           sceneIdentifier: sceneIdentifier) else { return }
+                            guard let metadata = self.database.setMetadatasSessionInWaitDownload(metadatas: [metadata],
+                                                                                                 session: NCNetworking.shared.sessionDownload,
+                                                                                                 selector: NCGlobal.shared.selectorSaveAsScan,
+                                                                                                 sceneIdentifier: controller.sceneIdentifier) else { return }
                             NCNetworking.shared.download(metadata: metadata, withNotificationProgressTask: true)
                         }
                     }
@@ -145,40 +146,28 @@ extension NCViewer {
         }
 
         //
-        // RENAME
-        //
-        if !webView, metadata.isRenameable {
-            actions.append(
-                NCMenuAction(
-                    title: NSLocalizedString("_rename_", comment: ""),
-                    icon: NCImagesRepository.menuIconRename,
-                    action: { _ in
-                        viewController.present(UIAlertController.renameFile(metadata: metadata, indexPath: indexPath), animated: true)
-                    }
-                )
-            )
-        }
-
-        //
-        // COPY - MOVE
-        //
-        if !webView, metadata.isCopyableMovable {
-            actions.append(.moveOrCopyAction(selectedMetadatas: [metadata], viewController: viewController, indexPath: []))
-        }
-
-        //
-        // DOWNLOAD FULL RESOLUTION
+        // DOWNLOAD - LOCAL
         //
         if !webView, metadata.session.isEmpty, !self.utilityFileSystem.fileProviderStorageExists(metadata) {
+            var title = ""
+            if metadata.isImage {
+                title = NSLocalizedString("_try_download_full_resolution_", comment: "")
+            } else if metadata.isVideo {
+                title = NSLocalizedString("_download_video_", comment: "")
+            } else if metadata.isAudio {
+                title = NSLocalizedString("_download_audio_", comment: "")
+            } else {
+                title = NSLocalizedString("_download_file_", comment: "")
+            }
             actions.append(
                 NCMenuAction(
-                    title: NSLocalizedString("_try_download_full_resolution_", comment: ""),
+                    title: title,
                     icon: NCImagesRepository.menuIconDownloadFullResolutionImage,
                     action: { _ in
-                        guard let metadata = NCManageDatabase.shared.setMetadatasSessionInWaitDownload(metadatas: [metadata],
-                                                                                                       session: NextcloudKit.shared.nkCommonInstance.sessionIdentifierDownload,
-                                                                                                       selector: "",
-                                                                                                       sceneIdentifier: sceneIdentifier) else { return }
+                        guard let metadata = self.database.setMetadatasSessionInWaitDownload(metadatas: [metadata],
+                                                                                             session: NCNetworking.shared.sessionDownload,
+                                                                                             selector: "",
+                                                                                             sceneIdentifier: controller.sceneIdentifier) else { return }
                         NCNetworking.shared.download(metadata: metadata, withNotificationProgressTask: true)
                     }
                 )
@@ -220,18 +209,20 @@ extension NCViewer {
                     icon: NCImagesRepository.menuIconModifyWithQuickLook,
                     action: { _ in
                         if self.utilityFileSystem.fileProviderStorageExists(metadata) {
-                            NotificationCenter.default.post(
-                                name: Notification.Name(rawValue: NCGlobal.shared.notificationCenterDownloadedFile),
-                                object: nil,
-                                userInfo: ["ocId": metadata.ocId,
-                                           "selector": NCGlobal.shared.selectorLoadFileQuickLook,
-                                           "error": NKError(),
-                                           "account": metadata.account])
+                            NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDownloadedFile,
+                                                                        object: nil,
+                                                                        userInfo: ["ocId": metadata.ocId,
+                                                                                   "ocIdTransfer": metadata.ocIdTransfer,
+                                                                                   "session": metadata.session,
+                                                                                   "selector": NCGlobal.shared.selectorLoadFileQuickLook,
+                                                                                   "error": NKError(),
+                                                                                   "account": metadata.account],
+                                                                        second: 0.5)
                         } else {
-                            guard let metadata = NCManageDatabase.shared.setMetadatasSessionInWaitDownload(metadatas: [metadata],
-                                                                                                           session: NextcloudKit.shared.nkCommonInstance.sessionIdentifierDownload,
-                                                                                                           selector: NCGlobal.shared.selectorLoadFileQuickLook,
-                                                                                                           sceneIdentifier: sceneIdentifier) else { return }
+                            guard let metadata = self.database.setMetadatasSessionInWaitDownload(metadatas: [metadata],
+                                                                                                 session: NCNetworking.shared.sessionDownload,
+                                                                                                 selector: NCGlobal.shared.selectorLoadFileQuickLook,
+                                                                                                 sceneIdentifier: controller.sceneIdentifier) else { return }
                             NCNetworking.shared.download(metadata: metadata, withNotificationProgressTask: true)
                         }
                     }
@@ -243,9 +234,9 @@ extension NCViewer {
         // DELETE
         //
         if !webView, metadata.isDeletable {
-            actions.append(.deleteAction(selectedMetadatas: [metadata], indexPaths: [], metadataFolder: nil, viewController: viewController))
+            actions.append(.deleteAction(selectedMetadatas: [metadata], metadataFolder: nil, controller: controller))
         }
 
-        viewController.presentMenu(with: actions)
+        controller.presentMenu(with: actions)
     }
 }

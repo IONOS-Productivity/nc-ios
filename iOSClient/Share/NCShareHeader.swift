@@ -37,8 +37,8 @@ class NCShareHeader: UIView {
 
     func setupUI(with metadata: tableMetadata) {
         let utilityFileSystem = NCUtilityFileSystem()
-        if FileManager.default.fileExists(atPath: utilityFileSystem.getDirectoryProviderStorageIconOcId(metadata.ocId, etag: metadata.etag)) {
-            fullWidthImageView.image = NCUtility().getImageMetadata(metadata, for: frame.height)
+        if let image = NCUtility().getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal.shared.previewExt1024) {
+            fullWidthImageView.image = image
             fullWidthImageView.contentMode = .scaleAspectFill
             imageView.image = fullWidthImageView.image
             imageView.isHidden = true
@@ -48,9 +48,9 @@ class NCShareHeader: UIView {
                     .withTintColor(UIColor(resource: .Share.commonIconTint))
                     .withRenderingMode(.alwaysOriginal)
             } else if !metadata.iconName.isEmpty {
-                imageView.image = NCUtility().loadImage(named: metadata.iconName, useTypeIconFile: true)
+                imageView.image = NCUtility().loadImage(named: metadata.iconName, useTypeIconFile: true, account: metadata.account)
             } else {
-                imageView.image = NCImageCache.images.file
+                imageView.image = NCImageCache.shared.getImageFile()
             }
 
             fileNameTopConstraint.constant -= 45
@@ -59,7 +59,7 @@ class NCShareHeader: UIView {
         fileName.text = metadata.fileNameView
         fileName.textColor = NCBrandColor.shared.textColor
         info.textColor = NCBrandColor.shared.textColor2
-        info.text = utilityFileSystem.transformedSize(metadata.size) + ", " + NCUtility().dateDiff(metadata.date as Date)
+        info.text = utilityFileSystem.transformedSize(metadata.size) + ", " + NCUtility().getRelativeDateTitle(metadata.date as Date)
 
         tagListView.addTags(Array(metadata.tags))
         

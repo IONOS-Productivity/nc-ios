@@ -37,14 +37,14 @@ struct FilesWidgetView: View {
 					.frame(width: geo.size.width, height: geo.size.height)
 			}
 			
-			HeaderView(title: entry.title)
+            HeaderView(title: entry.tile)
 				.padding(.top, 7)
 				
 			VStack(spacing: 5) {
 				
 				if !entry.isEmpty {
 					WidgetContentView(entry: entry)
-						.padding(.top, 40)
+						.padding(.top, 35)
 						.redacted(reason: entry.isPlaceholder ? .placeholder : [])
 				}
 				
@@ -60,13 +60,14 @@ struct FilesWidgetView: View {
 						   text: entry.footerText,
 						   isPlaceholder: entry.isPlaceholder)
 					.padding(.horizontal, 15.0)
-					.padding(.bottom, 10.0)
+                    .padding(.top, 5.0)
+                    .padding(.bottom, 5.0)
 					.frame(maxWidth: geo.size.width,
 						   maxHeight: 30,
 						   alignment: .bottomTrailing)
 			}
 		}
-		.widgetBackground(Color(UIColor(resource: .background)))
+        .widgetBackground(Color(.background))
     }
 }
 
@@ -100,10 +101,10 @@ fileprivate struct WidgetContentView: View {
 							VStack(alignment: .leading, spacing: 2) {
 								Text(element.title)
 									.font(WidgetConstants.elementTileFont)
-									.foregroundStyle(Color(UIColor(resource: .title)))
+                                    .foregroundStyle(Color(.title))
 								Text(element.subTitle)
 									.font(WidgetConstants.elementSubtitleFont)
-									.foregroundStyle(Color(UIColor(resource: .subtitle)))
+                                    .foregroundStyle(Color(.subtitle))
 							}
 							Spacer()
 						}
@@ -112,7 +113,7 @@ fileprivate struct WidgetContentView: View {
 					}
 					if element != entry.datas.last {
 						Divider()
-							.overlay(Color(UIColor(resource: .divider)))
+                            .overlay(Color(.divider))
 					}
 				}
 			}
@@ -141,8 +142,8 @@ struct LinkActionsToolbarView: View {
 				Image(uiImage: UIImage(resource: .media))
 					.resizable()
 					.renderingMode(.template)
-					.foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandText))
-					.background(entry.isPlaceholder ? Color(.systemGray4) : Color(UIColor(resource: .brandElement)))
+                    .foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(.text))
+					.background(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandElement))
 					.clipShape(Circle())
 					.scaledToFit()
 					.frame(width: width, height: height)
@@ -152,8 +153,8 @@ struct LinkActionsToolbarView: View {
 				Image(uiImage: UIImage(resource: .scan))
 					.resizable()
 					.renderingMode(.template)
-					.foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandText))
-					.background(entry.isPlaceholder ? Color(.systemGray4) : Color(UIColor(resource: .brandElement)))
+					.foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(.text))
+                    .background(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandElement))
 					.clipShape(Circle())
 					.scaledToFit()
 					.font(Font.system(.body).weight(.light))
@@ -164,8 +165,8 @@ struct LinkActionsToolbarView: View {
 				Image(uiImage: UIImage(resource: .mic))
 					.resizable()
 					.renderingMode(.template)
-					.foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandText))
-					.background(entry.isPlaceholder ? Color(.systemGray4) : Color(UIColor(resource: .brandElement)))
+					.foregroundColor(entry.isPlaceholder ? Color(.systemGray4) : Color(.text))
+					.background(entry.isPlaceholder ? Color(.systemGray4) : Color(NCBrandColor.shared.brandElement))
 					.clipShape(Circle())
 					.scaledToFit()
 					.frame(width: width, height: height)
@@ -177,7 +178,16 @@ struct LinkActionsToolbarView: View {
 struct FilesWidget_Previews: PreviewProvider {
     static var previews: some View {
         let datas = Array(filesDatasTest[0...4])
-        let entry = FilesDataEntry(date: Date(), datas: datas, isPlaceholder: false, isEmpty: true, userId: "", url: "", title: "Good afternoon, Marino Faggiana", footerImage: "Cloud_Checkmark", footerText: "Nextcloud files")
-        FilesWidgetView(entry: entry).previewContext(WidgetPreviewContext(family: .systemLarge))
+        let entry = FilesDataEntry(date: Date(), datas: datas, isPlaceholder: false, isEmpty: true, userId: "", url: "", account: "", tile: "Good afternoon, Marino Faggiana", footerImage: "Cloud_Checkmark", footerText: "Nextcloud files")
+        if #available(iOSApplicationExtension 17.0, *) {
+            FilesWidgetView(entry: entry)
+                .previewContext(WidgetPreviewContext(family: .systemLarge))
+                .containerBackground(for: .widget) {
+                    Color.red
+                }
+        } else {
+            FilesWidgetView(entry: entry)
+                .previewContext(WidgetPreviewContext(family: .systemLarge))
+        }
     }
 }

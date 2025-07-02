@@ -30,8 +30,6 @@ import Combine
 import SwiftUI
 
 class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
-    /// AppDelegate
-    let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     /// Keychain access
     var keychain = NCKeychain()
     /// State variable for indicating if the user is in Admin group
@@ -58,17 +56,21 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     /// State variable for storing the footer title, usually used for cache deletion.
     @Published var footerTitle: String = ""
     /// Root View Controller
-    @Published var viewController: UIViewController?
+    @Published var controller: NCMainTabBarController?
+    /// Get session
+    var session: NCSession.Session {
+        NCSession.shared.getSession(controller: controller)
+    }
 
     /// Initializes the view model with default values.
-    init(viewController: UIViewController?) {
-        self.viewController = viewController
+    init(controller: NCMainTabBarController?) {
+        self.controller = controller
         onViewAppear()
     }
 
     /// Triggered when the view appears.
     func onViewAppear() {
-        let groups = NCManageDatabase.shared.getAccountGroups(account: appDelegate.account)
+        let groups = NCManageDatabase.shared.getAccountGroups(account: session.account)
         isAdminGroup = groups.contains(NCGlobal.shared.groupAdmin)
         showHiddenFiles = keychain.showHiddenFiles
         mostCompatible = keychain.formatCompatibility
@@ -121,6 +123,7 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     func updateSelectedLogLevel() {
         keychain.logLevel = selectedLogLevel.rawValue
         NextcloudKit.shared.nkCommonInstance.levelLog = selectedLogLevel.rawValue
+        exit(0)
     }
 
     /// Updates the value of `selectedInterval` in the keychain.
@@ -128,16 +131,17 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
         keychain.cleanUpDay = selectedInterval.rawValue
     }
 
-    /// Clears cache associated with the specified account.
+    /// Clears cache
     func clearCache() {
         NCActivityIndicator.shared.startActivity(style: .large, blurEffect: true)
         // Cancel all networking tasks
         NCNetworking.shared.cancelAllTask()
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            URLCache.shared.memoryCapacity = 0
-            URLCache.shared.diskCapacity = 0
+            URLCache.shared.removeAllCachedResponses()
 
-            NCManageDatabase.shared.clearDatabase(account: self.appDelegate.account, removeAccount: false)
+            NCManageDatabase.shared.clearDatabase()
+
+            NCNetworking.shared.removeAllKeyUserDefaultsData(account: nil)
 
             let ufs = NCUtilityFileSystem()
             ufs.removeGroupDirectoryProviderStorage()
@@ -146,11 +150,12 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
             ufs.removeTemporaryDirectory()
             ufs.createDirectoryStandard()
 
-            NCAutoUpload.shared.alignPhotoLibrary(viewController: self.viewController)
-            NCImageCache.shared.createMediaCache(account: self.appDelegate.account, withCacheSize: true)
-
             NCActivityIndicator.shared.stop()
             self.calculateSize()
+
+            NCService().startRequestServicesServer(account: self.session.account, controller: self.controller)
+
+            NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterClearCache)
         }
     }
 
@@ -169,7 +174,8 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     /// - Parameter
     /// exit: Boolean indicating whether to reset the application.
     func resetNextCloud() {
-        self.appDelegate.resetApplication()
+        let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
+        appDelegate.resetApplication()
     }
 
     /// Exits the Nextcloud application if specified.
@@ -187,7 +193,8 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
         // Instantiate NCViewerQuickLook with the log file URL, editing disabled, and no metadata
         let viewerQuickLook = NCViewerQuickLook(with: NSURL(fileURLWithPath: NextcloudKit.shared.nkCommonInstance.filenamePathLog) as URL, isEditingEnabled: false, metadata: nil)
         // Present the NCViewerQuickLook view controller
-        viewController?.present(viewerQuickLook, animated: true, completion: nil)
+		let topController = controller?.presentedViewController ?? controller
+		topController?.present(viewerQuickLook, animated: true, completion: nil)
     }
 
     /// Clears the log file.
@@ -196,12 +203,10 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
         NextcloudKit.shared.nkCommonInstance.clearFileLog()
         // Fetch the log level from the keychain
         let logLevel = keychain.logLevel
-        // Check if the app is running in a simulator or TestFlight environment
-        let isSimulatorOrTestFlight = NCUtility().isSimulatorOrTestFlight()
         // Get the app's version and copyright information
         let versionNextcloudiOS = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, NCUtility().getVersionApp(withBuild: true))
         // Construct the log message
-        let logMessage = "[INFO] Clear log with level \(logLevel) \(versionNextcloudiOS)" + (isSimulatorOrTestFlight ? " (Simulator / TestFlight)" : "")
+        let logMessage = "[INFO] Clear log with level \(logLevel) \(versionNextcloudiOS)"
         // Write the log entry about the log clearance
         NextcloudKit.shared.nkCommonInstance.writeLog(logMessage)
         // Set the alert state to show that log file has been cleared

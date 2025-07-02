@@ -26,7 +26,6 @@
 import UIKit
 
 class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
-
     @IBOutlet weak var buttonLogin: UIButton!
     @IBOutlet weak var buttonSignUp: UIButton!
     @IBOutlet weak var buttonHost: UIButton!
@@ -38,7 +37,7 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
     private let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     private let titles = [NSLocalizedString("_intro_1_title_", comment: ""), NSLocalizedString("_intro_2_title_", comment: ""), NSLocalizedString("_intro_3_title_", comment: ""), NSLocalizedString("_intro_4_title_", comment: "")]
     private let images = [UIImage(named: "intro1"), UIImage(named: "intro2"), UIImage(named: "intro3"), UIImage(named: "intro4")]
-    private var timerAutoScroll: Timer?
+    private var timer: Timer?
     private var textColor: UIColor = .white
     private var textColorOpponent: UIColor = .black
 
@@ -97,28 +96,42 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
         pageControl.numberOfPages = self.titles.count
 
         view.backgroundColor = NCBrandColor.shared.customer
-        timerAutoScroll = Timer.scheduledTimer(timeInterval: 5, target: self, selector: (#selector(NCIntroViewController.autoScroll)), userInfo: nil, repeats: true)
 
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil, queue: nil) { _ in
-            let window = UIApplication.shared.firstWindow
-            if window?.rootViewController is NCMainTabBarController {
-                self.dismiss(animated: true)
-            } else {
-                if let mainTabBarController = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController() as? NCMainTabBarController {
-                    mainTabBarController.modalPresentationStyle = .fullScreen
-                    mainTabBarController.view.alpha = 0
-                    window?.rootViewController = mainTabBarController
-                    window?.makeKeyAndVisible()
-					
-					if let scene = window?.windowScene {
-						SceneManager.shared.register(scene: scene, withRootViewController: mainTabBarController)
-					}
-					
-                    UIView.animate(withDuration: 0.5) {
-                        mainTabBarController.view.alpha = 1
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil, queue: nil) { notification in
+            if let userInfo = notification.userInfo,
+               let account = userInfo["account"] as? String {
+                let window = UIApplication.shared.firstWindow
+                if let controller = window?.rootViewController as? NCMainTabBarController {
+                    controller.account = account
+                    self.dismiss(animated: true)
+                } else {
+                    if let controller = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController() as? NCMainTabBarController {
+                        controller.account = account
+                        controller.modalPresentationStyle = .fullScreen
+                        controller.view.alpha = 0
+
+                        window?.rootViewController = controller
+                        window?.makeKeyAndVisible()
+
+                        if let scene = window?.windowScene {
+                            SceneManager.shared.register(scene: scene, withRootViewController: controller)
+                        }
+
+                        UIView.animate(withDuration: 0.5) {
+                            controller.view.alpha = 1
+                        }
                     }
                 }
             }
+        }
+
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
+            self.timer?.invalidate()
+            self.timer = nil
+        }
+
+        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
+            self.timer = Timer.scheduledTimer(timeInterval: 4, target: self, selector: (#selector(NCIntroViewController.autoScroll)), userInfo: nil, repeats: true)
         }
     }
 
@@ -132,7 +145,8 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        timerAutoScroll?.invalidate()
+        timer?.invalidate()
+        timer = nil
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -175,20 +189,21 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        timerAutoScroll = Timer.scheduledTimer(timeInterval: 5, target: self, selector: (#selector(NCIntroViewController.autoScroll)), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: (#selector(NCIntroViewController.autoScroll)), userInfo: nil, repeats: true)
         pageControl.currentPage = Int(scrollView.contentOffset.x) / Int(scrollView.frame.width)
     }
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        timerAutoScroll?.invalidate()
+        timer?.invalidate()
+        timer = nil
     }
 
     @IBAction func login(_ sender: Any) {
-        appDelegate.openLogin(selector: NCGlobal.shared.introLogin, openLoginWeb: false)
+        appDelegate.openLogin(selector: NCGlobal.shared.introLogin)
     }
 
-    @IBAction func signup(_ sender: Any) {
-        appDelegate.openLogin(selector: NCGlobal.shared.introSignup, openLoginWeb: false)
+    @IBAction func signupWithProvider(_ sender: Any) {
+        appDelegate.openLogin(selector: NCGlobal.shared.introSignUpWithProvider)
     }
 
     @IBAction func host(_ sender: Any) {

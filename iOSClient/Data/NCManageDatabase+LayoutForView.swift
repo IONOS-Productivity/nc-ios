@@ -22,6 +22,7 @@
 //
 
 import Foundation
+import UIKit
 import RealmSwift
 import NextcloudKit
 
@@ -33,7 +34,6 @@ class NCDBLayoutForView: Object {
     @Persisted var sort: String = "fileName"
     @Persisted var ascending: Bool = true
     @Persisted var groupBy: String = "none"
-    @Persisted var directoryOnTop: Bool = true
     @Persisted var titleButtonHeader: String = "_sorted_by_name_a_z_"
     @Persisted var columnGrid: Int = 3
     @Persisted var columnPhoto: Int = 3
@@ -48,7 +48,6 @@ extension NCManageDatabase {
                           sort: String? = nil,
                           ascending: Bool? = nil,
                           groupBy: String? = nil,
-                          directoryOnTop: Bool? = nil,
                           titleButtonHeader: String? = nil,
                           columnGrid: Int? = nil,
                           columnPhoto: Int? = nil) -> NCDBLayoutForView? {
@@ -81,9 +80,6 @@ extension NCManageDatabase {
                 }
                 if let groupBy {
                     addObject.groupBy = groupBy
-                }
-                if let directoryOnTop {
-                    addObject.directoryOnTop = directoryOnTop
                 }
                 if let titleButtonHeader {
                     addObject.titleButtonHeader = titleButtonHeader
@@ -125,7 +121,6 @@ extension NCManageDatabase {
 
         do {
             let realm = try Realm()
-            realm.refresh()
             if let result = realm.objects(NCDBLayoutForView.self).filter("index == %@", index).first {
                 return NCDBLayoutForView(value: result)
             } else {
