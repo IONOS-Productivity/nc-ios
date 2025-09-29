@@ -47,9 +47,9 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
 
         if canDeleteServer {
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_yes_", comment: ""), style: .destructive) { _ in
-                NCNetworking.shared.deleteMetadatas(metadatas, sceneIdentifier: self.controller?.sceneIdentifier)
-                NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterReloadDataSource)
+                self.netwoking.setStatusWaitDelete(metadatas: metadatas, sceneIdentifier: self.controller?.sceneIdentifier)
                 self.setEditMode(false)
+                self.reloadDataSource()
             })
         }
 
@@ -58,14 +58,9 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
 
             Task {
                 var error = NKError()
-                var ocId: [String] = []
                 for metadata in copyMetadatas where error == .success {
-                    error = await NCNetworking.shared.deleteCache(metadata, sceneIdentifier: self.controller?.sceneIdentifier)
-                    if error == .success {
-                        ocId.append(metadata.ocId)
-                    }
+                    error = await self.netwoking.deleteCache(metadata, sceneIdentifier: self.controller?.sceneIdentifier)
                 }
-                NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterDeleteFile, userInfo: ["ocId": ocId, "error": error])
             }
             self.setEditMode(false)
         })
@@ -77,13 +72,13 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
     func move() {
         let metadatas = getSelectedMetadatas()
 
-        NCActionCenter.shared.openSelectView(items: metadatas, controller: self.controller)
+        NCDownloadAction.shared.openSelectView(items: metadatas, controller: self.controller)
         setEditMode(false)
     }
 
     func share() {
         let metadatas = getSelectedMetadatas()
-        NCActionCenter.shared.openActivityViewController(selectedMetadata: metadatas, controller: self.controller, sender: nil)
+        NCDownloadAction.shared.openActivityViewController(selectedMetadata: metadatas, controller: self.controller, sender: nil)
         setEditMode(false)
     }
 
@@ -95,13 +90,13 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
                 message: NSLocalizedString("_select_offline_warning_", comment: ""),
                 preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: NSLocalizedString("_continue_", comment: ""), style: .default, handler: { _ in
-                metadatas.forEach { NCActionCenter.shared.setMetadataAvalableOffline($0, isOffline: isAnyOffline) }
+                metadatas.forEach { NCDownloadAction.shared.setMetadataAvalableOffline($0, isOffline: isAnyOffline) }
                 self.setEditMode(false)
             }))
             alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel))
             self.present(alert, animated: true)
         } else {
-            metadatas.forEach { NCActionCenter.shared.setMetadataAvalableOffline($0, isOffline: isAnyOffline) }
+            metadatas.forEach { NCDownloadAction.shared.setMetadataAvalableOffline($0, isOffline: isAnyOffline) }
             setEditMode(false)
         }
     }
@@ -109,7 +104,7 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
     func lock(isAnyLocked: Bool) {
         let metadatas = getSelectedMetadatas()
         for metadata in metadatas where metadata.lock == isAnyLocked {
-            NCNetworking.shared.lockUnlockFile(metadata, shoulLock: !isAnyLocked)
+            self.netwoking.lockUnlockFile(metadata, shoulLock: !isAnyLocked)
         }
         setEditMode(false)
     }
@@ -148,5 +143,14 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
     
     func toolbarWillDisappear() {
         self.tabBarController?.tabBar.isHidden = false
+    }
+
+    func convertLivePhoto(metadataFirst: tableMetadata?, metadataLast: tableMetadata?) {
+        if let metadataFirst, let metadataLast {
+            Task {
+                await self.netwoking.setLivePhoto(metadataFirst: metadataFirst, metadataLast: metadataLast)
+            }
+        }
+        setEditMode(false)
     }
 }

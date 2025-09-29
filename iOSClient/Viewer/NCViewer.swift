@@ -35,7 +35,7 @@ class NCViewer: NSObject {
         let session = NCSession.shared.getSession(account: metadata.account)
 
         // URL
-        if metadata.classFile == NKCommon.TypeClassFile.url.rawValue {
+        if metadata.classFile == NKTypeClassFile.url.rawValue {
             // nextcloudtalk://open-conversation?server={serverURL}&user={userId}&withRoomToken={roomToken}
             if metadata.name == NCGlobal.shared.talkName {
                 let pathComponents = metadata.url.components(separatedBy: "/")
@@ -77,7 +77,7 @@ class NCViewer: NSObject {
         }
 
         // DOCUMENTS
-        if metadata.classFile == NKCommon.TypeClassFile.document.rawValue {
+        if metadata.classFile == NKTypeClassFile.document.rawValue {
             // Set Last Opening Date
             self.database.setLastOpeningDate(metadata: metadata)
             // PDF
@@ -124,24 +124,27 @@ class NCViewer: NSObject {
             if metadata.isAvailableDirectEditingEditorView {
                 var options = NKRequestOptions()
                 var editor = ""
+                var editorViewController = ""
                 let editors = utility.editorsDirectEditing(account: metadata.account, contentType: metadata.contentType)
-                if editors.contains(NCGlobal.shared.editorText) {
-                    editor = NCGlobal.shared.editorText
+                if editors.contains("Nextcloud Text") {
+                    editor = "text"
+                    editorViewController = "Nextcloud Text"
                     options = NKRequestOptions(customUserAgent: utility.getCustomUserAgentNCText())
-                } else if editors.contains(NCGlobal.shared.editorOnlyoffice) {
-                    editor = NCGlobal.shared.editorOnlyoffice
+                } else if editors.contains("ONLYOFFICE") {
+                    editor = "onlyoffice"
+                    editorViewController = "onlyoffice"
                     options = NKRequestOptions(customUserAgent: utility.getCustomUserAgentOnlyOffice())
                 }
                 if metadata.url.isEmpty {
                     let fileNamePath = utilityFileSystem.getFileNamePath(metadata.fileName, serverUrl: metadata.serverUrl, session: session)
                     NCActivityIndicator.shared.start(backgroundView: viewController.view)
-                    NextcloudKit.shared.NCTextOpenFile(fileNamePath: fileNamePath, editor: editor, account: metadata.account, options: options) { _, url, _, error in
+                    NextcloudKit.shared.textOpenFile(fileNamePath: fileNamePath, editor: editor, account: metadata.account, options: options) { _, url, _, error in
                         NCActivityIndicator.shared.stop()
                         if error == .success, url != nil {
                             if let navigationController = viewController.navigationController,
                                let viewController: NCViewerNextcloudText = UIStoryboard(name: "NCViewerNextcloudText", bundle: nil).instantiateInitialViewController() as? NCViewerNextcloudText {
                                 viewController.metadata = metadata
-                                viewController.editor = editor
+                                viewController.editor = editorViewController
                                 viewController.link = url!
                                 viewController.imageIcon = image
                                 navigationController.pushViewController(viewController, animated: true)
@@ -154,7 +157,7 @@ class NCViewer: NSObject {
                     if let navigationController = viewController.navigationController,
                        let viewController: NCViewerNextcloudText = UIStoryboard(name: "NCViewerNextcloudText", bundle: nil).instantiateInitialViewController() as? NCViewerNextcloudText {
                         viewController.metadata = metadata
-                        viewController.editor = editor
+                        viewController.editor = editorViewController
                         viewController.link = metadata.url
                         viewController.imageIcon = image
                         navigationController.pushViewController(viewController, animated: true)
@@ -174,9 +177,9 @@ class NCViewer: NSObject {
         } else {
         // Document Interaction Controller
             if let mainTabBarController = viewController.tabBarController as? NCMainTabBarController {
-                NCActionCenter.shared.openActivityViewController(selectedMetadata: [metadata], controller: mainTabBarController, sender: nil)
+                NCDownloadAction.shared.openActivityViewController(selectedMetadata: [metadata], controller: mainTabBarController, sender: nil)
             } else {
-				NCActionCenter.shared.openDocumentController(metadata: metadata, viewController: viewController)
+				NCDownloadAction.shared.openDocumentController(metadata: metadata, viewController: viewController)
             }
         }
     }

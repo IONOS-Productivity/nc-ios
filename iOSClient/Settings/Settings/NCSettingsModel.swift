@@ -26,6 +26,7 @@ import Foundation
 import UIKit
 import SwiftUI
 import LocalAuthentication
+import NextcloudKit
 
 class NCSettingsModel: ObservableObject, ViewOnAppearHandling {
     /// Keychain access
@@ -55,7 +56,7 @@ class NCSettingsModel: ObservableObject, ViewOnAppearHandling {
 
     /// Triggered when the view appears.
     func onViewAppear() {
-        let capabilities = NCCapabilities.shared.getCapabilities(account: self.controller?.account)
+        let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: self.controller?.account ?? "")
         isLockActive = (keychain.passcode != nil)
         enableTouchID = keychain.touchFaceID
         lockScreen = !keychain.requestPasscodeAtStart

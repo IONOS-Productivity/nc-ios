@@ -26,19 +26,28 @@ import SwiftUI
 import WidgetKit
 
 struct ToolbarWidgetView: View {
-
     var entry: ToolbarDataEntry
 
+    @ViewBuilder
     var body: some View {
+        if #available(iOS 17.0, *) {
+            mainContent
+                .containerBackground(Color.black, for: .widget)
+        } else {
+            mainContent
+                .background(Color.black)
+        }
+    }
 
+    private var mainContent: some View {
         let parameterLink = "&user=\(entry.userId)&url=\(entry.url)"
         let linkNoAction: URL = URL(string: NCGlobal.shared.widgetActionNoAction + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionNoAction + parameterLink)! : URL(string: NCGlobal.shared.widgetActionNoAction)!
         let linkActionUploadAsset: URL = URL(string: NCGlobal.shared.widgetActionUploadAsset + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionUploadAsset + parameterLink)! : URL(string: NCGlobal.shared.widgetActionUploadAsset)!
         let linkActionScanDocument: URL = URL(string: NCGlobal.shared.widgetActionScanDocument + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionScanDocument + parameterLink)! : URL(string: NCGlobal.shared.widgetActionScanDocument)!
         let linkActionVoiceMemo: URL = URL(string: NCGlobal.shared.widgetActionVoiceMemo + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionVoiceMemo + parameterLink)! : URL(string: NCGlobal.shared.widgetActionVoiceMemo)!
 
-        GeometryReader { geo in
 
+        return GeometryReader { geo in
             ZStack(alignment: .topLeading) {
 				
                 HStack(spacing: 0) {

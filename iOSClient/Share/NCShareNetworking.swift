@@ -85,8 +85,11 @@ class NCShareNetworking: NSObject {
                     }
 
                     Task {
-                        try await self.readDownloadLimits(account: account, tokens: shares.map(\.token))
-                        self.delegate?.readShareCompleted()
+                        try? await self.readDownloadLimits(account: account, tokens: shares.map(\.token))
+
+                        Task { @MainActor in
+                            self.delegate?.readShareCompleted()
+                        }
                     }
                 }
             } else {
@@ -118,12 +121,16 @@ class NCShareNetworking: NSObject {
                     self.updateShare(template, downloadLimit: downloadLimit)
                     // Download limit update should happen implicitly on share update.
                 } else {
-                    if case let .limited(limit, _) = downloadLimit, share.itemType != "folder" {
+                    let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: self.metadata.account)
+                    if case let .limited(limit, _) = downloadLimit,
+                        capabilities.fileSharingDownloadLimit {
                         self.setShareDownloadLimit(limit, token: share.token)
                     }
                 }
 
-                NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterUpdateShare, userInfo: ["account": self.metadata.account, "serverUrl": self.metadata.serverUrl])
+                NCNetworking.shared.notifyAllDelegates { delegate in
+                    delegate.transferRequestData(serverUrl: self.metadata.serverUrl)
+                }
             } else {
                 self.showAlert(with: error)
             }
@@ -141,7 +148,9 @@ class NCShareNetworking: NSObject {
                 self.database.deleteTableShare(account: account, idShare: idShare)
                 self.delegate?.unShareCompleted()
 
-                NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterUpdateShare, userInfo: ["account": self.metadata.account, "serverUrl": self.metadata.serverUrl])
+                NCNetworking.shared.notifyAllDelegates { delegate in
+                    delegate.transferRequestData(serverUrl: self.metadata.serverUrl)
+                }
             } else {
                 self.showAlert(with: error)
             }
@@ -155,18 +164,22 @@ class NCShareNetworking: NSObject {
 
             if error == .success, let share = share {
                 let home = self.utilityFileSystem.getHomeServer(session: self.session)
+                let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: self.metadata.account)
+
                 self.database.addShare(account: self.metadata.account, home: home, shares: [share])
                 self.delegate?.readShareCompleted()
 
-				if share.itemType != "folder" {
-					if case let .limited(limit, _) = downloadLimit {
-						self.setShareDownloadLimit(limit, token: share.token)
-					} else {
-						self.removeShareDownloadLimit(token: share.token)
-					}
-				}
+                if capabilities.fileSharingDownloadLimit {
+                    if case let .limited(limit, _) = downloadLimit {
+                        self.setShareDownloadLimit(limit, token: share.token)
+                    } else {
+                        self.removeShareDownloadLimit(token: share.token)
+                    }
+                }
 
-                NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterUpdateShare, userInfo: ["account": self.metadata.account, "serverUrl": self.metadata.serverUrl])
+                NCNetworking.shared.notifyAllDelegates { delegate in
+                    delegate.transferRequestData(serverUrl: self.metadata.serverUrl)
+                }
             } else {
                 self.showAlert(with: error)
                 self.delegate?.updateShareWithError(idShare: option.idShare)
@@ -194,6 +207,12 @@ class NCShareNetworking: NSObject {
     /// Remove the download limit on the share, if existent.
     ///
     func removeShareDownloadLimit(token: String) {
+        let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: metadata.account)
+
+        if !capabilities.fileSharingDownloadLimit {
+            return
+        }
+
         NCActivityIndicator.shared.start(backgroundView: view)
 
         NextcloudKit.shared.removeShareDownloadLimit(account: metadata.account, token: token) { error in
@@ -213,6 +232,12 @@ class NCShareNetworking: NSObject {
     /// - Parameter limit: The new download limit to set.
     ///
     func setShareDownloadLimit(_ limit: Int, token: String) {
+        let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: metadata.account)
+
+        if !capabilities.fileSharingDownloadLimit {
+            return
+        }
+
         NCActivityIndicator.shared.start(backgroundView: view)
 
         NextcloudKit.shared.setShareDownloadLimit(account: metadata.account, token: token, limit: limit) { error in

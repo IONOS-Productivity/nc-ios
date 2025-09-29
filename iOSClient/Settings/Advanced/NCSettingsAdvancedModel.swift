@@ -48,7 +48,7 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     @Published var logFileCleared: Bool = false
     // Properties for log level and cache deletion
     /// State variable for storing the selected log level.
-    @Published var selectedLogLevel: LogLevel = .standard
+    @Published var selectedLogLevel: NKLogLevel = .normal
     /// State variable for storing the selected cache deletion interval.
     @Published var selectedInterval: CacheDeletionInterval = .never
     /// State variable for storing the footer title, usually used for cache deletion.
@@ -70,12 +70,15 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     func onViewAppear() {
         let groups = NCManageDatabase.shared.getAccountGroups(account: session.account)
         isAdminGroup = groups.contains(NCGlobal.shared.groupAdmin)
+#if DEBUG
+        isAdminGroup = true
+#endif
         mostCompatible = keychain.formatCompatibility
         livePhoto = keychain.livePhoto
         removeFromCameraRoll = keychain.removePhotoCameraRoll
         appIntegration = keychain.disableFilesApp
         crashReporter = keychain.disableCrashservice
-        selectedLogLevel = LogLevel(rawValue: keychain.logLevel) ?? .standard
+        selectedLogLevel = keychain.log
         selectedInterval = CacheDeletionInterval(rawValue: keychain.cleanUpDay) ?? .never
 
         DispatchQueue.global().async {
@@ -113,8 +116,8 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
 
     /// Updates the value of `selectedLogLevel` in the keychain and sets it for NextcloudKit.
     func updateSelectedLogLevel() {
-        keychain.logLevel = selectedLogLevel.rawValue
-        NextcloudKit.shared.nkCommonInstance.levelLog = selectedLogLevel.rawValue
+        keychain.log = selectedLogLevel
+        NKLogFileManager.shared.logLevel = selectedLogLevel
     }
 
     /// Updates the value of `selectedInterval` in the keychain.
@@ -130,6 +133,7 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             URLCache.shared.removeAllCachedResponses()
 
+            NCNetworking.shared.removeServerErrorAccount(self.session.account)
             NCManageDatabase.shared.clearDatabase()
 
             let ufs = NCUtilityFileSystem()

@@ -29,7 +29,7 @@ import Alamofire
 extension NCCollectionViewCommon: UICollectionViewDelegate {
     func didSelectMetadata(_ metadata: tableMetadata, withOcIds: Bool) {
         if metadata.e2eEncrypted {
-            if NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityE2EEEnabled {
+            if capabilities.e2EEEnabled {
                 if !NCKeychain().isEndToEndEnabled(account: metadata.account) {
                     let e2ee = NCEndToEndInitialize()
                     e2ee.delegate = self
@@ -49,27 +49,28 @@ extension NCCollectionViewCommon: UICollectionViewDelegate {
                   UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url)
         } else {
-            let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal.shared.previewExt1024)
+            let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: self.global.previewExt1024)
 
             if !metadata.isDirectoryE2EE, metadata.isImage || metadata.isAudioOrVideo {
                 let metadatas = self.dataSource.getMetadatas()
-                let ocIds = metadatas.filter { $0.classFile == NKCommon.TypeClassFile.image.rawValue ||
-                                               $0.classFile == NKCommon.TypeClassFile.video.rawValue ||
-                                               $0.classFile == NKCommon.TypeClassFile.audio.rawValue }.map(\.ocId)
+                let ocIds = metadatas.filter { $0.classFile == NKTypeClassFile.image.rawValue ||
+                                               $0.classFile == NKTypeClassFile.video.rawValue ||
+                                               $0.classFile == NKTypeClassFile.audio.rawValue }.map(\.ocId)
 
                 return NCViewer().view(viewController: self, metadata: metadata, ocIds: withOcIds ? ocIds : nil, image: image)
 
-            } else if metadata.isAvailableEditorView ||
-                      utilityFileSystem.fileProviderStorageExists(metadata) ||
-                      metadata.name == NCGlobal.shared.talkName {
+            } else if metadata.isAvailableEditorView || utilityFileSystem.fileProviderStorageExists(metadata) || metadata.name == self.global.talkName {
 
                 NCViewer().view(viewController: self, metadata: metadata, image: image)
 
-            } else if NextcloudKit.shared.isNetworkReachable(),
-                      let metadata = database.setMetadatasSessionInWaitDownload(metadatas: [metadata],
-                                                                                session: NCNetworking.shared.sessionDownload,
+            } else if NextcloudKit.shared.isNetworkReachable() {
+                guard let  metadata = database.setMetadataSessionInWaitDownload(ocId: metadata.ocId,
+                                                                                session: self.netwoking.sessionDownload,
                                                                                 selector: global.selectorLoadFileView,
-                                                                                sceneIdentifier: self.controller?.sceneIdentifier) {
+                                                                                sceneIdentifier: self.controller?.sceneIdentifier) else {
+                    return
+                }
+
                 if metadata.name == "files" {
                     let hud = NCHud(self.tabBarController?.view)
                     var downloadRequest: DownloadRequest?
@@ -80,7 +81,7 @@ extension NCCollectionViewCommon: UICollectionViewDelegate {
                         }
                     }
 
-                    NCNetworking.shared.download(metadata: metadata, withNotificationProgressTask: false) {
+                    self.netwoking.download(metadata: metadata) {
                     } requestHandler: { request in
                         downloadRequest = request
                     } progressHandler: { progress in
@@ -104,30 +105,29 @@ extension NCCollectionViewCommon: UICollectionViewDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let metadata = self.dataSource.getMetadata(indexPath: indexPath),
-              !metadata.isInvalidated
-        else {
-            return
-        }
-
-        if isEditMode {
-            if let index = fileSelect.firstIndex(of: metadata.ocId) {
-                fileSelect.remove(at: index)
-            } else {
-                fileSelect.append(metadata.ocId)
+        self.dataSource.getMetadata(indexPath: indexPath) { metadata in
+            guard let metadata else {
+                return
             }
-            collectionView.reloadItems(at: [indexPath])
-            tabBarSelect?.update(fileSelect: fileSelect, metadatas: getSelectedMetadatas(), userId: metadata.userId)
-            fileActionsHeader?.setSelectionState(selectionState: selectionState)
-            return
-        }
+            if self.isEditMode {
+                if let index = self.fileSelect.firstIndex(of: metadata.ocId) {
+                    self.fileSelect.remove(at: index)
+                } else {
+                    self.fileSelect.append(metadata.ocId)
+                }
+                self.collectionView.reloadItems(at: [indexPath])
+                self.tabBarSelect?.update(fileSelect: self.fileSelect, metadatas: self.getSelectedMetadatas(), userId: metadata.userId)
+                self.fileActionsHeader?.setSelectionState(selectionState: selectionState)
+                return
+            }
 
-        self.didSelectMetadata(metadata, withOcIds: true)
+            self.didSelectMetadata(metadata, withOcIds: true)
+        }
     }
 
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         guard let metadata = self.dataSource.getMetadata(indexPath: indexPath),
-              metadata.classFile != NKCommon.TypeClassFile.url.rawValue,
+              metadata.classFile != NKTypeClassFile.url.rawValue,
               !isEditMode
         else {
             return nil
@@ -147,9 +147,10 @@ extension NCCollectionViewCommon: UICollectionViewDelegate {
         }
 
         return UIContextMenuConfiguration(identifier: identifier, previewProvider: {
-            return NCViewerProviderContextMenu(metadata: metadata, image: image)
+            return NCViewerProviderContextMenu(metadata: metadata, image: image, sceneIdentifier: self.sceneIdentifier)
         }, actionProvider: { _ in
-            return NCContextMenu().viewMenu(ocId: metadata.ocId, viewController: self, image: image)
+            let contextMenu = NCContextMenu(metadata: metadata.detachedCopy(), viewController: self, sceneIdentifier: self.sceneIdentifier, image: image)
+            return contextMenu.viewMenu()
         })
     }
 

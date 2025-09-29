@@ -22,6 +22,7 @@
 //
 
 import SwiftUI
+import NextcloudKit
 
 struct NCAccountSettingsView: View {
     @ObservedObject var model: NCAccountSettingsModel
@@ -33,6 +34,10 @@ struct NCAccountSettingsView: View {
     @State private var showDeleteAccountAlert: Bool = false
     @State private var showAddAccount: Bool = false
     @State private var animation: Bool = false
+
+    var capabilities: NKCapabilities.Capabilities {
+        NKCapabilities.shared.getCapabilitiesBlocking(for: model.controller?.account)
+    }
 
     @Environment(\.presentationMode) var presentationMode
 

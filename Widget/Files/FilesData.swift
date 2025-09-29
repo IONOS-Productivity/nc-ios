@@ -118,7 +118,6 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
                                       userId: activeTableAccount.userId,
                                       password: password,
                                       userAgent: userAgent,
-                                      nextcloudVersion: NCCapabilities.shared.getCapabilities(account: activeTableAccount.account).capabilityServerVersionMajor,
                                       httpMaximumConnectionsPerHost: NCBrandOptions.shared.httpMaximumConnectionsPerHost,
                                       httpMaximumConnectionsPerHostInDownload: NCBrandOptions.shared.httpMaximumConnectionsPerHostInDownload,
                                       httpMaximumConnectionsPerHostInUpload: NCBrandOptions.shared.httpMaximumConnectionsPerHostInUpload,
@@ -183,12 +182,11 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
     let showHiddenFiles = NCKeychain().getShowHiddenFiles(account: activeTableAccount.account)
 
     // LOG
-    let levelLog = NCKeychain().logLevel
     let versionNextcloudiOS = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, utility.getVersionApp())
 
-    NextcloudKit.shared.nkCommonInstance.levelLog = levelLog
-    NextcloudKit.shared.nkCommonInstance.pathLog = utilityFileSystem.directoryGroup
-    NextcloudKit.shared.nkCommonInstance.writeLog("[INFO] Start \(NCBrandOptions.shared.brand) widget session with level \(levelLog) " + versionNextcloudiOS)
+    NextcloudKit.configureLogger(logLevel: (NCBrandOptions.shared.disable_log ? .disabled : NCKeychain().log))
+
+    nkLog(debug: "Start \(NCBrandOptions.shared.brand) widget session " + versionNextcloudiOS)
 
     let options = NKRequestOptions(timeout: 30, queue: NextcloudKit.shared.nkCommonInstance.backgroundQueue)
     NextcloudKit.shared.searchBodyRequest(serverUrl: activeTableAccount.urlBase, requestBody: requestBody, showHiddenFiles: showHiddenFiles, account: activeTableAccount.account, options: options) { _, files, data, error in
@@ -201,7 +199,7 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
                 var useTypeIconFile = false
                 var image: UIImage?
 
-                if file.directory || (!file.livePhotoFile.isEmpty && file.classFile == NKCommon.TypeClassFile.video.rawValue) {
+                if file.directory || (!file.livePhotoFile.isEmpty && file.classFile == NKTypeClassFile.video.rawValue) {
                     continue
                 }
 
@@ -219,9 +217,9 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
                 // IMAGE
                 image = utility.getImage(ocId: file.ocId, etag: file.etag, ext: NCGlobal.shared.previewExt512)
                 if image == nil, file.hasPreview {
-                    let result = await NCNetworking.shared.downloadPreview(fileId: file.fileId,
-                                                                           account: activeTableAccount.account,
-                                                                           options: options)
+                    let result = await NextcloudKit.shared.downloadPreviewAsync(fileId: file.fileId,
+                                                                                account: activeTableAccount.account,
+                                                                                options: options)
                     if result.error == .success, let data = result.responseData?.data {
                         utility.createImageFileFrom(data: data, ocId: file.ocId, etag: file.etag)
                         image = utility.getImage(ocId: file.ocId, etag: file.etag, ext: NCGlobal.shared.previewExt256)

@@ -34,6 +34,7 @@ class NCPhotosPickerViewController: NSObject {
     var controller: NCMainTabBarController
     var maxSelectedAssets = 1
     var singleSelectedMode = false
+    let global = NCGlobal.shared
 
     @discardableResult
     init(controller: NCMainTabBarController, maxSelectedAssets: Int, singleSelectedMode: Bool) {
@@ -74,15 +75,15 @@ class NCPhotosPickerViewController: NSObject {
             completition(assets)
         }, didCancel: nil)
         viewController.didExceedMaximumNumberOfSelection = { _ in
-            let error = NKError(errorCode: NCGlobal.shared.errorInternalError, errorDescription: "_limited_dimension_")
+            let error = NKError(errorCode: self.global.errorInternalError, errorDescription: "_limited_dimension_")
             NCContentPresenter().showError(error: error)
         }
         viewController.handleNoAlbumPermissions = { _ in
-            let error = NKError(errorCode: NCGlobal.shared.errorInternalError, errorDescription: "_denied_album_")
+            let error = NKError(errorCode: self.global.errorInternalError, errorDescription: "_denied_album_")
             NCContentPresenter().showError(error: error)
         }
         viewController.handleNoCameraPermissions = { _ in
-            let error = NKError(errorCode: NCGlobal.shared.errorInternalError, errorDescription: "_denied_camera_")
+            let error = NKError(errorCode: self.global.errorInternalError, errorDescription: "_denied_camera_")
             NCContentPresenter().showError(error: error)
         }
         viewController.configure = configure
@@ -134,6 +135,8 @@ class NCDocumentPickerViewController: NSObject, UIDocumentPickerDelegate {
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         let session = NCSession.shared.getSession(controller: self.controller)
+        let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: session.account)
+
         if isViewerMedia,
            let urlIn = urls.first,
            let url = self.copySecurityScopedResource(url: urlIn, urlOut: FileManager.default.temporaryDirectory.appendingPathComponent(urlIn.lastPathComponent)),
@@ -141,22 +144,20 @@ class NCDocumentPickerViewController: NSObject, UIDocumentPickerDelegate {
             let ocId = NSUUID().uuidString
             let fileName = url.lastPathComponent
             let metadata = database.createMetadata(fileName: fileName,
-                                                   fileNameView: fileName,
                                                    ocId: ocId,
                                                    serverUrl: "",
                                                    url: url.path,
-                                                   contentType: "",
                                                    session: session,
                                                    sceneIdentifier: self.controller.sceneIdentifier)
 
-            if metadata.classFile == NKCommon.TypeClassFile.unknow.rawValue {
-                metadata.classFile = NKCommon.TypeClassFile.video.rawValue
+            if metadata.classFile == NKTypeClassFile.unknow.rawValue {
+                metadata.classFile = NKTypeClassFile.video.rawValue
             }
 
-            if let fileNameError = FileNameValidator.checkFileName(metadata.fileNameView, account: self.controller.account) {
+            if let fileNameError = FileNameValidator.checkFileName(metadata.fileNameView, account: self.controller.account, capabilities: capabilities) {
                 self.controller.present(UIAlertController.warning(message: "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
             } else {
-                database.addMetadata(metadata)
+                let metadata = database.addAndReturnMetadata(metadata)
                 NCViewer().view(viewController: viewController, metadata: metadata)
             }
 
@@ -176,11 +177,8 @@ class NCDocumentPickerViewController: NSObject, UIDocumentPickerDelegate {
                 guard self.copySecurityScopedResource(url: urlIn, urlOut: urlOut) != nil else { continue }
 
                 let metadataForUpload = database.createMetadata(fileName: newFileName,
-                                                                fileNameView: newFileName,
                                                                 ocId: ocId,
                                                                 serverUrl: serverUrl,
-                                                                url: "",
-                                                                contentType: "",
                                                                 session: session,
                                                                 sceneIdentifier: self.controller.sceneIdentifier)
 
@@ -200,13 +198,15 @@ class NCDocumentPickerViewController: NSObject, UIDocumentPickerDelegate {
             var invalidNameIndexes: [Int] = []
 
             for (index, metadata) in metadatas.enumerated() {
-                if let fileNameError = FileNameValidator.checkFileName(metadata.fileName, account: session.account) {
+                if let fileNameError = FileNameValidator.checkFileName(metadata.fileName, account: session.account, capabilities: capabilities) {
                     if metadatas.count == 1 {
                         let alert = UIAlertController.renameFile(fileName: metadata.fileName, account: session.account) { newFileName in
                             metadatas[index].fileName = newFileName
                             metadatas[index].fileNameView = newFileName
 
-                            NCNetworkingProcess.shared.createProcessUploads(metadatas: metadatas)
+                            Task {
+                                await self.database.addMetadatasAsync(metadatas)
+                            }
                         }
 
                         self.controller.present(alert, animated: true)
@@ -222,7 +222,9 @@ class NCDocumentPickerViewController: NSObject, UIDocumentPickerDelegate {
                 metadatas.remove(at: index)
             }
 
-            NCNetworkingProcess.shared.createProcessUploads(metadatas: metadatas)
+            Task {
+                await self.database.addMetadatasAsync(metadatas)
+            }
 
             if !metadatasInConflict.isEmpty {
                 if let conflict = UIStoryboard(name: "NCCreateFormUploadConflict", bundle: nil).instantiateInitialViewController() as? NCCreateFormUploadConflict {

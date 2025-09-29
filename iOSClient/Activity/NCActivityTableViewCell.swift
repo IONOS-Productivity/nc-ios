@@ -26,7 +26,6 @@ import UIKit
 import NextcloudKit
 import FloatingPanel
 import Queuer
-import Alamofire
 
 class NCActivityCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var imageView: UIImageView!
@@ -98,7 +97,7 @@ extension NCActivityTableViewCell: UICollectionViewDelegate {
             }
             if (responder as? UIViewController)!.navigationController != nil {
                 if let viewController = UIStoryboard(name: "NCTrash", bundle: nil).instantiateInitialViewController() as? NCTrash {
-                    if let result = NCManageDatabase.shared.getResultTrash(fileId: String(activityPreview.fileId), account: activityPreview.account) {
+                    if let result = NCManageDatabase.shared.getTableTrash(fileId: String(activityPreview.fileId), account: activityPreview.account) {
                         viewController.blinkFileId = result.fileId
                         viewController.filePath = result.filePath
                         (responder as? UIViewController)!.navigationController?.pushViewController(viewController, animated: true)
@@ -115,7 +114,7 @@ extension NCActivityTableViewCell: UICollectionViewDelegate {
             guard let activitySubjectRich = NCManageDatabase.shared.getActivitySubjectRich(account: activityPreview.account, idActivity: activityPreview.idActivity, id: String(activityPreview.fileId)) else {
                 return
             }
-            NCActionCenter.shared.viewerFile(account: account, fileId: activitySubjectRich.id, viewController: viewController)
+            NCDownloadAction.shared.viewerFile(account: account, fileId: activitySubjectRich.id, viewController: viewController)
         }
     }
 }

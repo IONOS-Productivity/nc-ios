@@ -169,7 +169,7 @@ extension NCMenuAction {
             order: order,
             sender: sender,
             action: { _ in
-                NCActionCenter.shared.openActivityViewController(selectedMetadata: selectedMetadatas, controller: controller, sender: sender)
+                NCDownloadAction.shared.openActivityViewController(selectedMetadata: selectedMetadatas, controller: controller, sender: sender)
                 completion?()
             }
         )
@@ -189,20 +189,20 @@ extension NCMenuAction {
                         message: NSLocalizedString("_select_offline_warning_", comment: ""),
                         preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: NSLocalizedString("_continue_", comment: ""), style: .default, handler: { _ in
-                        selectedMetadatas.forEach { NCActionCenter.shared.setMetadataAvalableOffline($0, isOffline: isAnyOffline) }
+                        selectedMetadatas.forEach { NCDownloadAction.shared.setMetadataAvalableOffline($0, isOffline: isAnyOffline) }
                         completion?()
                     }))
                     alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel))
                     viewController.present(alert, animated: true)
                 } else {
-                    selectedMetadatas.forEach { NCActionCenter.shared.setMetadataAvalableOffline($0, isOffline: isAnyOffline) }
+                    selectedMetadatas.forEach { NCDownloadAction.shared.setMetadataAvalableOffline($0, isOffline: isAnyOffline) }
                     completion?()
                 }
             }
         )
     }
     /// Open view that lets the user move or copy the files within Nextcloud
-    static func moveOrCopyAction(selectedMetadatas: [tableMetadata], viewController: UIViewController, order: Int = 0, sender: Any?, completion: (() -> Void)? = nil) -> NCMenuAction {
+    static func moveOrCopyAction(selectedMetadatas: [tableMetadata], account: String, viewController: UIViewController, order: Int = 0, sender: Any?, completion: (() -> Void)? = nil) -> NCMenuAction {
         NCMenuAction(
             title: NSLocalizedString("_move_or_copy_", comment: ""),
             icon: NCImagesRepository.menuIconMoveOrCopy,
@@ -210,11 +210,12 @@ extension NCMenuAction {
             sender: sender,
             action: { _ in
                 var fileNameError: NKError?
+                let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: account)
 
                 for metadata in selectedMetadatas {
                     if let sceneIdentifier = metadata.sceneIdentifier,
                        let controller = SceneManager.shared.getController(sceneIdentifier: sceneIdentifier),
-                       let checkError = FileNameValidator.checkFileName(metadata.fileNameView, account: controller.account) {
+                       let checkError = FileNameValidator.checkFileName(metadata.fileNameView, account: controller.account, capabilities: capabilities) {
 
                         fileNameError = checkError
                         break
@@ -225,7 +226,7 @@ extension NCMenuAction {
                     viewController.present(UIAlertController.warning(message: "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true, completion: nil)
                 } else {
                     let controller = viewController.mainTabBarController
-                    NCActionCenter.shared.openSelectView(items: selectedMetadatas, controller: controller)
+                    NCDownloadAction.shared.openSelectView(items: selectedMetadatas, controller: controller)
                     completion?()
                 }
             }

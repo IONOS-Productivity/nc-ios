@@ -95,7 +95,7 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
                let file = json["file"] as? [String: Any],
                file["type"] as? String == "file" {
                 if let id = file["id"] {
-                    NCActionCenter.shared.viewerFile(account: session.account, fileId: ("\(id)"), viewController: self)
+                    NCDownloadAction.shared.viewerFile(account: session.account, fileId: ("\(id)"), viewController: self)
                 }
             }
         } catch {
@@ -232,7 +232,6 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
     // MARK: - tap Action
 
     func tapRemove(with notification: NKNotifications, sender: Any?) {
-
         NextcloudKit.shared.setNotification(serverUrl: nil, idNotification: notification.idNotification, method: "DELETE", account: session.account) { _, _, error in
             if error == .success {
                 if let index = self.notifications

@@ -40,8 +40,7 @@ class NCMainTabBarController: UITabBarController {
     private var previousIndex: Int?
     private var checkUserDelaultErrorInProgress: Bool = false
     private var timer: Timer?
-    private var unauthorizedAccountInProgress: Bool = false
-    private var unavailableAccountInProgress: Bool = false
+    private let global = NCGlobal.shared
     
     private(set) var burgerMenuController: BurgerMenuAttachController?
 
@@ -55,11 +54,13 @@ class NCMainTabBarController: UITabBarController {
 		if #available(iOS 17.0, *) {
 			traitOverrides.horizontalSizeClass = .compact
 		}
-		
+
+        NCDownloadAction.shared.setup(sceneIdentifier: sceneIdentifier)
+
         tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
 
 
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeTheming), object: nil, queue: .main) { [weak self] notification in
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterChangeTheming), object: nil, queue: .main) { [weak self] notification in
             if let userInfo = notification.userInfo as? NSDictionary,
                let account = userInfo["account"] as? String,
                self?.account == account {
@@ -67,7 +68,7 @@ class NCMainTabBarController: UITabBarController {
             }
         }
 
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterCheckUserDelaultErrorDone), object: nil, queue: nil) { notification in
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterCheckUserDelaultErrorDone), object: nil, queue: nil) { notification in
             if let userInfo = notification.userInfo,
                let account = userInfo["account"] as? String,
                let controller = userInfo["controller"] as? NCMainTabBarController,
@@ -128,7 +129,17 @@ class NCMainTabBarController: UITabBarController {
     private func timerCheckServerError() {
         self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false, block: { _ in
             NCNetworking.shared.checkServerError(account: self.account, controller: self) {
-                self.timerCheckServerError()
+                /// Update right bar button item
+                if let navigationController = self.selectedViewController as? NCMainNavigationController {
+                    navigationController.updateRightBarButtonItems(self.tabBar.items?[0])
+                }
+                /// Update Activity tab bar
+                if let item = self.tabBar.items?[3] {
+                    let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: self.account)
+                    item.isEnabled = capabilities.activityEnabled
+                }
+
+                self.timerCheck()
             }
         })
     }

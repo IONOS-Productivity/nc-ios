@@ -41,8 +41,11 @@ struct NCSettingsView: View {
     /// Object of ViewModel of this view
     @ObservedObject var model: NCSettingsModel
 
+    var capabilities: NKCapabilities.Capabilities {
+        NKCapabilities.shared.getCapabilitiesBlocking(for: model.controller?.account)
+    }
+
     var body: some View {
-        let capabilities = NCCapabilities.shared.getCapabilities(account: model.controller?.account)
         Form {
             /// `Auto Upload` Section
             Section(content: {

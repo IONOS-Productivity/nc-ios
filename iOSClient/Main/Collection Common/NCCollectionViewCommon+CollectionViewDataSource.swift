@@ -44,22 +44,30 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
     func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         if !collectionView.indexPathsForVisibleItems.contains(indexPath) {
-            guard let metadata = self.dataSource.getMetadata(indexPath: indexPath) else { return }
-            for case let operation as NCCollectionViewDownloadThumbnail in NCNetworking.shared.downloadThumbnailQueue.operations where operation.metadata.ocId == metadata.ocId {
-                        operation.cancel()
+            self.dataSource.getMetadata(indexPath: indexPath) { metadata in
+                guard let metadata else {
+                    return
+                }
+                for case let operation as NCCollectionViewDownloadThumbnail in self.netwoking.downloadThumbnailQueue.operations where operation.metadata.ocId == metadata.ocId {
+                    operation.cancel()
+                }
             }
         }
     }
 
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        guard let metadata = dataSource.getMetadata(indexPath: indexPath) else { return }
-        let existsImagePreview = utilityFileSystem.fileProviderStorageImageExists(metadata.ocId, etag: metadata.etag)
-        let ext = global.getSizeExtension(column: self.numberOfColumns)
+        self.dataSource.getMetadata(indexPath: indexPath) { metadata in
+            guard let metadata else {
+                return
+            }
+            let existsImagePreview = self.utilityFileSystem.fileProviderStorageImageExists(metadata.ocId, etag: metadata.etag)
+            let ext = self.global.getSizeExtension(column: self.numberOfColumns)
 
-        if metadata.hasPreview,
-           !existsImagePreview,
-           NCNetworking.shared.downloadThumbnailQueue.operations.filter({ ($0 as? NCMediaDownloadThumbnail)?.metadata.ocId == metadata.ocId }).isEmpty {
-            NCNetworking.shared.downloadThumbnailQueue.addOperation(NCCollectionViewDownloadThumbnail(metadata: metadata, collectionView: collectionView, ext: ext))
+            if metadata.hasPreview,
+               !existsImagePreview,
+               self.netwoking.downloadThumbnailQueue.operations.filter({ ($0 as? NCMediaDownloadThumbnail)?.metadata.ocId == metadata.ocId }).isEmpty {
+                self.netwoking.downloadThumbnailQueue.addOperation(NCCollectionViewDownloadThumbnail(metadata: metadata, collectionView: collectionView, ext: ext))
+            }
         }
     }
 
@@ -183,7 +191,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         let ext = global.getSizeExtension(column: self.numberOfColumns)
 
         defer {
-            if !metadata.isSharable() || NCCapabilities.shared.disableSharesView(account: metadata.account) {
+            if !metadata.isSharable() || (!capabilities.fileSharingApiEnabled && !capabilities.filesComments && capabilities.activity.isEmpty) {
                 cell.hideButtonShare(true)
             }
         }
@@ -229,7 +237,9 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell.filePreviewImageView?.contentMode = .scaleAspectFit
         }
 
-        guard let metadata = self.dataSource.getMetadata(indexPath: indexPath) else { return cell }
+        guard let metadata = self.dataSource.getMetadata(indexPath: indexPath) else {
+            return cell
+        }
 
         if metadataFolder != nil {
             isShare = metadata.permissions.contains(permissions.permissionShared) && !metadataFolder!.permissions.contains(permissions.permissionShared)
@@ -251,6 +261,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
             cell.fileSubinfoLabel?.isHidden = true
         } else if !metadata.sessionError.isEmpty, metadata.status != global.metadataStatusNormal {
+            cell.fileTitleLabel?.text = metadata.fileNameView
             cell.fileSubinfoLabel?.isHidden = false
             cell.fileInfoLabel?.text = metadata.sessionError
         } else {
@@ -267,7 +278,8 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
 		let canHaveShareIcon = isShare || !metadata.shareType.isEmpty
         if metadata.directory {
-            let tableDirectory = database.getTableDirectory(ocId: metadata.ocId)
+            let tblDirectory = database.getResultTableDirectory(ocId: metadata.ocId)
+
             if metadata.e2eEncrypted {
                 cell.filePreviewImageView?.image = imageCache.getFolderEncrypted(account: metadata.account)
 			} else if canHaveShareIcon {
@@ -283,14 +295,15 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
 
             // Local image: offline
-            if let tableDirectory, tableDirectory.offline {
+            if let tblDirectory, tblDirectory.offline {
                 cell.fileLocalImage?.image = imageCache.getImageOfflineFlag()
             }
 
             // color folder
-            cell.filePreviewImageView?.image = cell.filePreviewImageView?.image?.colorizeFolder(metadata: metadata, tableDirectory: tableDirectory)
+            cell.filePreviewImageView?.image = cell.filePreviewImageView?.image?.colorizeFolder(metadata: metadata, tblDirectory: tblDirectory)
 
         } else {
+            let tableLocalFile = database.getResultTableLocalFile(predicate: NSPredicate(format: "ocId == %@", metadata.ocId))
 
             if metadata.hasPreviewBorder {
                 cell.filePreviewImageView?.layer.borderWidth = 0.2
@@ -401,7 +414,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 		}
 
         // URL
-        if metadata.classFile == NKCommon.TypeClassFile.url.rawValue {
+        if metadata.classFile == NKTypeClassFile.url.rawValue {
             cell.fileLocalImage?.image = nil
             cell.hideButtonShare(true)
             cell.hideButtonMore(true)
@@ -476,11 +489,6 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell.hideButtonMore(true)
         }
 
-        cell.setIconOutlines()
-
-        cell.accessibilityLabel = metadata.fileName
-        cell.accessibilityIdentifier = "Cell/\(metadata.fileName)"
-
         return cell
     }
 
@@ -507,6 +515,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
                                   heightHeaderSection: heightHeaderSection,
                                   sectionText: sectionText,
                                   viewController: self,
+                                  sceneItentifier: self.sceneIdentifier,
                                   delegate: self)
 
             } else if let header = header as? NCSectionFirstHeaderEmptyData {

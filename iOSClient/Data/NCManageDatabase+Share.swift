@@ -56,6 +56,8 @@ class tableShareV2: Object {
     @objc dynamic var serverUrl = ""
 
     ///
+    /// shareType - (int) 0 = user; 1 = group; 3 = public link; 4 = email; 6 = federated cloud share; 7 = circle; 10 = Talk conversation
+    ///
     /// See [OCS Share API documentation](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-share-api.html) for semantic definitions of the different possible values.
     ///
     @objc dynamic var shareType: Int = 0
@@ -133,7 +135,7 @@ extension NCManageDatabase {
                 }
             }
         } catch let error {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not write to database: \(error)")
+            nkLog(error: "Could not write to database: \(error)")
         }
     }
 
@@ -151,7 +153,7 @@ extension NCManageDatabase {
             let results = realm.objects(tableShare.self).filter("account == %@", account).sorted(by: sortProperties)
             return Array(results.map { tableShare.init(value: $0) })
         } catch let error as NSError {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not access database: \(error)")
+            nkLog(error: "Could not access database: \(error)")
         }
         return []
     }
@@ -169,7 +171,7 @@ extension NCManageDatabase {
                 return(firstShareLink: firstShareLink, share: Array(results.map { tableShare.init(value: $0) }))
             }
         } catch let error as NSError {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not access database: \(error)")
+            nkLog(error: "Could not access database: \(error)")
         }
         return (nil, nil)
     }
@@ -180,7 +182,7 @@ extension NCManageDatabase {
             guard let result = realm.objects(tableShare.self).filter("account = %@ AND idShare = %d", account, idShare).first else { return nil }
             return tableShare.init(value: result)
         } catch let error as NSError {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not access database: \(error)")
+            nkLog(error: "Could not access database: \(error)")
         }
         return nil
     }
@@ -192,7 +194,7 @@ extension NCManageDatabase {
             let results = realm.objects(tableShare.self).filter("account == %@ AND serverUrl == %@", account, serverUrl).sorted(by: sortProperties)
             return Array(results.map { tableShare.init(value: $0) })
         } catch let error as NSError {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not access database: \(error)")
+            nkLog(error: "Could not access database: \(error)")
         }
         return []
     }
@@ -207,7 +209,7 @@ extension NCManageDatabase {
             let results = realm.objects(tableShare.self).filter("account == %@ AND serverUrl == %@ AND fileName == %@", account, serverUrl, fileName).sorted(by: sortProperties)
             return Array(results.map { tableShare.init(value: $0) })
         } catch let error as NSError {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not access database: \(error)")
+            nkLog(error: "Could not access database: \(error)")
         }
 
         return []
@@ -221,7 +223,7 @@ extension NCManageDatabase {
                 realm.delete(result)
             }
         } catch let error as NSError {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not write to database: \(error)")
+            nkLog(error: "Could not write to database: \(error)")
         }
     }
 
@@ -233,7 +235,7 @@ extension NCManageDatabase {
                 realm.delete(result)
             }
         } catch let error as NSError {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not write to database: \(error)")
+            nkLog(error: "Could not write to database: \(error)")
         }
     }
 
@@ -245,16 +247,16 @@ extension NCManageDatabase {
                 realm.delete(result)
             }
         } catch let error as NSError {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not write to database: \(error)")
+            nkLog(error: "Could not write to database: \(error)")
         }
     }
 
     // There is currently only one share attribute “download” from the scope “permissions”. This attribute is only valid for user and group shares, not for public link shares.
     func setAttibuteDownload(state: Bool) -> String? {
         if state {
-            return nil
+            return "[{\"scope\":\"permissions\",\"key\":\"download\",\"value\":true}]"
         } else {
-            return "[{\"scope\":\"permissions\",\"key\":\"download\",\"enabled\":false}]"
+            return "[{\"scope\":\"permissions\",\"key\":\"download\",\"value\":null}]"
         }
     }
 
@@ -264,10 +266,10 @@ extension NCManageDatabase {
                 if let json = try JSONSerialization.jsonObject(with: data) as? [Dictionary<String, Any>] {
                     for sub in json {
                         let key = sub["key"] as? String
-                        let enabled = sub["enabled"] as? Bool
+                        let enabled = (sub["value"] as? Bool) /* >= NC 30 */ ?? sub["enabled"] as? Bool // /* < NC 29 */
                         let scope = sub["scope"] as? String
-                        if key == "download", scope == "permissions", let enabled = enabled {
-                            return enabled
+                        if key == "download", scope == "permissions" {
+                            return enabled ?? false
                         }
                     }
                 }

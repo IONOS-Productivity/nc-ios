@@ -38,7 +38,12 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
     var session: NCSession.Session {
         NCSession.shared.getSession(controller: controller)
     }
+    /// Capabilities
+    var capabilities: NKCapabilities.Capabilities {
+        NKCapabilities.shared.getCapabilitiesBlocking(for: controller?.account)
+    }
     let database = NCManageDatabase.shared
+    let global = NCGlobal.shared
     var metadatasNOConflict: [tableMetadata] = []
     var metadatasUploadInConflict: [tableMetadata] = []
     var timer: Timer?
@@ -157,17 +162,18 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
 
         func createProcessUploads() {
             if !self.dismissView {
-                NCNetworkingProcess.shared.createProcessUploads(metadatas: metadatas, completion: { _ in
-                    self.dismissView = true
-                })
+                self.database.addMetadatas(metadatas)
+                self.dismissView = true
             }
         }
 
         if useAutoUploadFolder {
             let assets = self.assets.compactMap { $0.phAsset }
-            NCNetworking.shared.createFolder(assets: assets, useSubFolder: self.useAutoUploadSubFolder, session: self.session)
-            self.showHUD = false
-            createProcessUploads()
+            self.database.createMetadatasFolder(assets: assets, useSubFolder: self.useAutoUploadSubFolder, session: self.session) { metadatasFolder in
+                self.database.addMetadatas(metadatasFolder)
+                self.showHUD = false
+                createProcessUploads()
+            }
         } else {
             createProcessUploads()
         }
@@ -179,6 +185,7 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
         var metadatasUploadInConflict: [tableMetadata] = []
         let autoUploadServerUrlBase = database.getAccountAutoUploadServerUrlBase(session: self.session)
         var serverUrl = useAutoUploadFolder ? autoUploadServerUrlBase : serverUrl
+        let isInDirectoryE2EE = NCUtilityFileSystem().isDirectoryE2EE(session: session, serverUrl: serverUrl)
 
         for tlAsset in assets {
             guard let asset = tlAsset.phAsset, let previewStore = previewStore.first(where: { $0.id == asset.localIdentifier }) else { continue }
@@ -189,7 +196,10 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
             let fileName = previewStore.fileName.isEmpty ? utilityFileSystem.createFileName(assetFileName as String, fileDate: creationDate, fileType: asset.mediaType)
             : (previewStore.fileName + "." + ext)
 
-            if previewStore.assetType == .livePhoto && NCKeychain().livePhoto && previewStore.data == nil {
+            if previewStore.assetType == .livePhoto,
+               !isInDirectoryE2EE,
+               NCKeychain().livePhoto,
+               previewStore.data == nil {
                 livePhoto = true
             }
 
@@ -207,11 +217,8 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
             }
 
             let metadataForUpload = database.createMetadata(fileName: fileName,
-                                                            fileNameView: fileName,
                                                             ocId: NSUUID().uuidString,
                                                             serverUrl: serverUrl,
-                                                            url: "",
-                                                            contentType: "",
                                                             session: session,
                                                             sceneIdentifier: controller?.sceneIdentifier)
 
@@ -220,8 +227,8 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
             }
             metadataForUpload.assetLocalIdentifier = asset.localIdentifier
             metadataForUpload.session = NCNetworking.shared.sessionUploadBackground
-            metadataForUpload.sessionSelector = NCGlobal.shared.selectorUploadFile
-            metadataForUpload.status = NCGlobal.shared.metadataStatusWaitUpload
+            metadataForUpload.sessionSelector = self.global.selectorUploadFile
+            metadataForUpload.status = self.global.metadataStatusWaitUpload
             metadataForUpload.sessionDate = Date()
             metadataForUpload.nativeFormat = previewStore.nativeFormat
 

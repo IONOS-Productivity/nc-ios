@@ -106,6 +106,9 @@
 "_view_in_folder_"          = "View in folder";
 "_leave_share_"             = "Leave this share";
 "_disabled_"                = "Disabled";
+"_compact_"                 = "Compact";
+"_normal_"                  = "Normal";
+"_verbose_"                 = "Verbose";
 "_standard_"                = "Standard";
 "_maximum_"                 = "Maximum";
 "_error_occurred_"          = "An error occurred, please try again.";
@@ -114,6 +117,11 @@
 "_confirm_"                 = "Confirm";
 "_confirm_continue_"        = "Confirm by continuing the previous uploading";
 "_confirm_resetting_"       = "confirm ignoring previous uploading ";
+"_background_location_access_title_"    = "Background Location Access";
+"_background_location_access_message_"  = "This app needs background location access to automatically upload files when you move between areas. GPS is not used and your location is never stored.";
+"_enable_background_location_title_"    = "Enable Background Location";
+"_enable_background_location_message_"  = "To allow automatic file uploads in the background, please enable 'Always' for location access in Settings.";
+"_enable_background_location_footer_"   = "To keep your photo library up to date automatically, this app can use background location access.\nThis allows it to detect when you’re in a new area and check for new photos to upload.\nGPS is not used, and your location is never stored or tracked.";
 
 /* MARK: Files lock */
 
@@ -233,6 +241,7 @@
 "_select_offline_warning_"      = "Making multiple files and folders available offline may take a while and use a lot of memory while doing so.";
 "_advanced_"                    = "Advanced";
 "_permissions_"                 = "Permissions";
+"_custom_permissions_"          = "Custom permissions";
 "_disable_files_app_"           = "Disable Files App integration";
 "_disable_files_app_footer_"    = "Do not permit the access of files via the iOS Files application.";
 "_time_remaining_"              = "%@ remaining";
@@ -401,7 +410,7 @@
 "_share_read_only_"             = "View only";
 "_share_editing_"               = "Can edit";
 "_share_allow_upload_"          = "Allow upload and editing";
-"_share_file_drop_"             = "File drop (upload only)";
+"_share_file_drop_"             = "File request";
 "_share_secure_file_drop_"      = "Secure file drop (upload only)";
 "_share_hide_download_"         = "Hide download";
 "_share_limit_download_"        = "Limit downloads";
@@ -410,16 +419,19 @@
 "_share_expiration_date_"       = "Set expiration date";
 "_share_note_recipient_"        = "Note to recipient";
 "_share_add_sharelink_"         = "Add another link";
-"_share_can_reshare_"           = "Allow resharing";
-"_share_can_create_"            = "Allow creating";
-"_share_can_change_"            = "Allow editing";
-"_share_can_delete_"            = "Allow deleting";
-"_share_can_download_"          = "Allow download";
-"_share_unshare_"               = "Unshare";
+"_share_can_read_"              = "Read";
+"_share_can_reshare_"           = "Share";
+"_share_can_create_"            = "Create";
+"_share_can_change_"            = "Edit";
+"_share_can_delete_"            = "Delete";
+"_share_can_download_"          = "Allow download and sync";
+"_share_unshare_"               = "Delete share";
 "_share_internal_link_"         = "Internal link";
 "_share_internal_link_des_"     = "Only works for users with access to this file/folder.";
 "_share_reshare_disabled_"      = "You are not allowed to reshare this file/folder.";
 "_share_reshare_restricted_"    = "Note: You only have limited permission to reshare this file/folder.";
+"_remote_"                      = "Remote";
+"_conversation_"                = "Conversation";
 
 "_no_transfer_"                     = "No transfers yet";
 "_no_transfer_sub_"                 = "Uploads and downloads from this device will show up here";
@@ -476,6 +488,7 @@
 "_personal_files_"                  = "Personal Files";
 
 "_trash_view_"                      = "Deleted files";
+"_empty_trash_"                     = "Empty trash";
 "_trash_no_trash_"                  = "No files deleted";
 "_trash_no_trash_description_"      = "You can restore deleted files from here";
 "_confirm_delete_selected_"         = "Are you sure you want to delete the selected items?";
@@ -744,4 +757,5 @@ You can stop it at any time, adjust the settings, and enable it again.";
 "_back_up_new_photos_only_" = "Back up new photos/videos only";
 "_auto_upload_all_photos_warning_title_" = "Are you sure you want to upload all photos?";
 "_auto_upload_all_photos_warning_message_" = "This can take some time to process depending on the amount of photos.";
+"_item_with_same_name_already_exists_" = "An item with the same name already exists.";
 "_download_"                    = "Download";

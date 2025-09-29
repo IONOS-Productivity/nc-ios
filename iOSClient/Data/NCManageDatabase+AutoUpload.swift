@@ -31,15 +31,24 @@ extension NCManageDatabase {
 
     // MARK: - Realm Write
 
-    func addAutoUploadTransfer(account: String, serverUrlBase: String, fileName: String, assetLocalIdentifier: String, date: Date, sync: Bool = false) {
-        performRealmWrite(sync: sync) { realm in
-            let newAutoUpload = tableAutoUploadTransfer(account: account, serverUrlBase: serverUrlBase, fileName: fileName, assetLocalIdentifier: assetLocalIdentifier, date: date)
-            realm.add(newAutoUpload, update: .all)
+    func addAutoUploadTransferAsync(account: String,
+                                    serverUrlBase: String,
+                                    fileName: String,
+                                    assetLocalIdentifier: String,
+                                    date: Date) async {
+        await performRealmWriteAsync { realm in
+            let result = tableAutoUploadTransfer(account: account,
+                                                 serverUrlBase: serverUrlBase,
+                                                 fileName: fileName,
+                                                 assetLocalIdentifier: assetLocalIdentifier,
+                                                 date: date)
+            realm.add(result, update: .all)
         }
     }
 
-    func deleteAutoUploadTransfer(account: String, autoUploadServerUrlBase: String, sync: Bool = true) {
-        performRealmWrite(sync: sync) { realm in
+    func deleteAutoUploadTransferAsync(account: String,
+                                       autoUploadServerUrlBase: String) async {
+        await performRealmWriteAsync { realm in
             let result = realm.objects(tableAutoUploadTransfer.self)
                 .filter("account == %@ AND serverUrlBase == %@", account, autoUploadServerUrlBase)
             realm.delete(result)
@@ -48,10 +57,8 @@ extension NCManageDatabase {
 
     // MARK: - Realm Read
 
-    func fetchSkipFileNames(account: String, autoUploadServerUrlBase: String) -> Set<String> {
-        var skipFileNames = Set<String>()
-
-        performRealmRead { realm in
+    func fetchSkipFileNames(account: String, autoUploadServerUrlBase: String) async -> Set<String> {
+        let result: Set<String>? = await performRealmReadAsync { realm in
             let metadatas = realm.objects(tableMetadata.self)
                 .filter("account == %@ AND autoUploadServerUrlBase == %@ AND status IN %@", account, autoUploadServerUrlBase, NCGlobal.shared.metadataStatusUploadingAllMode)
                 .map(\.fileNameView)
@@ -60,15 +67,19 @@ extension NCManageDatabase {
                 .filter("account == %@ AND serverUrlBase == %@", account, autoUploadServerUrlBase)
                 .map(\.fileName)
 
-            skipFileNames.formUnion(metadatas)
-            skipFileNames.formUnion(transfers)
+            return Set(metadatas).union(transfers)
         }
 
-        return skipFileNames
+        return result ?? []
     }
 
-    func fetchLastAutoUploadedDate(account: String, autoUploadServerUrlBase: String) -> Date? {
-        performRealmRead { realm in
+    /// Asynchronously fetches the most recent auto-uploaded date for the given account and server base URL.
+    /// - Parameters:
+    ///   - account: The account identifier.
+    ///   - autoUploadServerUrlBase: The server base URL for auto-upload.
+    /// - Returns: The most recent upload `Date`, or `nil` if no entry exists.
+    func fetchLastAutoUploadedDateAsync(account: String, autoUploadServerUrlBase: String) async -> Date? {
+        await performRealmReadAsync { realm in
             realm.objects(tableAutoUploadTransfer.self)
                 .filter("account == %@ AND serverUrlBase == %@", account, autoUploadServerUrlBase)
                 .sorted(byKeyPath: "date", ascending: false)

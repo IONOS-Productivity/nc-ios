@@ -109,7 +109,9 @@ class NCSharePaging: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        if NCCapabilities.shared.disableSharesView(account: metadata.account) {
+        let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: metadata.account)
+
+        if !capabilities.fileSharingApiEnabled && !capabilities.filesComments && capabilities.activity.isEmpty {
             self.dismiss(animated: false, completion: nil)
         }
 
@@ -120,7 +122,9 @@ class NCSharePaging: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterReloadDataSource, userInfo: ["serverUrl": metadata.serverUrl])
+        NCNetworking.shared.notifyAllDelegates { delegate in
+            delegate.transferReloadData(serverUrl: metadata.serverUrl, status: nil)
+        }
     }
 
     deinit {
@@ -225,13 +229,8 @@ extension NCSharePaging: PagingViewControllerDataSource {
 // MARK: - Header
 
 class NCShareHeaderViewController: PagingViewController {
-
     public var image: UIImage?
     public var metadata = tableMetadata()
-
-    public var activityEnabled = true
-    public var commentsEnabled = true
-    public var sharingEnabled = true
 
     override func loadView() {
         view = NCSharePagingView(

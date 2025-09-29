@@ -46,8 +46,27 @@ extension NCManageDatabase {
         }
     }
 
-    func deleteDiagnostics(account: String, ids: [ObjectId]) {
-        performRealmWrite { realm in
+    func addDiagnosticAsync(account: String,
+                            issue: String,
+                            error: String? = nil) async {
+        await performRealmWriteAsync { realm in
+            let primaryKey = account + issue + (error ?? "")
+
+            if let result = realm.object(ofType: TableSecurityGuardDiagnostics.self, forPrimaryKey: primaryKey) {
+                result.counter += 1
+                result.oldest = Date().timeIntervalSince1970
+            } else {
+                let table = TableSecurityGuardDiagnostics(account: account,
+                                                          issue: issue,
+                                                          error: error,
+                                                          date: Date())
+                realm.add(table)
+            }
+        }
+    }
+
+    func deleteDiagnosticsAsync(account: String, ids: [ObjectId]) async {
+        await performRealmWriteAsync { realm in
             let results = realm.objects(TableSecurityGuardDiagnostics.self)
                 .filter("account == %@", account)
 
@@ -76,5 +95,13 @@ extension NCManageDatabase {
                 .filter("account == %@ AND issue == %@", account, issue)
         }
         return results
+    }
+
+    func getDiagnosticsAsync(account: String) async -> [TableSecurityGuardDiagnostics]? {
+        await performRealmReadAsync { realm in
+            let results = realm.objects(TableSecurityGuardDiagnostics.self)
+                .filter("account == %@", account)
+            return Array(results)
+        }
     }
 }

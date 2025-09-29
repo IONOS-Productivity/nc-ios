@@ -60,8 +60,9 @@ extension NCMedia {
         else { return }
         let limit = max(self.collectionView.visibleCells.count * 3, 300)
         let visibleCells = self.collectionView?.indexPathsForVisibleItems.sorted(by: { $0.row < $1.row }).compactMap({ self.collectionView?.cellForItem(at: $0) })
+        let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: session.account)
 
-        DispatchQueue.global(qos: .background).async {
+        DispatchQueue.global(qos: .utility).async {
             self.semaphoreSearchMedia.wait()
             self.searchMediaInProgress = true
 
@@ -103,9 +104,9 @@ extension NCMedia {
                 }
             }
 
-            NextcloudKit.shared.nkCommonInstance.writeLog("[DEBUG] Start searchMedia with lessDate \(lessDate), greaterDate \(greaterDate), limit \(limit)")
+            nkLog(start: "Start searchMedia with lessDate \(lessDate), greaterDate \(greaterDate), limit \(limit)")
 
-            if NCCapabilities.shared.getCapabilities(account: self.session.account).capabilityServerVersionMajor >= self.global.nextcloudVersion31 {
+            if capabilities.serverVersionMajor >= self.global.nextcloudVersion31 {
                 elementDate = "nc:metadata-photos-original_date_time"
                 lessDateAny = Int((lessDate as AnyObject).timeIntervalSince1970)
                 greaterDateAny = Int((greaterDate as AnyObject).timeIntervalSince1970)
@@ -160,7 +161,7 @@ extension NCMedia {
                         }
                     }
                 } else {
-                    NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Media search new media error code \(error.errorCode) " + error.errorDescription)
+                    nkLog(error: "Media search new media error code \(error.errorCode) " + error.errorDescription)
                     self.collectionViewReloadData()
                 }
 
@@ -238,9 +239,9 @@ public class NCMediaDataSource: NSObject {
         return Metadata(datePhotosOriginal: metadata.datePhotosOriginal as Date,
                         etag: metadata.etag,
                         imageSize: CGSize(width: metadata.width, height: metadata.height),
-                        isImage: metadata.classFile == NKCommon.TypeClassFile.image.rawValue,
+                        isImage: metadata.classFile == NKTypeClassFile.image.rawValue,
                         isLivePhoto: !metadata.livePhotoFile.isEmpty,
-                        isVideo: metadata.classFile == NKCommon.TypeClassFile.video.rawValue,
+                        isVideo: metadata.classFile == NKTypeClassFile.video.rawValue,
                         ocId: metadata.ocId)
     }
 
