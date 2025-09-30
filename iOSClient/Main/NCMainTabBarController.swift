@@ -33,6 +33,7 @@ struct NavigationCollectionViewCommon {
 }
 
 class NCMainTabBarController: UITabBarController {
+    var sceneIdentifier: String = UUID().uuidString
     var account = ""
     var availableNotifications: Bool = false
     var documentPickerViewController: NCDocumentPickerViewController?
@@ -41,7 +42,7 @@ class NCMainTabBarController: UITabBarController {
     private var checkUserDelaultErrorInProgress: Bool = false
     private var timer: Timer?
     private let global = NCGlobal.shared
-    
+
     private(set) var burgerMenuController: BurgerMenuAttachController?
 
     var window: UIWindow? {
@@ -58,7 +59,6 @@ class NCMainTabBarController: UITabBarController {
         NCDownloadAction.shared.setup(sceneIdentifier: sceneIdentifier)
 
         tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
-
 
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterChangeTheming), object: nil, queue: .main) { [weak self] notification in
             if let userInfo = notification.userInfo as? NSDictionary,

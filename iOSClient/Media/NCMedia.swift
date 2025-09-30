@@ -31,10 +31,10 @@ import Combine
 class NCMedia: UIViewController {
 	@IBOutlet weak var collectionView: UICollectionView!
 	@IBOutlet weak var fileActionsHeader: FileActionsHeader?
-	
+
 	let semaphoreSearchMedia = DispatchSemaphore(value: 1)
 	let semaphoreNotificationCenter = DispatchSemaphore(value: 1)
-	
+
 	let layout = NCMediaLayout()
 	var layoutType = NCGlobal.shared.mediaLayoutRatio
 	var documentPickerViewController: NCDocumentPickerViewController?
@@ -64,16 +64,16 @@ class NCMedia: UIViewController {
 	var photoImage = UIImage()
 	var videoImage = UIImage()
 	var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
-	
+
 	private var accountButtonFactory: AccountButtonFactory!
 	var activeTransfersListener: AnyCancellable? = nil
-	
+
 	var lastScale: CGFloat = 1.0
 	var currentScale: CGFloat = 1.0
 	var maxColumns: Int {
 		let screenWidth = min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
 		let column = Int(screenWidth / 44)
-		
+
 		return column
 	}
 	var transitionColumns = false
@@ -81,30 +81,34 @@ class NCMedia: UIViewController {
 	var lastNumberOfColumns: Int = 0
 
     let debouncer = NCDebouncer(delay: 1)
-	
+
 	var session: NCSession.Session {
 		NCSession.shared.getSession(controller: tabBarController)
 	}
-	
+
 	var controller: NCMainTabBarController? {
 		self.tabBarController as? NCMainTabBarController
 	}
-	
+
 	var isViewActived: Bool {
 		return self.isViewLoaded && self.view.window != nil
 	}
-	
+
 	var isPinchGestureActive: Bool {
 		return pinchGesture.state == .began || pinchGesture.state == .changed
 	}
-	
+
+    var sceneIdentifier: String {
+        self.mainTabBarController?.sceneIdentifier ?? ""
+    }
+
 	// MARK: - View Life Cycle
-	
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		
+
 		view.backgroundColor = NCBrandColor.shared.appBackgroundColor
-		
+
 		collectionView.register(UINib(nibName: "NCSectionFirstHeaderEmptyData", bundle: nil), forSupplementaryViewOfKind: mediaSectionHeader, withReuseIdentifier: "sectionFirstHeaderEmptyData")
 		collectionView.register(UINib(nibName: "NCSectionFooter", bundle: nil), forSupplementaryViewOfKind: mediaSectionFooter, withReuseIdentifier: "sectionFooter")
 		collectionView.register(UINib(nibName: "NCMediaCell", bundle: nil), forCellWithReuseIdentifier: "mediaCell")
@@ -116,7 +120,7 @@ class NCMedia: UIViewController {
 		collectionView.dragDelegate = self
 		collectionView.dropDelegate = self
 		collectionView.accessibilityIdentifier = "NCMedia"
-		
+
 		layout.sectionInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
 		collectionView.collectionViewLayout = layout
         layoutType = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "").layout

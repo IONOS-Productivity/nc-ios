@@ -40,6 +40,10 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
         NCSession.shared.getSession(account: metadata.account)
     }
 
+    var sceneIdentifier: String {
+        self.mainTabBarController?.sceneIdentifier ?? ""
+    }
+
     // MARK: - View Life Cycle
 
     required init?(coder: NSCoder) {

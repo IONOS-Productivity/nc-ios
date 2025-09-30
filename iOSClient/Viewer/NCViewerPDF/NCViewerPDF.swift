@@ -60,6 +60,10 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
 
     private var tipView: EasyTipView?
 
+    var sceneIdentifier: String {
+        self.mainTabBarController?.sceneIdentifier ?? ""
+    }
+
     // MARK: - View Life Cycle
 
     required init?(coder aDecoder: NSCoder) {

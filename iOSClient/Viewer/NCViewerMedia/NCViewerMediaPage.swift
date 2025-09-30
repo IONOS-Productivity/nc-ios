@@ -83,6 +83,10 @@ class NCViewerMediaPage: UIViewController {
         }
     }
 
+    var sceneIdentifier: String {
+        self.mainTabBarController?.sceneIdentifier ?? ""
+    }
+
     // MARK: - View Life Cycle
 
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {

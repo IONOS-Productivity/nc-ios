@@ -34,6 +34,10 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
     var imageIcon: UIImage?
     let utility = NCUtility()
 
+    var sceneIdentifier: String {
+        self.mainTabBarController?.sceneIdentifier ?? ""
+    }
+
     // MARK: - View Life Cycle
 
     required init?(coder: NSCoder) {
