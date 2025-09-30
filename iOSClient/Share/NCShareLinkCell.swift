@@ -47,7 +47,7 @@ class NCShareLinkCell: UITableViewCell {
         tableShare = nil
     }
 
-    func setupCellUI() {
+    func setupCellUI(titleAppendString: String? = nil) {
         var menuImageResource: ImageResource = .Share.threeDots
         let commonIconTint = UIColor(resource: .Share.commonIconTint)
 
@@ -95,7 +95,7 @@ class NCShareLinkCell: UITableViewCell {
         labelTitle.textColor = NCBrandColor.shared.textColor
 
         statusStackView.isHidden = true
-
+        let permissions = NCPermissions()
         if let tableShare {
             statusStackView.isHidden = false
             labelQuickStatus.text = NSLocalizedString("_custom_permissions_", comment: "")

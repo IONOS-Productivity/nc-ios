@@ -303,8 +303,6 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell.filePreviewImageView?.image = cell.filePreviewImageView?.image?.colorizeFolder(metadata: metadata, tblDirectory: tblDirectory)
 
         } else {
-            let tableLocalFile = database.getResultTableLocalFile(predicate: NSPredicate(format: "ocId == %@", metadata.ocId))
-
             if metadata.hasPreviewBorder {
                 cell.filePreviewImageView?.layer.borderWidth = 0.2
                 cell.filePreviewImageView?.layer.borderColor = UIColor.lightGray.cgColor

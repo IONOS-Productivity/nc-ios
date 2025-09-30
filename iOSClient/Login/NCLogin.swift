@@ -230,7 +230,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
                         nkLog(debug: "Successfully received login flow information.")
                         let safariVC = NCLoginProvider()
                         safariVC.initialURLString = login
-                        safariVC.uiColor = textColor
+                        safariVC.uiColor = self?.textColor ?? .clear
                         safariVC.delegate = self
                         safariVC.startPolling(loginFlowV2Token: token, loginFlowV2Endpoint: endpoint, loginFlowV2Login: login)
 						self?.navigationController?.pushViewController(safariVC, animated: true)

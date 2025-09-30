@@ -472,7 +472,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             if selector == NCGlobal.shared.introSignUpWithProvider {
                 // Login via provider
                 activeLoginWeb = UIStoryboard(name: "NCLogin", bundle: nil).instantiateViewController(withIdentifier: "NCLoginProvider") as? NCLoginProvider
-                activeLoginWeb?.urlBase = NCBrandOptions.shared.linkloginPreferredProviders
+                activeLoginWeb?.initialURLString = NCBrandOptions.shared.linkloginPreferredProviders
                 showLoginViewController(activeLoginWeb)
             } else {
                 // Regular login

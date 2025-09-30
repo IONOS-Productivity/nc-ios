@@ -43,7 +43,7 @@ extension NCCollectionViewCommon {
     }
     
     private func createSortMenuActions() -> [UIMenuElement] {
-        guard let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl) else { return [] }
+        let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
         
         let ascending = layoutForView.ascending
         let ascendingChevronImage = utility.loadImage(named: ascending ? "chevron.up" : "chevron.down")
@@ -86,7 +86,7 @@ extension NCCollectionViewCommon {
     }
     
     private func createViewModeMenuActions() -> [UIMenuElement] {
-        guard let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl) else { return [] }
+        let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
 
         let listImage = UIImage(resource: .FileSelection.viewModeList).templateRendered()
         let gridImage = UIImage(resource: .FileSelection.viewModeGrid).templateRendered()
@@ -116,16 +116,16 @@ extension NCCollectionViewCommon {
     }
     
     private func notifyAboutLayoutChange(_ layoutForView: NCDBLayoutForView) {
-        NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterChangeLayout,
-                                                    object: nil,
-                                                    userInfo: ["account": self.session.account,
-                                                               "serverUrl": self.serverUrl,
-                                                               "layoutForView": layoutForView])
+//        NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterChangeLayout,
+//                                                    object: nil,
+//                                                    userInfo: ["account": self.session.account,
+//                                                               "serverUrl": self.serverUrl,
+//                                                               "layoutForView": layoutForView])
     }
     
     private var sortTitle: String? {
-        guard let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl) else { return nil }
-        
+        let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
+
         switch layoutForView.sort {
         case "fileName": return NSLocalizedString("_name_", comment: "")
         case "date": return NSLocalizedString("_date_", comment: "")
@@ -135,7 +135,7 @@ extension NCCollectionViewCommon {
     }
     
     private var sortDirectionImage: UIImage? {
-        guard let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl) else { return nil }
+        let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
         let imageName = layoutForView.ascending ? "arrow.up" : "arrow.down"
         return UIImage(systemName: imageName, withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold))
     }

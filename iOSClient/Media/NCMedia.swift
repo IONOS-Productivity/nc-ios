@@ -79,6 +79,8 @@ class NCMedia: UIViewController {
 	var transitionColumns = false
 	var numberOfColumns: Int = 0
 	var lastNumberOfColumns: Int = 0
+
+    let debouncer = NCDebouncer(delay: 1)
 	
 	var session: NCSession.Session {
 		NCSession.shared.getSession(controller: tabBarController)
@@ -117,7 +119,7 @@ class NCMedia: UIViewController {
 		
 		layout.sectionInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
 		collectionView.collectionViewLayout = layout
-		layoutType = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "")?.layout ?? global.mediaLayoutRatio
+        layoutType = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "").layout
 		
 		tabBarSelect = HiDriveCollectionViewCommonSelectToolbar(controller: controller, delegate: self, displayedButtons: [.delete])
 		
@@ -135,7 +137,7 @@ class NCMedia: UIViewController {
 		collectionView.addGestureRecognizer(pinchGesture)
 		
 		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { _ in
-			self.layoutType = self.database.getLayoutForView(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "")?.layout ?? self.global.mediaLayoutRatio
+			self.layoutType = self.database.getLayoutForView(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "").layout
 			self.imageCache.removeAll()
 			self.loadDataSource()
 			self.searchMediaUI(true)
@@ -146,12 +148,6 @@ class NCMedia: UIViewController {
 			self.imageCache.removeAll()
 			self.searchMediaUI(true)
 		}
-		
-		NotificationCenter.default.addObserver(self, selector: #selector(fileExists(_:)), name: NSNotification.Name(rawValue: global.notificationCenterFileExists), object: nil)
-		
-		NotificationCenter.default.addObserver(self, selector: #selector(deleteFile(_:)), name: NSNotification.Name(rawValue: global.notificationCenterDeleteFile), object: nil)
-		
-		NotificationCenter.default.addObserver(self, selector: #selector(reloadDataSource(_:)), name: NSNotification.Name(rawValue: global.notificationCenterReloadDataSource), object: nil)
 		
 		NotificationCenter.default.addObserver(self, selector: #selector(networkRemoveAll(_:)), name: UIApplication.didEnterBackgroundNotification, object: nil)
 		
@@ -187,9 +183,7 @@ class NCMedia: UIViewController {
 	
 	override func viewDidAppear(_ animated: Bool) {
 		super.viewDidAppear(animated)
-		
-		NotificationCenter.default.addObserver(self, selector: #selector(copyMoveFile(_:)), name: NSNotification.Name(rawValue: global.notificationCenterCopyMoveFile), object: nil)
-		
+
 		NotificationCenter.default.addObserver(self, selector: #selector(enterForeground(_:)), name: UIApplication.willEnterForegroundNotification, object: nil)
 		
 		searchNewMedia()
@@ -197,9 +191,7 @@ class NCMedia: UIViewController {
 	
 	override func viewDidDisappear(_ animated: Bool) {
 		super.viewDidDisappear(animated)
-		
-		NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: global.notificationCenterCopyMoveFile), object: nil)
-		
+				
 		NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
 		
 		networkRemoveAll(nil)

@@ -1336,10 +1336,6 @@
 		AA8E03DB2D2FBAAD00E7E89C /* DownloadLimitUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadLimitUITests.swift; sourceTree = "<group>"; };
 		AA8E041C2D300FDE00E7E89C /* NCShareNetworkingDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCShareNetworkingDelegate.swift; sourceTree = "<group>"; };
 		AA8E041E2D3114E200E7E89C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		AA9B6A8D2DF1D8F7009D805D /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = et; path = et.lproj/Intent.strings; sourceTree = "<group>"; };
-		AA9B6A8E2DF1D8F7009D805D /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = et; path = et.lproj/Localizable.strings; sourceTree = "<group>"; };
-		AA9B6A8F2DF1D8F7009D805D /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = et; path = "Supporting Files/et.lproj/Localizable.stringsdict"; sourceTree = "<group>"; };
-		AA9B6A902DF1D8F7009D805D /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = et; path = et.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		AAA7BC2D2D3E39EC008F1A22 /* CapabilitiesResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapabilitiesResponse.swift; sourceTree = "<group>"; };
 		AAA7BC2F2D3E3B83008F1A22 /* CapabilityResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapabilityResponse.swift; sourceTree = "<group>"; };
 		AABD0C862D5F58C400F009E6 /* Server.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = Server.sh; sourceTree = "<group>"; };
@@ -3340,8 +3336,6 @@
 				F794E13E2BBC0F70003693D7 /* SceneDelegate.swift */,
 				F7CF067A2E0FF38F0063AD04 /* NCAppStateManager.swift */,
 				F77DD6A72C5CC093009448FB /* NCSession.swift */,
-				F7401C142C75E6F300649E87 /* NCCapabilities.swift */,
-				F7A8FD512C5E2557006C9CF8 /* NCAccount.swift */,
 				F76B649B2ADFFAED00014640 /* NCImageCache.swift */,
 				D5C5133A2C91970B00AE35CA /* NCImagesRepository.swift */,
 				F702F2CE25EE5B5C008F8E80 /* NCGlobal.swift */,
@@ -4624,7 +4618,7 @@
 				F718E25A2DF2D5D1004038AF /* NCBackgroundLocationUploadManager.swift in Sources */,
 				F761856B29E98543006EB3B0 /* NCIntroViewController.swift in Sources */,
 				F7743A142C33F13A0034F670 /* NCCollectionViewCommon+CollectionViewDataSource.swift in Sources */,
-				F75B0ABD244C4DBB00E58DCA /* NCActionCenter.swift in Sources */,
+				F75B0ABD244C4DBB00E58DCA /* NCDownloadAction.swift in Sources */,
 				4240DB4E2C5646B400E72FC0 /* BurgerMenuAttachController.swift in Sources */,
 				AF935067276B84E700BD078F /* NCMenu+FloatingPanel.swift in Sources */,
 				F76882282C0DD1E7001CF441 /* NCEndToEndInitialize.swift in Sources */,
@@ -4863,8 +4857,6 @@
 				F7A560422AE1593700BE8FD6 /* NCOperationSaveLivePhoto.swift in Sources */,
 				F7D1C4AC2C9484FD00EC6D44 /* NCMedia+CollectionViewDataSourcePrefetching.swift in Sources */,
 				F7D368DF2DAFE19E0037E7C6 /* NCActivityNavigationController.swift in Sources */,
-				F7401C152C75E6F300649E87 /* NCCapabilities.swift in Sources */,
-				F7A03E332D426115007AA677 /* NCMoreNavigationController.swift in Sources */,
 				F7E402312BA891EB007E5609 /* NCTrash+SelectTabBarDelegate.swift in Sources */,
 				D5E1D4FE2CF4E7C600813AB6 /* DataProtectionSettingsScreen.swift in Sources */,
 				F70753EB2542A99800972D44 /* NCViewerMediaPage.swift in Sources */,
@@ -4885,7 +4877,6 @@
 				F7C30DFA291BCF790017149B /* NCNetworkingE2EECreateFolder.swift in Sources */,
 				F7BC288026663F85004D46C5 /* NCViewCertificateDetails.swift in Sources */,
 				F78B87E92B62550800C65ADC /* NCMediaDownloadThumbnail.swift in Sources */,
-				F73EF7AF2B0224350087E6E9 /* NCManageDatabase+DirectEditing.swift in Sources */,
 				4240DB502C5648E300E72FC0 /* BurgerMenuViewController.swift in Sources */,
 				0F9DB9C12DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 				D5B6AA7827200C7200D49C24 /* NCActivityTableViewCell.swift in Sources */,
@@ -4933,7 +4924,6 @@
 				F70D8D8124A4A9BF000A5756 /* NCNetworkingProcess.swift in Sources */,
 				F3A0479A2BD2668800658E7B /* NCAssistantTaskDetail.swift in Sources */,
 				F71D2FB72E09BBD700B751CC /* NCAutoUploadModel.swift in Sources */,
-				F38F71252B6BBDC300473CDC /* NCCollectionViewCommonSelectTabBar.swift in Sources */,
 				F7E4D9C422ED929B003675FD /* NCShareCommentsCell.swift in Sources */,
 				F73EFF9B2DB11EC900FD434C /* NCFiles+UIScrollViewDelegate.swift in Sources */,
 				F7327E202B73A42F00A462C7 /* NCNetworking+Download.swift in Sources */,
@@ -4990,7 +4980,6 @@
 				F7CF06852E1127460063AD04 /* NCManageDatabase+Metadata+Create.swift in Sources */,
 				F7A8D73928F17E25008BBE1C /* NCManageDatabase+Metadata.swift in Sources */,
 				F7D7A7722DCDD437003D2007 /* NCManageDatabase+AutoUpload.swift in Sources */,
-				F73EF7B12B0224350087E6E9 /* NCManageDatabase+DirectEditing.swift in Sources */,
 				0F9DB9BB2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 				F343A4B52A1E084200DDA874 /* PHAsset+Extension.swift in Sources */,
 				F72FD3B7297ED49A00075D28 /* NCManageDatabase+E2EE.swift in Sources */,

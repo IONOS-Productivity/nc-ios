@@ -154,10 +154,6 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 		self.tabBarController as? NCMainTabBarController ?? mainTabBarController
     }
 
-    var sceneIdentifier: String {
-        (self.tabBarController as? NCMainTabBarController)?.sceneIdentifier ?? ""
-    }
-
     var defaultPredicate: NSPredicate {
         let predicate = NSPredicate(format: "account == %@ AND serverUrl == %@ AND NOT (status IN %@) AND NOT (livePhotoFile != '' AND classFile == %@)", session.account, self.serverUrl, self.global.metadataStatusHideInView, NKTypeClassFile.video.rawValue)
         return predicate
@@ -201,7 +197,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 		getServerData()
 		if isRecommendationActived {
 			Task.detached {
-				await NCNetworking.shared.createRecommendations(session: self.session)
+				await NCNetworking.shared.createRecommendations(session: self.session, serverUrl: self.serverUrl, collectionView: self.collectionView)
 			}
 		}
 	}

@@ -45,7 +45,7 @@ class NCContextMenu: NSObject {
                                 NSLocalizedString("_remove_favorites_", comment: "") :
                                 NSLocalizedString("_add_favorites_", comment: ""),
                                 image: metadata.favorite ? NCImagesRepository.menuIconRemoveFromFavorite : NCImagesRepository.menuIconAddToFavorite) { _ in
-            self.networking.favoriteMetadata(metadata) { error in
+            self.networking.favoriteMetadata(self.metadata) { error in
                 if error != .success {
                     NCContentPresenter().showError(error: error)
                 }

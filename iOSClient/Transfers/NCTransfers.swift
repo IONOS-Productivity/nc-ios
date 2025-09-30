@@ -173,7 +173,7 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
         cell.labelPath.text = pathText
         cell.setButtonMore(image: UIImage(resource: .Transfers.stop))
         
-        if metadata.iconName == NKCommon.TypeClassFile.directory.rawValue {
+        if metadata.iconName == NKTypeClassFile.directory.rawValue {
             cell.imageItem?.image = UIImage(resource: .folder)
         } else {
             cell.imageItem?.image = UIImage(resource: .fileUnsupported)

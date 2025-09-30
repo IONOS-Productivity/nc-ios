@@ -36,7 +36,7 @@ struct NCAccountSettingsView: View {
     @State private var animation: Bool = false
 
     var capabilities: NKCapabilities.Capabilities {
-        NKCapabilities.shared.getCapabilitiesBlocking(for: model.controller?.account)
+        return NKCapabilities.shared.getCapabilitiesBlocking(for: model.controller?.account)
     }
 
     @Environment(\.presentationMode) var presentationMode
@@ -51,7 +51,7 @@ struct NCAccountSettingsView: View {
                         PersonalDataView(account: activeAccount)
                     }
                     changeAliasSection
-                    if NCCapabilities.shared.getCapabilities(account: model.tblAccount?.account).capabilityUserStatusEnabled {
+                    if capabilities.userStatusEnabled {
                         userStatusButtonView
                     }
                     if model.isAdminGroup() {

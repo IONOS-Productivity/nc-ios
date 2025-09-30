@@ -58,7 +58,7 @@ extension NCMedia {
 
     func createMenuElements() -> [UIMenuElement] {
         let layoutForView = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "")
-        var layout = layoutForView?.layout ?? global.mediaLayoutRatio
+        var layout = layoutForView.layout
         /// Overwrite default value
         if layout == global.layoutList {
             layout = global.mediaLayoutRatio

@@ -123,10 +123,6 @@ class NCShare: UIViewController, NCSharePagingContent {
         reloadData()
 
         networking = NCShareNetworking(metadata: metadata, view: self.view, delegate: self, session: session)
-        if sharingEnabled {
-            let isVisible = (self.navigationController?.topViewController as? NCSharePaging)?.page == .sharing
-            networking?.readShare(showLoadingIndicator: isVisible)
-        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -391,7 +387,7 @@ extension NCShare: UITableViewDataSource {
                 cell.tableShare = tableShare
                 cell.isDirectory = metadata.directory
                 cell.delegate = self
-                cell.setupCellUI(userId: session.userId)
+                cell.setupCellUI(userId: session.userId, session: session, metadata: metadata)
 
                 let fileName = NCSession.shared.getFileName(urlBase: session.urlBase, user: tableShare.shareWith)
                 

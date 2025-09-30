@@ -9,6 +9,7 @@ import NextcloudKit
 // MARK: - Drag
 
 extension NCMedia: NCTransferDelegate {
+    
     func transferChange(status: String, metadatasError: [tableMetadata: NKError]) {
         switch status {
         /// DELETE

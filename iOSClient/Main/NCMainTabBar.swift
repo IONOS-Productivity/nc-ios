@@ -64,8 +64,6 @@ class NCMainTabBar: UITabBar {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
 
-        NotificationCenter.default.addObserver(self, selector: #selector(updateBadgeNumber(_:)), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterUpdateBadgeNumber), object: nil)
-
         changeTheming()
     }
 
@@ -219,11 +217,11 @@ class NCMainTabBar: UITabBar {
                 let fileFolderPath = NCUtilityFileSystem().getFileNamePath("", serverUrl: serverUrl, session: NCSession.shared.getSession(controller: controller))
                 let fileFolderName = (serverUrl as NSString).lastPathComponent
 
-                if !FileNameValidator.checkFolderPath(fileFolderPath, account: controller.account) {
-                    controller.present(UIAlertController.warning(message: "\(String(format: NSLocalizedString("_file_name_validator_error_reserved_name_", comment: ""), fileFolderName)) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
-
-                    return
-                }
+//                if !FileNameValidator.checkFolderPath(fileFolderPath, account: controller.account) {
+//                    controller.present(UIAlertController.warning(message: "\(String(format: NSLocalizedString("_file_name_validator_error_reserved_name_", comment: ""), fileFolderName)) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
+//
+//                    return
+//                }
 
 				self.appDelegate.toggleMenu(controller: controller, sender: nil)
             }

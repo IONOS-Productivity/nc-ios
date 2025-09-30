@@ -208,9 +208,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let controller = SceneManager.shared.getController(scene: scene),
-              let url = URLContexts.first?.url,
-              let sceneIdentifier = controller.sceneIdentifier else { return }
+              let url = URLContexts.first?.url else { return }
 
+        let sceneIdentifier = controller.sceneIdentifier
         let scheme = url.scheme
         let action = url.host
 
@@ -464,9 +464,7 @@ final class SceneManager: @unchecked Sendable {
     func getSceneIdentifier() -> [String] {
         var results: [String] = []
         for controller in sceneController.keys {
-            guard let sceneIdentifier = controller.sceneIdentifier else {
-                continue
-            }
+            let sceneIdentifier = controller.sceneIdentifier
             results.append(sceneIdentifier)
         }
         return results

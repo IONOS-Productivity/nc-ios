@@ -180,7 +180,7 @@ extension tableMetadata {
     }
     
     var isURL: Bool {
-        return classFile == NKCommon.TypeClassFile.url.rawValue
+        return classFile == NKTypeClassFile.url.rawValue
     }
 
     var isSavebleAsImage: Bool {

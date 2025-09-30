@@ -256,16 +256,16 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
 	
 	@Sendable func colorByImageName(_ name: String) -> UIColor {
 		switch name {
-		case NKCommon.TypeIconFile.audio.rawValue, 
-			 NKCommon.TypeIconFile.code.rawValue,
-			 NKCommon.TypeIconFile.compress.rawValue,
-		 	 NKCommon.TypeIconFile.image.rawValue,
-			 NKCommon.TypeIconFile.movie.rawValue,
-			 NKCommon.TypeIconFile.txt.rawValue,
-			 NKCommon.TypeIconFile.url.rawValue: return NCBrandColor.shared.iconImageColor2
-		case NKCommon.TypeIconFile.document.rawValue: return NCBrandColor.shared.documentIconColor
-		case NKCommon.TypeIconFile.ppt.rawValue: return NCBrandColor.shared.presentationIconColor
-		case NKCommon.TypeIconFile.xls.rawValue: return NCBrandColor.shared.spreadsheetIconColor
+		case NKTypeIconFile.audio.rawValue,
+             NKTypeIconFile.code.rawValue,
+             NKTypeIconFile.compress.rawValue,
+             NKTypeIconFile.image.rawValue,
+             NKTypeIconFile.video.rawValue,
+             NKTypeIconFile.txt.rawValue,
+             NKTypeIconFile.url.rawValue: return NCBrandColor.shared.iconImageColor2
+		case NKTypeIconFile.document.rawValue: return NCBrandColor.shared.documentIconColor
+		case NKTypeIconFile.ppt.rawValue: return NCBrandColor.shared.presentationIconColor
+		case NKTypeIconFile.xls.rawValue: return NCBrandColor.shared.spreadsheetIconColor
 			
         default: return NCBrandColor.shared.brandElement
 		}

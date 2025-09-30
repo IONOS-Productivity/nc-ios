@@ -183,27 +183,17 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
 
     /// Presents the log file viewer.
     func viewLogFile() {
-        // Instantiate NCViewerQuickLook with the log file URL, editing disabled, and no metadata
-        let viewerQuickLook = NCViewerQuickLook(with: NSURL(fileURLWithPath: NextcloudKit.shared.nkCommonInstance.filenamePathLog) as URL, isEditingEnabled: false, metadata: nil)
-        // Present the NCViewerQuickLook view controller
-		let topController = controller?.presentedViewController ?? controller
-		topController?.present(viewerQuickLook, animated: true, completion: nil)
-    }
+        // Path of the current (active) log file
+        let currentLogURL = NKLogFileManager.shared.currentLogFileURL()
 
-    /// Clears the log file.
-    func clearLogFile() {
-        // Clear the log file using NextcloudKit
-        NextcloudKit.shared.nkCommonInstance.clearFileLog()
-        // Fetch the log level from the keychain
-        let logLevel = keychain.logLevel
-        // Get the app's version and copyright information
-        let versionNextcloudiOS = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, NCUtility().getVersionApp(withBuild: true))
-        // Construct the log message
-        let logMessage = "[INFO] Clear log with level \(logLevel) \(versionNextcloudiOS)"
-        // Write the log entry about the log clearance
-        NextcloudKit.shared.nkCommonInstance.writeLog(logMessage)
-        // Set the alert state to show that log file has been cleared
-        self.logFileCleared = true
+        // Create NCViewerQuickLook with the current log file
+        let viewerQuickLook = NCViewerQuickLook(
+            with: currentLogURL,
+            isEditingEnabled: false,
+            metadata: nil
+        )
+
+        controller?.present(viewerQuickLook, animated: true, completion: nil)
     }
 }
 

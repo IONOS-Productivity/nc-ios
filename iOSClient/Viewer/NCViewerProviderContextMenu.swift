@@ -36,7 +36,7 @@ class NCViewerProviderContextMenu: UIViewController {
     private let networking = NCNetworking.shared
     internal let global = NCGlobal.shared
     private let sizeIcon: CGFloat = 150
-    internal var sceneIdentifier: String = ""
+//    internal var sceneIdentifier: String = ""
 
     // MARK: - View Life Cycle
 
@@ -49,7 +49,7 @@ class NCViewerProviderContextMenu: UIViewController {
         self.metadata = metadata.detachedCopy()
         self.metadataLivePhoto = NCManageDatabase.shared.getMetadataLivePhoto(metadata: metadata)
         self.image = image
-        self.sceneIdentifier = sceneIdentifier
+//        self.sceneIdentifier = sceneIdentifier
 
         if metadata.directory {
             imageView.image = NCImageCache.shared.getFolder(account: metadata.account)

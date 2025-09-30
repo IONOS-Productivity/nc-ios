@@ -36,6 +36,7 @@ extension AppDelegate {
         let isDirectoryE2EE = NCUtilityFileSystem().isDirectoryE2EE(serverUrl: serverUrl, account: session.account)
         let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", session.account, serverUrl))
         let utility = NCUtility()
+        let canCreateOfficeFiles = false
         let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: session.account)
 
         actions.append(

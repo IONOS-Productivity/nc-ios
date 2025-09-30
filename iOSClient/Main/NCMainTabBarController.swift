@@ -130,16 +130,12 @@ class NCMainTabBarController: UITabBarController {
         self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false, block: { _ in
             NCNetworking.shared.checkServerError(account: self.account, controller: self) {
                 /// Update right bar button item
-                if let navigationController = self.selectedViewController as? NCMainNavigationController {
-                    navigationController.updateRightBarButtonItems(self.tabBar.items?[0])
-                }
+                // TODO: [MERGE] Need to show active transfers number badge on tab bar item
                 /// Update Activity tab bar
                 if let item = self.tabBar.items?[3] {
                     let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: self.account)
                     item.isEnabled = capabilities.activityEnabled
                 }
-
-                self.timerCheck()
             }
         })
     }

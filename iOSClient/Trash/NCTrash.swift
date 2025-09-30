@@ -91,8 +91,6 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
         refreshControl.addTarget(self, action: #selector(loadListingTrash(_:)), for: .valueChanged)
 
 		updateHeadersView()
-		
-        NotificationCenter.default.addObserver(self, selector: #selector(reloadDataSource), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterReloadDataSource), object: nil)
     }
 
 	private func updateHeadersView() {
@@ -227,7 +225,6 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
                 self.datasource = results
                 self.collectionView.reloadData()
         		self.updateHeadersView()
-                (self.navigationController as? NCMainNavigationController)?.updateRightMenu()
 
                 guard let blinkFileId = self.blinkFileId else { return }
 

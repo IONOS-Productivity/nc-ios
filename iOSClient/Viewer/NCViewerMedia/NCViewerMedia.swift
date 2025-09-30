@@ -71,10 +71,6 @@ class NCViewerMedia: UIViewController {
     private var allowOpeningDetails = true
     private var tipView: EasyTipView?
 
-    var sceneIdentifier: String {
-        (self.tabBarController as? NCMainTabBarController)?.sceneIdentifier ?? ""
-    }
-
     // MARK: - View Life Cycle
 
     required init?(coder aDecoder: NSCoder) {
