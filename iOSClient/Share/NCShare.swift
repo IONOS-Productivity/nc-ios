@@ -124,7 +124,7 @@ class NCShare: UIViewController, NCSharePagingContent {
 
         networking = NCShareNetworking(metadata: metadata, view: self.view, delegate: self, session: session)
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.setNavigationBarAppearance()

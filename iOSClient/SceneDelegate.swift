@@ -18,8 +18,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private var isFirstScene: Bool = true
     private let database = NCManageDatabase.shared
     private let global = NCGlobal.shared
-    
-    let sceneIdentifier: String = UUID().uuidString
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene),

@@ -83,22 +83,14 @@ class NCMainTabBarController: UITabBarController {
             self.timer = nil
         }
 
-        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                if !isAppInBackground {
-                    self.timerCheckServerError()
-                }
-            }
-        }
-        
 		setupTabBarView()
         burgerMenuController = BurgerMenuAttachController(with: self)
     }
-    
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         DataProtectionAgreementManager.shared.showAgreement(viewController: self)
-        
+
         previousIndex = selectedIndex
         if NCBrandOptions.shared.enforce_passcode_lock && NCKeychain().passcode.isEmptyOrNil {
             let vc = UIHostingController(rootView: SetupPasscodeView(isLockActive: .constant(false)))
@@ -107,7 +99,7 @@ class NCMainTabBarController: UITabBarController {
             present(vc, animated: true)
         }
     }
-	
+
 	private func setupTabBarView() {
 		if UIDevice.current.userInterfaceIdiom == .pad {
 			tabBar.itemPositioning = .centered
@@ -117,27 +109,13 @@ class NCMainTabBarController: UITabBarController {
 			}
 		}
 	}
-    
+
     func showBurgerMenu() {
         burgerMenuController?.showMenu()
     }
-    
+
     func presentedNavigationController() -> UINavigationController? {
         return presentedViewController as? UINavigationController
-    }
-
-    private func timerCheckServerError() {
-        self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false, block: { _ in
-            NCNetworking.shared.checkServerError(account: self.account, controller: self) {
-                /// Update right bar button item
-                // TODO: [MERGE] Need to show active transfers number badge on tab bar item
-                /// Update Activity tab bar
-                if let item = self.tabBar.items?[3] {
-                    let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: self.account)
-                    item.isEnabled = capabilities.activityEnabled
-                }
-            }
-        })
     }
 
     func currentViewController() -> UIViewController? {
