@@ -73,9 +73,12 @@ extension NCTrash {
             NCMenuAction(
                 title: NSLocalizedString("_restore_", comment: ""),
                 icon: NCImagesRepository.menuRestore,
-				sender: sender, action: { _ in
-					self.restoreItem(with: objectId)
-				}
+                sender: sender,
+                action: { _ in
+                    Task {
+                        await self.restoreItem(with: objectId)
+                    }
+                }
             )
         )
 

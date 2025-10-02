@@ -18,7 +18,7 @@ class NCBrandOptions: @unchecked Sendable {
     var textCopyrightNextcloudiOS: String = "Nextcloud Matheria for iOS %@ © 2025"
     var textCopyrightNextcloudServer: String = "Nextcloud Server %@"
     var loginBaseUrl: String = "https://cloud.nextcloud.com"
-    var pushNotificationServerProxy: String = "https://push-notifications.nextcloud.com"
+    var pushNotificationServerProxy: String = ""
     var linkLoginHost: String = "https://nextcloud.com/install"
     var linkloginPreferredProviders: String = "https://nextcloud.com/signup-ios"
     var webLoginAutenticationProtocol: String = "nc://"                                        // example "abc://"
@@ -102,9 +102,14 @@ class NCBrandOptions: @unchecked Sendable {
                 enforce_passcode_lock = (str as NSString).boolValue
             }
         }
-#if DEBUG
+        #if DEBUG
         pushNotificationServerProxy = "https://c0004.customerpush.nextcloud.com"
-#endif
+        #else
+        if pushNotificationServerProxy.isEmpty,
+            brand == "Nextcloud" {
+            pushNotificationServerProxy = "https://push-notifications.nextcloud.com"
+        }
+        #endif
     }
 
     @objc func getUserAgent() -> String {
@@ -207,7 +212,7 @@ class NCBrandColor: @unchecked Sendable {
     }
 
     @discardableResult
-    func settingThemingColor(account: String) -> Bool {
+    func settingThemingColor(account: String, capabilities: NKCapabilities.Capabilities) -> Bool {
         let darker: CGFloat = 30    // %
         let lighter: CGFloat = 30   // %
         var colorThemingColor: UIColor?
@@ -215,7 +220,6 @@ class NCBrandColor: @unchecked Sendable {
         var colorThemingColorText: UIColor?
 
         if NCBrandOptions.shared.use_themingColor {
-            let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: account)
             let themingColor = capabilities.themingColor
             let themingColorElement = capabilities.themingColorElement
             let themingColorText = capabilities.themingColorText
@@ -286,7 +290,6 @@ class NCBrandColor: @unchecked Sendable {
         }
 
         if self.themingColor[account] != colorThemingColor || self.themingColorElement[account] != colorThemingColorElement || self.themingColorText[account] != colorThemingColorText {
-
             self.themingColor[account] = colorThemingColor
             self.themingColorElement[account] = colorThemingColorElement
             self.themingColorText[account] = colorThemingColorText

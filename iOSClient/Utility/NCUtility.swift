@@ -33,10 +33,9 @@ final class NCUtility: NSObject, Sendable {
     let global = NCGlobal.shared
 
     func isTypeFileRichDocument(_ metadata: tableMetadata) -> Bool {
-        guard metadata.fileNameView != "." else { return false }
         let fileExtension = (metadata.fileNameView as NSString).pathExtension
-        let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: metadata.account)
-        guard !fileExtension.isEmpty,
+        guard let capabilities = NCNetworking.shared.capabilities[metadata.account],
+              !fileExtension.isEmpty,
               let mimeType = UTType(tag: fileExtension.uppercased(), tagClass: .filenameExtension, conformingTo: nil)?.identifier else {
             return false
         }
@@ -59,9 +58,9 @@ final class NCUtility: NSObject, Sendable {
 
     func editorsDirectEditing(account: String, contentType: String) -> [String] {
         var names: [String] = []
-        let capabilities = NKCapabilities.shared.getCapabilitiesBlocking(for: account)
+        let capabilities = NCNetworking.shared.capabilities[account]
 
-        capabilities.directEditingEditors.forEach { editor in
+        capabilities?.directEditingEditors.forEach { editor in
             editor.mimetypes.forEach { mimetype in
                 if mimetype == contentType {
                     names.append(editor.name)
@@ -273,14 +272,6 @@ final class NCUtility: NSObject, Sendable {
         }
 
         return (usedmegabytes, totalmegabytes)
-    }
-
-    func removeForbiddenCharacters(_ fileName: String) -> String {
-        var fileName = fileName
-        for character in global.forbiddenCharacters {
-            fileName = fileName.replacingOccurrences(of: character, with: "")
-        }
-        return fileName
     }
 
     func getHeightHeaderEmptyData(view: UIView, portraitOffset: CGFloat, landscapeOffset: CGFloat) -> CGFloat {

@@ -15,12 +15,9 @@ class NCNetworkingE2EECreateFolder: NSObject {
     let global = NCGlobal.shared
 
     func createFolder(fileName: String, serverUrl: String, sceneIdentifier: String?, session: NCSession.Session) async -> NKError {
-        var fileNameFolder = utility.removeForbiddenCharacters(fileName)
-        if fileName != fileNameFolder {
-            let errorDescription = String(format: NSLocalizedString("_forbidden_characters_", comment: ""), global.forbiddenCharacters.joined(separator: " "))
-            let error = NKError(errorCode: global.errorConflict, errorDescription: errorDescription)
-            return error
-        }
+        let capabilities = await NKCapabilities.shared.getCapabilities(for: session.account)
+        var fileNameFolder = FileAutoRenamer.rename(fileName, isFolderPath: true, capabilities: capabilities)
+
         let fileNameIdentifier = networkingE2EE.generateRandomIdentifier()
         let serverUrlFileName = serverUrl + "/" + fileNameIdentifier
         fileNameFolder = utilityFileSystem.createFileName(fileNameFolder, serverUrl: serverUrl, account: session.account)
@@ -113,7 +110,7 @@ class NCNetworkingE2EECreateFolder: NSObject {
 
         // SET FOLDER AS E2EE
         //
-        let resultsMarkE2EEFolder = await NextcloudKit.shared.markE2EEFolderAsync(fileId: fileId, delete: false, account: session.account, options: NCNetworkingE2EE().getOptions(account: session.account))
+        let resultsMarkE2EEFolder = await NextcloudKit.shared.markE2EEFolderAsync(fileId: fileId, delete: false, account: session.account, options: NCNetworkingE2EE().getOptions(account: session.account, capabilities: capabilities))
         guard resultsMarkE2EEFolder.error == .success  else {
             await networkingE2EE.unlock(account: session.account, serverUrl: serverUrl)
             return resultsMarkE2EEFolder.error
@@ -130,7 +127,7 @@ class NCNetworkingE2EECreateFolder: NSObject {
             await networkingE2EE.unlock(account: session.account, serverUrl: serverUrl)
             return resultsReadFileOrFolder.error
         }
-        let metadata = self.database.convertFileToMetadata(file, isDirectoryE2EE: true)
+        let metadata = await self.database.convertFileToMetadataAsync(file, isDirectoryE2EE: true)
         await self.database.addMetadataAsync(metadata)
         await self.database.addDirectoryAsync(e2eEncrypted: true, favorite: metadata.favorite, ocId: metadata.ocId, fileId: metadata.fileId, permissions: metadata.permissions, serverUrl: serverUrlFileName, account: metadata.account)
 
