@@ -11,12 +11,14 @@ import NextcloudKit
 extension NCShareExtension {
     func reloadData() async {
         let session = self.extensionData.getSession()
-        let layoutForView = await NCManageDatabase.shared.getLayoutForViewAsync(account: session.account, key: keyLayout, serverUrl: serverUrl)
+        let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: keyLayout, serverUrl: serverUrl)
         let predicate = NSPredicate(format: "account == %@ AND serverUrl == %@ AND fileName != %@ AND directory == true", session.account, serverUrl, NextcloudKit.shared.nkCommonInstance.rootFileName)
         let metadatas = await self.database.getMetadatasAsync(predicate: predicate,
                                                               withLayout: layoutForView,
                                                               withAccount: session.account)
-        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: layoutForView, account: session.account)
+        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas,
+                                                     layoutForView: layoutForView,
+                                                     account: session.account)
         self.collectionView.reloadData()
     }
 
@@ -80,7 +82,7 @@ class NCFilesExtensionHandler {
                     originalName = url.lastPathComponent
 
                     if fileNames.contains(originalName) {
-                        let incrementalNumber = NCKeychain().incrementalNumber
+                        let incrementalNumber = NCPreferences().incrementalNumber
                         originalName = "\(url.deletingPathExtension().lastPathComponent) \(incrementalNumber).\(url.pathExtension)"
                     }
                 }

@@ -87,13 +87,13 @@ extension NCManageDatabase {
             try realm.write {
                 for share in shares {
                     let serverUrlPath = home + share.path
-                    guard let serverUrl = utilityFileSystem.deleteLastPath(serverUrlPath: serverUrlPath, home: home) else { continue }
+                    guard let serverDirectoryUp = utilityFileSystem.serverDirectoryUp(serverUrl: serverUrlPath, home: home) else { continue }
                     let object = tableShare()
                     object.account = account
                     if let fileName = share.path.components(separatedBy: "/").last {
                         object.fileName = fileName
                     }
-                    object.serverUrl = serverUrl
+                    object.serverUrl = serverDirectoryUp
                     object.canEdit = share.canEdit
                     object.canDelete = share.canDelete
                     object.date = share.date as? NSDate
@@ -147,8 +147,7 @@ extension NCManageDatabase {
     func addShareAsync(account: String, home: String, shares: [NKShare]) async {
         await performRealmWriteAsync { realm in
             for share in shares {
-                let serverUrlPath = home + share.path
-                guard let serverUrl = self.utilityFileSystem.deleteLastPath(serverUrlPath: serverUrlPath, home: home) else {
+                guard let serverDirectoryUp = self.utilityFileSystem.serverDirectoryUp(serverUrl: home + share.path, home: home) else {
                     continue
                 }
                 let object = tableShare()
@@ -156,7 +155,7 @@ extension NCManageDatabase {
                 if let fileName = share.path.components(separatedBy: "/").last {
                     object.fileName = fileName
                 }
-                object.serverUrl = serverUrl
+                object.serverUrl = serverDirectoryUp
                 object.canEdit = share.canEdit
                 object.canDelete = share.canDelete
                 object.date = share.date as? NSDate
@@ -286,6 +285,30 @@ extension NCManageDatabase {
         }
 
         return []
+    }
+
+    /// Asynchronously retrieves a list of detached `tableShare` objects matching the given account, server URL, and file name.
+    ///
+    /// - Parameters:
+    ///   - account: The user account identifier.
+    ///   - serverUrl: The base URL of the server.
+    ///   - fileName: The file name used to filter shares.
+    /// - Returns: An array of detached `tableShare` objects, or an empty array if an error occurs.
+    func getTableSharesAsync(account: String, serverUrl: String, fileName: String) async -> [tableShare] {
+        await performRealmReadAsync { realm in
+            // Define sorting by shareType descending, then idShare descending
+            let sortProperties = [
+                SortDescriptor(keyPath: "shareType", ascending: false),
+                SortDescriptor(keyPath: "idShare", ascending: false)
+            ]
+
+            // Query matching tableShare objects and return detached copies
+            let results = realm.objects(tableShare.self)
+                .filter("account == %@ AND serverUrl == %@ AND fileName == %@", account, serverUrl, fileName)
+                .sorted(by: sortProperties)
+
+            return results.map { tableShare(value: $0) }
+        } ?? []
     }
 
     func deleteTableShare(account: String, idShare: Int) {

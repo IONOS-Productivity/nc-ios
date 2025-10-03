@@ -97,7 +97,9 @@ final class NCManageDatabase: @unchecked Sendable {
         let databaseFileUrl = dirGroup?.appendingPathComponent(NCGlobal.shared.appDatabaseNextcloud + "/" + databaseName)
 
         // now you can read/write in Realm
+        #if !EXTENSION
         isAppSuspending = false
+        #endif
 
         Realm.Configuration.defaultConfiguration = Realm.Configuration(fileURL: databaseFileUrl,
                                                                        schemaVersion: databaseSchemaVersion,
@@ -200,7 +202,7 @@ final class NCManageDatabase: @unchecked Sendable {
 
     private func compactDB(_ totalBytes: Int, _ usedBytes: Int) -> Bool {
         let usedPercentage = (Double(usedBytes) / Double(totalBytes)) * 100
-        /// Compact the database if more than 25% of the space is free
+        // Compact the database if more than 25% of the space is free
         let shouldCompact = (usedPercentage < 75.0) && (totalBytes > 100 * 1024 * 1024)
 
         return shouldCompact
@@ -211,10 +213,12 @@ final class NCManageDatabase: @unchecked Sendable {
     @discardableResult
     func performRealmRead<T>(_ block: @escaping (Realm) throws -> T?, sync: Bool = true, completion: ((T?) -> Void)? = nil) -> T? {
         // Skip execution if app is suspending
+        #if !EXTENSION
         guard !isAppSuspending else {
             completion?(nil)
             return nil
         }
+        #endif
         let isOnRealmQueue = DispatchQueue.getSpecific(key: NCManageDatabase.realmQueueKey) != nil
 
         if sync {
@@ -257,10 +261,12 @@ final class NCManageDatabase: @unchecked Sendable {
 
     func performRealmWrite(sync: Bool = true, _ block: @escaping (Realm) throws -> Void) {
         // Skip execution if app is suspending
+        #if !EXTENSION
         guard !isAppSuspending
         else {
             return
         }
+        #endif
         let isOnRealmQueue = DispatchQueue.getSpecific(key: NCManageDatabase.realmQueueKey) != nil
 
         let executionBlock: @Sendable () -> Void = {
@@ -292,9 +298,11 @@ final class NCManageDatabase: @unchecked Sendable {
 
     func performRealmReadAsync<T>(_ block: @escaping (Realm) throws -> T?) async -> T? {
         // Skip execution if app is suspending
+        #if !EXTENSION
         guard !isAppSuspending else {
             return nil
         }
+        #endif
 
         return await withCheckedContinuation { continuation in
             realmQueue.async {
@@ -314,9 +322,11 @@ final class NCManageDatabase: @unchecked Sendable {
 
     func performRealmWriteAsync(_ block: @escaping (Realm) throws -> Void) async {
         // Skip execution if app is suspending
+        #if !EXTENSION
         if isAppSuspending {
             return
         }
+        #endif
 
         await withCheckedContinuation { continuation in
             realmQueue.async {
@@ -339,6 +349,19 @@ final class NCManageDatabase: @unchecked Sendable {
 
     func clearTable(_ table: Object.Type, account: String? = nil) {
         performRealmWrite { realm in
+            var results: Results<Object>
+            if let account = account {
+                results = realm.objects(table).filter("account == %@", account)
+            } else {
+                results = realm.objects(table)
+            }
+
+            realm.delete(results)
+        }
+    }
+
+    func clearTableAsync(_ table: Object.Type, account: String? = nil) async {
+        await performRealmWriteAsync { realm in
             var results: Results<Object>
             if let account = account {
                 results = realm.objects(table).filter("account == %@", account)
@@ -398,7 +421,7 @@ final class NCManageDatabase: @unchecked Sendable {
         self.clearTable(tableE2eCounter.self, account: account)
     }
 
-    func cleanTablesOcIds(account: String) async {
+    func cleanTablesOcIds(account: String, userId: String, urlBase: String) async {
         let metadatas = await getMetadatasAsync(predicate: NSPredicate(format: "account == %@", account))
         let directories = await getDirectoriesAsync(predicate: NSPredicate(format: "account == %@", account))
         let locals = await getTableLocalFilesAsync(predicate: NSPredicate(format: "account == %@", account))
@@ -414,7 +437,7 @@ final class NCManageDatabase: @unchecked Sendable {
             for ocId in localMissingOcIds {
                 group.addTask {
                     await self.deleteLocalFileOcIdAsync(ocId)
-                    self.utilityFileSystem.removeFile(atPath: self.utilityFileSystem.getDirectoryProviderStorageOcId(ocId))
+                    self.utilityFileSystem.removeFile(atPath: self.utilityFileSystem.getDirectoryProviderStorageOcId(ocId, userId: userId, urlBase: urlBase))
                 }
             }
         }
@@ -492,10 +515,10 @@ final class NCManageDatabase: @unchecked Sendable {
     // MARK: -
     // MARK: Utils
 
-    func sortedMetadata(layoutForView: NCDBLayoutForView?, account: String, metadatas: [tableMetadata]) -> [tableMetadata] {
+    func sortedMetadata(layoutForView: NCDBLayoutForView?, account: String, metadatas: [tableMetadata]) async -> [tableMetadata] {
         let layout: NCDBLayoutForView = layoutForView ?? NCDBLayoutForView()
-        let directoryOnTop = NCKeychain().getDirectoryOnTop(account: account)
-        let favoriteOnTop = NCKeychain().getFavoriteOnTop(account: account)
+        let directoryOnTop = NCPreferences().getDirectoryOnTop(account: account)
+        let favoriteOnTop = NCPreferences().getFavoriteOnTop(account: account)
 
         let sorted = metadatas.sorted { lhs, rhs in
             if favoriteOnTop, lhs.favorite != rhs.favorite {
@@ -527,22 +550,22 @@ final class NCManageDatabase: @unchecked Sendable {
     // MARK: -
     // MARK: SWIFTUI PREVIEW
 
-    func previewCreateDB() {
-        /// Account
+    func previewCreateDB() async {
+        // Account
         let account = "marinofaggiana https://cloudtest.nextcloud.com"
         let account2 = "mariorossi https://cloudtest.nextcloud.com"
-        addAccount(account, urlBase: "https://cloudtest.nextcloud.com", user: "marinofaggiana", userId: "marinofaggiana", password: "password")
-        addAccount(account2, urlBase: "https://cloudtest.nextcloud.com", user: "mariorossi", userId: "mariorossi", password: "password")
+        await addAccountAsync(account, urlBase: "https://cloudtest.nextcloud.com", user: "marinofaggiana", userId: "marinofaggiana", password: "password")
+        await addAccountAsync(account2, urlBase: "https://cloudtest.nextcloud.com", user: "mariorossi", userId: "mariorossi", password: "password")
         let userProfile = NKUserProfile()
         userProfile.displayName = "Marino Faggiana"
         userProfile.address = "Hirschstrasse 26, 70192 Stuttgart, Germany"
         userProfile.phone = "+49 (711) 252 428 - 90"
         userProfile.email = "cloudtest@nextcloud.com"
-        setAccountUserProfile(account: account, userProfile: userProfile)
+        await setAccountUserProfileAsync(account: account, userProfile: userProfile)
         let userProfile2 = NKUserProfile()
         userProfile2.displayName = "Mario Rossi"
         userProfile2.email = "cloudtest@nextcloud.com"
-        setAccountUserProfile(account: account2, userProfile: userProfile2)
+        await setAccountUserProfileAsync(account: account2, userProfile: userProfile2)
     }
 }
 

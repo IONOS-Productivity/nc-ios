@@ -1,26 +1,7 @@
-//
-//  NCMedia+Command.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 24/02/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
 import UIKit
@@ -144,7 +125,10 @@ extension NCMedia {
                                                                            session: self.session,
                                                                            sceneIdentifier: self.controller?.sceneIdentifier)
                     await self.database.addMetadataAsync(metadata)
-                    NCViewer().view(viewController: self, metadata: metadata)
+
+                    if let vc = await NCViewer().getViewerController(metadata: metadata, delegate: self) {
+                        self.navigationController?.pushViewController(vc, animated: true)
+                    }
                 }
             }))
             self.present(alert, animated: true)
@@ -205,7 +189,6 @@ extension NCMedia: HiDriveCollectionViewCommonSelectToolbarDelegate {
             return
         }
 
-        self.ocIdDeleted.append(ocId)
         await self.database.deleteMetadataOcIdAsync(ocId)
 
         await MainActor.run {

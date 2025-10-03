@@ -1,25 +1,6 @@
-//
-//  NCPickerViewController.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 11/11/2018.
-//  Copyright (c) 2018 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2018 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import TLPhotoPicker
@@ -40,24 +21,24 @@ class NCPhotosPickerViewController: NSObject {
     init(controller: NCMainTabBarController, maxSelectedAssets: Int, singleSelectedMode: Bool) {
         self.controller = controller
         super.init()
-
         self.maxSelectedAssets = maxSelectedAssets
         self.singleSelectedMode = singleSelectedMode
 
-        self.openPhotosPickerViewController { assets in
-            if !assets.isEmpty {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    let model = NCUploadAssetsModel(assets: assets, serverUrl: controller.currentServerUrl(), controller: controller)
-                    let view = NCUploadAssetsView(model: model)
-                    let viewController = UIHostingController(rootView: view)
-                    controller.present(viewController, animated: true, completion: nil)
-                }
+        openPhotosPickerViewController { assets in
+            guard !assets.isEmpty else {
+                return
             }
+            let model = NCUploadAssetsModel(assets: assets, serverUrl: controller.currentServerUrl(), controller: controller)
+            let view = NCUploadAssetsView(model: model)
+            let viewController = UIHostingController(rootView: view)
+
+            controller.present(viewController, animated: true, completion: nil)
         }
     }
 
     private func openPhotosPickerViewController(completition: @escaping ([TLPHAsset]) -> Void) {
         var configure = TLPhotosPickerConfigure()
+        var pickerVC: TLPhotosPickerViewController?
 
         configure.cancelTitle = NSLocalizedString("_cancel_", comment: "")
         configure.doneTitle = NSLocalizedString("_done_", comment: "")
@@ -71,24 +52,35 @@ class NCPhotosPickerViewController: NSObject {
         configure.singleSelectedMode = singleSelectedMode
         configure.allowedAlbumCloudShared = true
 
-        let viewController = customPhotoPickerViewController(withTLPHAssets: { assets in
-            completition(assets)
+        pickerVC = customPhotoPickerViewController(withTLPHAssets: { assets in
+            pickerVC?.dismiss(animated: true) {
+                completition(assets)
+            }
         }, didCancel: nil)
-        viewController.didExceedMaximumNumberOfSelection = { _ in
+
+        pickerVC?.didExceedMaximumNumberOfSelection = { _ in
             let error = NKError(errorCode: self.global.errorInternalError, errorDescription: "_limited_dimension_")
             NCContentPresenter().showError(error: error)
         }
-        viewController.handleNoAlbumPermissions = { _ in
+
+        pickerVC?.handleNoAlbumPermissions = { _ in
             let error = NKError(errorCode: self.global.errorInternalError, errorDescription: "_denied_album_")
             NCContentPresenter().showError(error: error)
         }
-        viewController.handleNoCameraPermissions = { _ in
+
+        pickerVC?.handleNoCameraPermissions = { _ in
             let error = NKError(errorCode: self.global.errorInternalError, errorDescription: "_denied_camera_")
             NCContentPresenter().showError(error: error)
         }
-        viewController.configure = configure
 
-        controller.present(viewController, animated: true, completion: nil)
+        pickerVC?.configure = configure
+        guard let pickerVC else {
+            return
+        }
+
+        DispatchQueue.main.async {
+            self.controller.present(pickerVC, animated: true, completion: nil)
+        }
     }
 }
 
@@ -156,10 +148,12 @@ class NCDocumentPickerViewController: NSObject, UIDocumentPickerDelegate {
                 }
 
                 if let fileNameError = FileNameValidator.checkFileName(metadata.fileNameView, account: self.controller.account, capabilities: capabilities) {
-                    self.controller.present(UIAlertController.warning(message: "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
+                    let message = "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"
+                    await UIAlertController.warningAsync( message: message, presenter: self.controller)
                 } else {
-                    if let metadata = await database.addAndReturnMetadataAsync(metadata) {
-                        NCViewer().view(viewController: viewController, metadata: metadata)
+                    if let metadata = await database.addAndReturnMetadataAsync(metadata),
+                       let vc = await NCViewer().getViewerController(metadata: metadata, delegate: viewController) {
+                        viewController.navigationController?.pushViewController(vc, animated: true)
                     }
                 }
             } else {
@@ -172,7 +166,10 @@ class NCDocumentPickerViewController: NSObject, UIDocumentPickerDelegate {
                     let ocId = NSUUID().uuidString
                     let fileName = urlIn.lastPathComponent
                     let newFileName = FileAutoRenamer.rename(fileName, capabilities: capabilities)
-                    let toPath = utilityFileSystem.getDirectoryProviderStorageOcId(ocId, fileNameView: newFileName)
+                    let toPath = utilityFileSystem.getDirectoryProviderStorageOcId(ocId,
+                                                                                   fileName: newFileName,
+                                                                                   userId: session.userId,
+                                                                                   urlBase: session.urlBase)
                     let urlOut = URL(fileURLWithPath: toPath)
                     guard self.copySecurityScopedResource(url: urlIn, urlOut: urlOut) != nil else {
                         continue
@@ -201,17 +198,21 @@ class NCDocumentPickerViewController: NSObject, UIDocumentPickerDelegate {
                     if let fileNameError = FileNameValidator.checkFileName(metadata.fileName, account: session.account, capabilities: capabilities) {
                         if metadatas.count == 1 {
 
-                            let newFileName = await UIAlertController.renameFileAsync(metadata: metadata, capabilities: capabilities, presenter: self.controller)
+                            let newFileName = await UIAlertController.renameFileAsync(fileName: metadata.fileName,
+                                                                                      capabilities: capabilities,
+                                                                                      account: metadata.account,
+                                                                                      presenter: self.controller)
 
                             metadatas[index].fileName = newFileName
                             metadatas[index].fileNameView = newFileName
-                            metadatas[index].serverUrlFileName = metadatas[index].serverUrl + "/" + newFileName
+                            metadatas[index].serverUrlFileName = utilityFileSystem.createServerUrl(serverUrl: metadatas[index].serverUrl, fileName: newFileName)
 
                             await self.database.addMetadatasAsync(metadatas)
 
                             return
                         } else {
-                            self.controller.present(UIAlertController.warning(message: "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
+                            let message = "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"
+                            await UIAlertController.warningAsync( message: message, presenter: self.controller)
                             invalidNameIndexes.append(index)
                         }
                     }

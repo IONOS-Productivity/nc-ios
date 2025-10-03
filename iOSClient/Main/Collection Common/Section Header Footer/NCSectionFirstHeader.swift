@@ -1,25 +1,6 @@
-//
-//  NCSectionFirstHeader.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 09/10/2018.
-//  Copyright © 2018 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2018 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import MarkdownKit
@@ -101,12 +82,6 @@ class NCSectionFirstHeader: UICollectionReusableView, UIGestureRecognizerDelegat
         setRichWorkspaceColor()
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        setRichWorkspaceColor()
-    }
-
     func setContent(heightHeaderRichWorkspace: CGFloat,
                     richWorkspaceText: String?,
                     heightHeaderRecommendations: CGFloat,
@@ -154,11 +129,11 @@ class NCSectionFirstHeader: UICollectionReusableView, UIGestureRecognizerDelegat
 
     // MARK: - RichWorkspace
 
-    private func setRichWorkspaceColor() {
-        if traitCollection.userInterfaceStyle == .dark {
-            richWorkspaceGradient.colors = [UIColor(white: 0, alpha: 0).cgColor, UIColor.black.cgColor]
+    func setRichWorkspaceColor(style: UIUserInterfaceStyle? = nil) {
+        if let style {
+            richWorkspaceGradient.colors = style == .light ? [UIColor(white: 1, alpha: 0).cgColor, UIColor.white.cgColor] : [UIColor(white: 0, alpha: 0).cgColor, UIColor.black.cgColor]
         } else {
-            richWorkspaceGradient.colors = [UIColor(white: 1, alpha: 0).cgColor, UIColor.white.cgColor]
+            richWorkspaceGradient.colors = traitCollection.userInterfaceStyle == .light ? [UIColor(white: 1, alpha: 0).cgColor, UIColor.white.cgColor] : [UIColor(white: 0, alpha: 0).cgColor, UIColor.black.cgColor]
         }
     }
 
@@ -177,7 +152,7 @@ extension NCSectionFirstHeader: UICollectionViewDataSource {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as? NCRecommendationsCell else { fatalError() }
 
         if let metadata = NCManageDatabase.shared.getMetadataFromFileId(recommendedFiles.id) {
-            let imagePreview = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: global.previewExt512)
+            let imagePreview = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: global.previewExt512, userId: metadata.userId, urlBase: metadata.urlBase)
 
             if metadata.directory {
                 cell.image.image = self.utility.loadImage(named: metadata.iconName, useTypeIconFile: true, account: metadata.account)
@@ -192,8 +167,8 @@ extension NCSectionFirstHeader: UICollectionViewDataSource {
                     Task {
                         let resultsPreview = await NextcloudKit.shared.downloadPreviewAsync(fileId: metadata.fileId, etag: metadata.etag, account: metadata.account)
                         if resultsPreview.error == .success, let data = resultsPreview.responseData?.data {
-                            self.utility.createImageFileFrom(data: data, ocId: metadata.ocId, etag: metadata.etag)
-                            if let image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: self.global.previewExt512) {
+                            self.utility.createImageFileFrom(data: data, ocId: metadata.ocId, etag: metadata.etag, userId: metadata.userId, urlBase: metadata.urlBase)
+                            if let image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: self.global.previewExt512, userId: metadata.userId, urlBase: metadata.urlBase) {
                                 Task { @MainActor in
                                     for case let cell as NCRecommendationsCell in self.collectionViewRecommendations.visibleCells {
                                         if cell.id == recommendedFiles.id {
@@ -251,7 +226,7 @@ extension NCSectionFirstHeader: UICollectionViewDelegate {
             return nil
         }
         let identifier = indexPath as NSCopying
-        let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal().previewExt1024)
+        let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal().previewExt1024, userId: metadata.userId, urlBase: metadata.urlBase)
 
 #if EXTENSION
         return nil

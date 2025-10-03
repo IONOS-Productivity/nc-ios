@@ -31,7 +31,6 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
 
     var metadata: tableMetadata?
     var url: URL?
-    var titleView: String?
     var imageIcon: UIImage?
 
     private let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
@@ -75,15 +74,15 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
         if let url = self.url {
             pdfDocument = PDFDocument(url: url)
         } else if let metadata = self.metadata {
-            filePath = NCUtilityFileSystem().getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView)
+            filePath = NCUtilityFileSystem().getDirectoryProviderStorageOcId(metadata.ocId,
+                                                                             fileName: metadata.fileNameView,
+                                                                             userId: metadata.userId,
+                                                                             urlBase: metadata.urlBase)
             pdfDocument = PDFDocument(url: URL(fileURLWithPath: filePath))
             navigationItem.rightBarButtonItem = UIBarButtonItem(image: NCImageCache.shared.getImageButtonMore(), style: .plain, target: self, action: #selector(openMenuMore(_:)))
         }
         defaultBackgroundColor = NCBrandColor.shared.appBackgroundColor
         view.backgroundColor = defaultBackgroundColor
-
-        navigationController?.navigationBar.prefersLargeTitles = false
-        navigationItem.title = titleView
 
         // PDF CONTAINER
 
@@ -139,6 +138,8 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+        tabBarController?.tabBar.isHidden = true
 
         // PDF THUMBNAIL
 
@@ -244,15 +245,25 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        NCNetworking.shared.addDelegate(self)
+        Task {
+            await NCNetworking.shared.transferDispatcher.addDelegate(self)
+        }
 
         showTip()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        tabBarController?.tabBar.isHidden = false
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
 
-        NCNetworking.shared.removeDelegate(self)
+        Task {
+            await NCNetworking.shared.transferDispatcher.removeDelegate(self)
+        }
 
         dismissTip()
     }
@@ -498,9 +509,9 @@ extension NCViewerPDF: EasyTipViewDelegate {
                 preferences.animating.showDuration = 1.5
                 preferences.animating.dismissDuration = 1.5
 
-                if self.tipView == nil {
+                if self.tipView == nil, let viewContainer = self.pdfContainer {
                     self.tipView = EasyTipView(text: NSLocalizedString("_tip_pdf_thumbnails_", comment: ""), preferences: preferences, delegate: self)
-                    self.tipView?.show(forView: self.pdfThumbnailScrollView, withinSuperview: self.pdfContainer)
+                    self.tipView?.show(forView: self.pdfThumbnailScrollView, withinSuperview: viewContainer)
                 }
             }
         }
@@ -524,7 +535,7 @@ extension NCViewerPDF: EasyTipViewDelegate {
 extension NCViewerPDF: NCTransferDelegate {
     func transferChange(status: String, metadatasError: [tableMetadata: NKError]) {
         switch status {
-        /// DELETE
+        // DELETE
         case NCGlobal.shared.networkingStatusDelete:
             let shouldUnloadView = metadatasError.contains { key, error in
                 key.ocId == self.metadata?.ocId && error == .success
@@ -546,7 +557,7 @@ extension NCViewerPDF: NCTransferDelegate {
 
         DispatchQueue.main.async {
             switch status {
-            /// UPLOAD
+            // UPLOAD
             case NCGlobal.shared.networkingStatusUploading:
                 NCActivityIndicator.shared.start()
             case NCGlobal.shared.networkingStatusUploaded:
@@ -556,7 +567,7 @@ extension NCViewerPDF: NCTransferDelegate {
                     self.pdfView.document = self.pdfDocument
                     self.pdfView.layoutDocumentView()
                 }
-            /// FAVORITE
+            // FAVORITE
             case NCGlobal.shared.networkingStatusFavorite:
                 if self.metadata?.ocId == metadata.ocId {
                     self.metadata = metadata

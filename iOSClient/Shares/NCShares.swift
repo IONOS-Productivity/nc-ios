@@ -72,14 +72,16 @@ class NCShares: NCCollectionViewCommon {
                                                          withLayout: layoutForView,
                                                          withAccount: session.account)
 
-        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: layoutForView, account: session.account)
+        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas,
+                                                     layoutForView: layoutForView,
+                                                     account: session.account)
 
         await super.reloadDataSource()
 
         cachingAsync(metadatas: metadatas)
     }
 
-    override func getServerData(refresh: Bool = false) async {
+    override func getServerData(forced: Bool = false) async {
         await super.getServerData()
 
         showLoadingTitle()
@@ -118,7 +120,7 @@ class NCShares: NCCollectionViewCommon {
                         self.ocIdShares.insert(ocId)
                     }
                 } else {
-                    let serverUrlFileName = share.serverUrl + "/" + share.fileName
+                    let serverUrlFileName = NCUtilityFileSystem().createServerUrl(serverUrl: share.serverUrl, fileName: share.fileName)
                     let resultReadShare = await NCNetworking.shared.readFileAsync(serverUrlFileName: serverUrlFileName, account: session.account)
                     if resultReadShare.error == .success, let metadata = resultReadShare.metadata {
                         let ocId = metadata.ocId

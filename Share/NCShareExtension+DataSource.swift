@@ -15,15 +15,16 @@ extension NCShareExtension: UICollectionViewDelegate {
                   let metadata = self.dataSource.getMetadata(indexPath: indexPath) else {
                 return self.showAlert(description: "_invalid_url_")
             }
-            let serverUrl = self.utilityFileSystem.stringAppendServerUrl(metadata.serverUrl, addFileName: metadata.fileName)
+            let serverUrl = self.utilityFileSystem.createServerUrl(serverUrl: metadata.serverUrl, fileName: metadata.fileName)
 
-            if metadata.e2eEncrypted && !NCKeychain().isEndToEndEnabled(account: tblAccount.account) {
+            if metadata.e2eEncrypted && !NCPreferences().isEndToEndEnabled(account: tblAccount.account) {
                 self.showAlert(title: "_info_", description: "_e2e_goto_settings_for_enable_")
             }
             let capabilities = await NKCapabilities.shared.getCapabilities(for: tblAccount.account)
 
             if let fileNameError = FileNameValidator.checkFileName(metadata.fileNameView, account: tblAccount.account, capabilities: capabilities) {
-                self.present(UIAlertController.warning(message: "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
+                let message = "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"
+                await UIAlertController.warningAsync(message: message, presenter: self)
                 return
             }
 
@@ -119,12 +120,11 @@ extension NCShareExtension: UICollectionViewDataSource {
     func setupDirectoryCell(_ cell: NCListCell, indexPath: IndexPath, with metadata: tableMetadata) {
         var isShare = false
         var isMounted = false
-        let permissions = NCPermissions()
         let session = self.extensionData.getSession()
 
         if let metadataFolder = metadataFolder {
-            isShare = metadata.permissions.contains(permissions.permissionShared) && !metadataFolder.permissions.contains(permissions.permissionShared)
-            isMounted = metadata.permissions.contains(permissions.permissionMounted) && !metadataFolder.permissions.contains(permissions.permissionMounted)
+            isShare = metadata.permissions.contains(NCMetadataPermissions.permissionShared) && !metadataFolder.permissions.contains(NCMetadataPermissions.permissionShared)
+            isMounted = metadata.permissions.contains(NCMetadataPermissions.permissionMounted) && !metadataFolder.permissions.contains(NCMetadataPermissions.permissionMounted)
         }
 
         if metadata.e2eEncrypted {
@@ -147,7 +147,7 @@ extension NCShareExtension: UICollectionViewDataSource {
 
         cell.labelInfo.text = utility.getRelativeDateTitle(metadata.date as Date)
 
-        let lockServerUrl = utilityFileSystem.stringAppendServerUrl(metadata.serverUrl, addFileName: metadata.fileName)
+        let lockServerUrl = utilityFileSystem.createServerUrl(serverUrl: metadata.serverUrl, fileName: metadata.fileName)
         let tableDirectory = self.database.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", session.account, lockServerUrl))
 
         // Local image: offline
@@ -165,9 +165,6 @@ extension NCShareExtension: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard !uploadStarted else {
-            return
-        }
         let fileName = filesName[indexPath.row]
         let session = self.extensionData.getSession()
 

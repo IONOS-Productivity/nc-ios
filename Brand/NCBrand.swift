@@ -47,7 +47,7 @@ class NCBrandOptions: @unchecked Sendable {
     var disable_openin_file: Bool = false                                                       // Don't touch me !!
     var disable_crash_service: Bool = false
     var disable_log: Bool = false
-    var disable_mobileconfig: Bool = false
+    var disable_mobileconfig: Bool = false  
     var disable_show_more_nextcloud_apps_in_settings: Bool = false
     var doNotAskPasscodeAtStartup: Bool = false
     var disable_source_code_in_settings: Bool = false
@@ -102,14 +102,13 @@ class NCBrandOptions: @unchecked Sendable {
                 enforce_passcode_lock = (str as NSString).boolValue
             }
         }
-        #if DEBUG
-        pushNotificationServerProxy = "https://c0004.customerpush.nextcloud.com"
-        #else
+
         if pushNotificationServerProxy.isEmpty,
             brand == "Nextcloud" {
             pushNotificationServerProxy = "https://push-notifications.nextcloud.com"
+            // DEBUG SERVER PUSH
+            // pushNotificationServerProxy = "https://c0004.customerpush.nextcloud.com"
         }
-        #endif
     }
 
     @objc func getUserAgent() -> String {
@@ -120,8 +119,7 @@ class NCBrandOptions: @unchecked Sendable {
 class NCBrandColor: @unchecked Sendable {
     static let shared = NCBrandColorIONOS()
 
-    /// This is rewrited from customet theme, default is Nextcloud color
-    ///
+    // This is rewrited from customet theme, default is Nextcloud color
     let customer: UIColor = UIColor(red: 0.0 / 255.0, green: 130.0 / 255.0, blue: 201.0 / 255.0, alpha: 1.0)         // BLU NC : #0082c9
     var customerText: UIColor = .white
 

@@ -37,7 +37,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         if isUiTestingEnabled {
-            NCAccount().deleteAllAccounts()
+            Task {
+                await NCAccount().deleteAllAccounts()
+            }
         }
         let utilityFileSystem = NCUtilityFileSystem()
         let utility = NCUtility()
@@ -62,16 +64,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         NextcloudKit.shared.setup(groupIdentifier: NCBrandOptions.shared.capabilitiesGroup,
                                   delegate: NCNetworking.shared)
 
-        NextcloudKit.configureLogger(logLevel: (NCBrandOptions.shared.disable_log ? .disabled : NCKeychain().log))
+        NextcloudKit.configureLogger(logLevel: (NCBrandOptions.shared.disable_log ? .disabled : NCPreferences().log))
 
-        nkLog(start: "Start session with level \(NCKeychain().log) " + versionNextcloudiOS)
+        nkLog(start: "Start session with level \(NCPreferences().log) " + versionNextcloudiOS)
 
-        /// Try to restore accounts
+        // Try to restore accounts
         if self.database.getActiveTableAccount() == nil {
             self.database.restoreTableAccountFromFile()
         }
 
-        /// Push Notification & display notification
+        // Push Notification & display notification
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             self.notificationSettings = settings
         }
@@ -110,10 +112,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         UISlider.appearance().maximumTrackTintColor = UIColor(Color(.QualitySlider.maximumTrack))
 
         if NCBrandOptions.shared.enforce_passcode_lock {
-            NCKeychain().requestPasscodeAtStart = true
+            NCPreferences().requestPasscodeAtStart = true
         }
 
-        /// Activation singleton
+        // Activation singleton
         _ = NCAppStateManager.shared
         _ = NCNetworking.shared
         _ = NCDownloadAction.shared
@@ -258,8 +260,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
                return
            }
 
-           await NCService().synchronize(account: tblAccount.account)
-           nkLog(tag: self.global.logTagTask, message: "Synchronize for \(tblAccount.account) completed.")
+           // TODO: DISABLE synchronize FOR TEST
+           // await NCService().synchronize(account: tblAccount.account)
+           // nkLog(tag: self.global.logTagTask, message: "Synchronize for \(tblAccount.account) completed.")
 
            let numTransfers = await backgroundSync(tblAccount: tblAccount)
            nkLog(tag: self.global.logTagTask, emoji: .success, message: "Processing task completed with \(numTransfers) transfers of auto upload")
@@ -281,7 +284,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         if let metadatasWaitDownlod,
            !metadatasWaitDownlod.isEmpty {
             for metadata in metadatasWaitDownlod {
-                let error = await NCNetworking.shared.downloadFileInBackgroundAsync(metadata: metadata)
+                let error = await NCNetworking.shared.downloadFileInBackground(metadata: metadata)
 
                 if error == .success {
                     nkLog(tag: self.global.logTagBgSync, message: "Create new download \(metadata.fileName) in \(metadata.serverUrl)")
@@ -310,7 +313,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             !metadatasWaitCreateFolder.isEmpty {
             var successCountCreateFolder: Int = 0
             for metadata in metadatasWaitCreateFolder {
-                let serverUrl = metadata.serverUrl + "/" + metadata.fileName
+                let serverUrl = NCUtilityFileSystem().createServerUrl(serverUrl: metadata.serverUrl, fileName: metadata.fileName)
                 let resultsCreateFolder = await NCNetworking.shared.createFolder(fileName: metadata.fileName,
                                                                                  serverUrl: metadata.serverUrl,
                                                                                  overwrite: true,
@@ -353,8 +356,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             let metadatas = await NCCameraRoll().extractCameraRoll(from: metadatasWaitUpload)
 
             for metadata in metadatas {
-                let error = await NCNetworking.shared.uploadFileInBackgroundAsync(metadata: metadata.detachedCopy())
-
+                let error = await NCNetworking.shared.uploadFileInBackground(metadata: metadata.detachedCopy())
                 if error == .success {
                     nkLog(tag: self.global.logTagBgSync, message: "Create new upload \(metadata.fileName) in \(metadata.serverUrl)")
                 } else {
@@ -434,8 +436,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
         func openNotification(controller: NCMainTabBarController) {
             if app == NCGlobal.shared.termsOfServiceName {
-                NCNetworking.shared.notifyAllDelegates { delegate in
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task {
+                    await NCNetworking.shared.transferDispatcher.notifyAllDelegatesAsync { delegate in
+                        try? await Task.sleep(nanoseconds: 500_000_000)
                         delegate.transferRequestData(serverUrl: nil)
                     }
                 }
@@ -451,9 +454,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
         if let controller = SceneManager.shared.getControllers().first(where: { $0.account == account }) {
             openNotification(controller: controller)
-        } else if let tableAccount = NCManageDatabase.shared.getAllTableAccount().first(where: { $0.account == account }),
+        } else if let tblAccount = NCManageDatabase.shared.getAllTableAccount().first(where: { $0.account == account }),
                   let controller = UIApplication.shared.firstWindow?.rootViewController as? NCMainTabBarController {
-            NCAccount().changeAccount(tableAccount.account, userProfile: nil, controller: controller) {
+            Task { @MainActor in
+                await NCAccount().changeAccount(tblAccount.account, userProfile: nil, controller: controller)
                 openNotification(controller: controller)
             }
         } else {
@@ -511,8 +515,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     // MARK: -
 
     func trustCertificateError(host: String) {
-        guard let activeTableAccount = NCManageDatabase.shared.getActiveTableAccount(),
-              let currentHost = URL(string: activeTableAccount.urlBase)?.host,
+        guard let activeTblAccount = NCManageDatabase.shared.getActiveTableAccount(),
+              let currentHost = URL(string: activeTblAccount.urlBase)?.host,
               let pushNotificationServerProxyHost = URL(string: NCBrandOptions.shared.pushNotificationServerProxy)?.host,
               host != pushNotificationServerProxyHost,
               host == currentHost
@@ -558,7 +562,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         utilityFileSystem.removeDocumentsDirectory()
         utilityFileSystem.removeTemporaryDirectory()
 
-        NCKeychain().removeAll()
+        NCPreferences().removeAll()
 
         exit(0)
     }

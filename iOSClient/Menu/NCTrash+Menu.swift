@@ -50,7 +50,7 @@ extension NCTrash {
         var actions: [NCMenuAction] = []
 
         var iconHeader: UIImage!
-        if let icon = utility.getImage(ocId: tblTrash.fileId, etag: tblTrash.fileName, ext: NCGlobal.shared.previewExt512) {
+        if let icon = utility.getImage(ocId: tblTrash.fileId, etag: tblTrash.fileName, ext: NCGlobal.shared.previewExt512, userId: session.userId, urlBase: session.urlBase) {
             iconHeader = icon
         } else {
             if tblTrash.directory {

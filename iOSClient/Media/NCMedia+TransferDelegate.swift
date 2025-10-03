@@ -17,7 +17,7 @@ extension NCMedia: NCTransferDelegate {
         }
     }
 
-    func transferCopy(metadata: tableMetadata, error: NKError) {
+    func transferCopy(metadata: tableMetadata, destination: String, error: NKError) {
         setEditMode(false)
 
         Task {
@@ -26,21 +26,12 @@ extension NCMedia: NCTransferDelegate {
         }
     }
 
-    func transferMove(metadata: tableMetadata, error: NKError) {
+    func transferMove(metadata: tableMetadata, destination: String, error: NKError) {
         setEditMode(false)
 
         Task {
             await self.loadDataSource()
             await self.searchMediaUI()
-        }
-    }
-
-    func transferFileExists(ocId: String, exists: Bool) {
-        Task {
-            if !exists {
-                await self.deleteImage(with: ocId)
-            }
-            ocIdVerified.append(ocId)
         }
     }
 }

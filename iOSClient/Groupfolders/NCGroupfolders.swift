@@ -70,13 +70,15 @@ class NCGroupfolders: NCCollectionViewCommon {
                                                          withAccount: session.account)
         }
 
-        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: layoutForView, account: session.account)
+        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas,
+                                                     layoutForView: layoutForView,
+                                                     account: session.account)
         await super.reloadDataSource()
 
         cachingAsync(metadatas: metadatas)
     }
 
-    override func getServerData(refresh: Bool = false) async {
+    override func getServerData(forced: Bool = false) async {
         await super.getServerData()
 
         defer {
@@ -86,7 +88,7 @@ class NCGroupfolders: NCCollectionViewCommon {
         showLoadingTitle()
 
         let homeServerUrl = utilityFileSystem.getHomeServer(session: session)
-        let showHiddenFiles = NCKeychain().getShowHiddenFiles(account: session.account)
+        let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: session.account)
 
         let resultsGroupfolders = await NextcloudKit.shared.getGroupfoldersAsync(account: session.account) { task in
             self.dataSourceTask = task
@@ -112,12 +114,15 @@ class NCGroupfolders: NCCollectionViewCommon {
                 return
             }
 
-            let isDirectoryE2EE = await self.utilityFileSystem.isDirectoryE2EEAsync(file: file)
-            let metadata = await self.database.convertFileToMetadataAsync(file, isDirectoryE2EE: isDirectoryE2EE)
+            let metadata = await self.database.convertFileToMetadataAsync(file)
 
             await self.database.addMetadataAsync(metadata)
-            await self.database.addDirectoryAsync(e2eEncrypted: isDirectoryE2EE, favorite: metadata.favorite, ocId: metadata.ocId, fileId: metadata.fileId, permissions: metadata.permissions, serverUrl: serverUrlFileName, account: metadata.account)
-
+            await self.database.addDirectoryAsync(serverUrl: serverUrlFileName,
+                                                  ocId: metadata.ocId,
+                                                  fileId: metadata.fileId,
+                                                  permissions: metadata.permissions,
+                                                  favorite: metadata.favorite,
+                                                  account: metadata.account)
             await self.reloadDataSource()
         }
     }

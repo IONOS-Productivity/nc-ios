@@ -9,48 +9,50 @@ import NextcloudKit
 extension FileProviderExtension {
     override func createDirectory(withName directoryName: String, inParentItemIdentifier parentItemIdentifier: NSFileProviderItemIdentifier, completionHandler: @escaping (NSFileProviderItem?, Error?) -> Void) {
         Task {
-            let account = fileProviderData.shared.session.account
-            let homeServerUrl = utilityFileSystem.getHomeServer(session: fileProviderData.shared.session)
-
-            guard let tableDirectory = await providerUtility.getTableDirectoryFromParentItemIdentifierAsync(parentItemIdentifier, account: account, homeServerUrl: homeServerUrl) else {
+            guard let session = fileProviderData.session,
+                  let tableDirectory = await providerUtility.getTableDirectoryFromParentItemIdentifierAsync(parentItemIdentifier, account: session.account, homeServerUrl: utilityFileSystem.getHomeServer(session: session)) else {
                 return completionHandler(nil, NSFileProviderError(.noSuchItem))
             }
-
-            let safeDirectoryName = utilityFileSystem.createFileName(directoryName, serverUrl: tableDirectory.serverUrl, account: account)
-            let serverUrlFileName = tableDirectory.serverUrl + "/" + safeDirectoryName
-            let showHiddenFiles = NCKeychain().getShowHiddenFiles(account: account)
+            let account = session.account
+            let fileNameFolder = utilityFileSystem.createFileName(directoryName, serverUrl: tableDirectory.serverUrl, account: account)
+            let serverUrlFileName = utilityFileSystem.createServerUrl(serverUrl: tableDirectory.serverUrl, fileName: fileNameFolder)
+            let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: account)
 
             let resultsCreateFolder = await NextcloudKit.shared.createFolderAsync(serverUrlFileName: serverUrlFileName, account: account)
 
-            guard resultsCreateFolder.error == .success else {
-                return completionHandler(nil, NSFileProviderError(.filenameCollision))
+            if resultsCreateFolder.error == .success {
+                let resultsReadFile = await NextcloudKit.shared.readFileOrFolderAsync(serverUrlFileName: serverUrlFileName, depth: "0", showHiddenFiles: showHiddenFiles, account: account)
+
+                if resultsReadFile.error == .success, let file = resultsReadFile.files?.first {
+                    let metadata = await self.database.convertFileToMetadataAsync(file)
+
+                    await self.database.addDirectoryAsync(serverUrl: serverUrlFileName,
+                                                          ocId: file.ocId,
+                                                          fileId: metadata.fileId,
+                                                          etag: metadata.etag,
+                                                          permissions: metadata.permissions,
+                                                          favorite: false,
+                                                          account: metadata.account)
+
+                    await self.database.addMetadataAsync(metadata)
+
+                    let item = FileProviderItem(metadata: metadata, parentItemIdentifier: parentItemIdentifier)
+
+                    completionHandler(item, nil)
+                    return
+
+                } else {
+
+                    completionHandler(nil, NSFileProviderError(.serverUnreachable))
+                    return
+
+                }
+            } else {
+
+                completionHandler(nil, NSFileProviderError(.filenameCollision))
+                return
+
             }
-
-            let resultsReadFile = await NextcloudKit.shared.readFileOrFolderAsync(serverUrlFileName: serverUrlFileName,
-                                                                                  depth: "0",
-                                                                                  showHiddenFiles: showHiddenFiles,
-                                                                                  account: account)
-
-            guard resultsReadFile.error == .success, let file = resultsReadFile.files?.first else {
-                return completionHandler(nil, NSFileProviderError(.serverUnreachable))
-            }
-
-            let isDirectoryEncrypted = await utilityFileSystem.isDirectoryE2EEAsync(file: file)
-            let metadata = await database.convertFileToMetadataAsync(file, isDirectoryE2EE: isDirectoryEncrypted)
-
-            await database.addDirectoryAsync(e2eEncrypted: false,
-                                             favorite: false,
-                                             ocId: file.ocId,
-                                             fileId: metadata.fileId,
-                                             etag: metadata.etag,
-                                             permissions: metadata.permissions,
-                                             serverUrl: serverUrlFileName,
-                                             account: metadata.account)
-
-            await database.addMetadataAsync(metadata)
-
-            let item = FileProviderItem(metadata: metadata, parentItemIdentifier: parentItemIdentifier)
-            completionHandler(item, nil)
         }
     }
 
@@ -61,7 +63,7 @@ extension FileProviderExtension {
                 return
             }
             let ocId = metadata.ocId
-            let serverUrlFileName = metadata.serverUrl + "/" + metadata.fileName
+            let serverUrlFileName = utilityFileSystem.createServerUrl(serverUrl: metadata.serverUrl, fileName: metadata.fileName)
             let isDirectory = metadata.directory
             let serverUrl = metadata.serverUrl
             let fileName = metadata.fileName
@@ -70,7 +72,7 @@ extension FileProviderExtension {
             let resultsDelete = await NextcloudKit.shared.deleteFileOrFolderAsync(serverUrlFileName: serverUrlFileName, account: account)
 
             if resultsDelete.error == .success {
-                let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(itemIdentifier.rawValue)
+                let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(itemIdentifier.rawValue, userId: metadata.userId, urlBase: metadata.urlBase)
 
                 do {
                     try self.providerUtility.fileManager.removeItem(atPath: fileNamePath)
@@ -79,7 +81,7 @@ extension FileProviderExtension {
                 }
 
                 if isDirectory {
-                    let dirForDelete = self.utilityFileSystem.stringAppendServerUrl(serverUrl, addFileName: fileName)
+                    let dirForDelete = self.utilityFileSystem.createServerUrl(serverUrl: serverUrl, fileName: fileName)
                     await self.database.deleteDirectoryAndSubDirectoryAsync(serverUrl: dirForDelete, account: account)
                 }
 
@@ -106,18 +108,18 @@ extension FileProviderExtension {
             }
             let ocIdFrom = metadataFrom.ocId
             let serverUrlFrom = metadataFrom.serverUrl
-            let fileNameFrom = serverUrlFrom + "/" + itemFrom.filename
+            let fileNameFrom = utilityFileSystem.createServerUrl(serverUrl: serverUrlFrom, fileName: itemFrom.filename)
             let account = metadataFrom.account
 
-            guard let tableDirectoryTo = await providerUtility.getTableDirectoryFromParentItemIdentifierAsync(parentItemIdentifier, account: account, homeServerUrl: utilityFileSystem.getHomeServer(session: fileProviderData.shared.session)) else {
+            guard let tableDirectoryTo = await providerUtility.getTableDirectoryFromParentItemIdentifierAsync(parentItemIdentifier, account: account, homeServerUrl: utilityFileSystem.getHomeServer(urlBase: metadataFrom.urlBase, userId: metadataFrom.userId)) else {
                 completionHandler(nil, NSFileProviderError(.noSuchItem))
                 return
             }
 
             let serverUrlTo = tableDirectoryTo.serverUrl
-            var fileNameTo = serverUrlTo + "/" + itemFrom.filename
+            var fileNameTo = utilityFileSystem.createServerUrl(serverUrl: serverUrlTo, fileName: itemFrom.filename)
             if let newName {
-                fileNameTo = serverUrlTo + "/" + newName
+                fileNameTo = utilityFileSystem.createServerUrl(serverUrl: serverUrlTo, fileName: newName)
             }
 
             let resultsMove = await NextcloudKit.shared.moveFileOrFolderAsync(serverUrlFileNameSource: fileNameFrom, serverUrlFileNameDestination: fileNameTo, overwrite: true, account: metadataFrom.account)
@@ -154,8 +156,8 @@ extension FileProviderExtension {
                 return
             }
             let fileNameFrom = metadata.fileNameView
-            let fileNamePathFrom = metadata.serverUrl + "/" + fileNameFrom
-            let fileNamePathTo = metadata.serverUrl + "/" + itemName
+            let fileNamePathFrom = utilityFileSystem.createServerUrl(serverUrl: metadata.serverUrl, fileName: fileNameFrom)
+            let fileNamePathTo = utilityFileSystem.createServerUrl(serverUrl: metadata.serverUrl, fileName: itemName)
             let ocId = metadata.ocId
 
             let resultsMove = await NextcloudKit.shared.moveFileOrFolderAsync(serverUrlFileNameSource: fileNamePathFrom, serverUrlFileNameDestination: fileNamePathTo, overwrite: false, account: metadata.account)
@@ -165,7 +167,7 @@ extension FileProviderExtension {
                 await self.database.setMetadataServerUrlFileNameStatusNormalAsync(ocId: ocId)
 
                 guard let metadata = await self.database.getMetadataFromOcIdAsync(ocId),
-                      let parentItemIdentifier = await self.providerUtility.getParentItemIdentifierAsync(account: metadata.account, serverUrl: metadata.serverUrl) else {
+                      let parentItemIdentifier = await self.providerUtility.getParentItemIdentifierAsync(metadata: metadata) else {
                     completionHandler(nil, NSFileProviderError(.noSuchItem))
                     return
                 }
@@ -199,16 +201,16 @@ extension FileProviderExtension {
             let ocId = metadata.ocId
 
             if favoriteRank == nil {
-                fileProviderData.shared.listFavoriteIdentifierRank.removeValue(forKey: itemIdentifier.rawValue)
+                fileProviderData.listFavoriteIdentifierRank.removeValue(forKey: itemIdentifier.rawValue)
             } else {
-                if fileProviderData.shared.listFavoriteIdentifierRank[itemIdentifier.rawValue] == nil {
-                    fileProviderData.shared.listFavoriteIdentifierRank[itemIdentifier.rawValue] = favoriteRank
+                if fileProviderData.listFavoriteIdentifierRank[itemIdentifier.rawValue] == nil {
+                    fileProviderData.listFavoriteIdentifierRank[itemIdentifier.rawValue] = favoriteRank
                 }
                 favorite = true
             }
 
             if (favorite == true && !metadata.favorite) || (!favorite && metadata.favorite) {
-                let fileNamePath = utilityFileSystem.getFileNamePath(metadata.fileName, serverUrl: metadata.serverUrl, session: fileProviderData.shared.session)
+                let fileNamePath = utilityFileSystem.getFileNamePath(metadata.fileName, serverUrl: metadata.serverUrl, urlBase: metadata.urlBase, userId: metadata.userId)
                 let resultsFavorite = await  NextcloudKit.shared.setFavoriteAsync(fileName: fileNamePath, favorite: favorite, account: metadata.account)
 
                 if resultsFavorite.error == .success {
@@ -221,7 +223,7 @@ extension FileProviderExtension {
                     metadata.favorite = favorite
                     await self.database.addMetadataAsync(metadata)
 
-                    let item = fileProviderData.shared.signalEnumerator(ocId: metadata.ocId, type: .workingSet)
+                    let item = await fileProviderData.signalEnumerator(ocId: metadata.ocId, type: .workingSet)
 
                     completionHandler(item, nil)
                     return
@@ -233,9 +235,9 @@ extension FileProviderExtension {
                     }
 
                     // Errore, remove from listFavoriteIdentifierRank
-                    fileProviderData.shared.listFavoriteIdentifierRank.removeValue(forKey: itemIdentifier.rawValue)
+                    fileProviderData.listFavoriteIdentifierRank.removeValue(forKey: itemIdentifier.rawValue)
 
-                    let item = fileProviderData.shared.signalEnumerator(ocId: metadata.ocId, type: .workingSet)
+                    let item = await fileProviderData.signalEnumerator(ocId: metadata.ocId, type: .workingSet)
 
                     completionHandler(item, NSFileProviderError(.serverUnreachable))
                     return
@@ -255,7 +257,7 @@ extension FileProviderExtension {
 
             await self.database.addTagAsunc(ocId, tagIOS: tagData, account: account)
 
-            let item = fileProviderData.shared.signalEnumerator(ocId: ocId, type: .workingSet)
+            let item = await fileProviderData.signalEnumerator(ocId: ocId, type: .workingSet)
 
             completionHandler(item, nil)
         }
@@ -265,7 +267,7 @@ extension FileProviderExtension {
 
         Task {
             guard let metadata = await providerUtility.getTableMetadataFromItemIdentifierAsync(itemIdentifier),
-                  let parentItemIdentifier = await providerUtility.getParentItemIdentifierAsync(account: metadata.account, serverUrl: metadata.serverUrl) else {
+                  let parentItemIdentifier = await providerUtility.getParentItemIdentifierAsync(metadata: metadata) else {
                 completionHandler(nil, NSFileProviderError(.noSuchItem))
                 return
             }

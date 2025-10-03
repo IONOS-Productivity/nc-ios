@@ -1,26 +1,7 @@
-//
-//  NCMainTabBarController.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 02/04/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import SwiftUI
@@ -44,7 +25,7 @@ class NCMainTabBarController: UITabBarController {
     let navigationCollectionViewCommon = ThreadSafeArray<NavigationCollectionViewCommon>()
     private var previousIndex: Int?
     private var checkUserDelaultErrorInProgress: Bool = false
-    private var timer: Timer?
+    private var timerTask: Task<Void, Never>?
     private let global = NCGlobal.shared
 
     private(set) var burgerMenuController: BurgerMenuAttachController?
@@ -83,8 +64,7 @@ class NCMainTabBarController: UITabBarController {
         }
 
         NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
-            self.timer?.invalidate()
-            self.timer = nil
+            self.timerTask?.cancel()
         }
 
 		setupTabBarView()
@@ -96,7 +76,8 @@ class NCMainTabBarController: UITabBarController {
         DataProtectionAgreementManager.shared.showAgreement(viewController: self)
 
         previousIndex = selectedIndex
-        if NCBrandOptions.shared.enforce_passcode_lock && NCKeychain().passcode.isEmptyOrNil {
+
+        if NCBrandOptions.shared.enforce_passcode_lock && NCPreferences().passcode.isEmptyOrNil {
             let vc = UIHostingController(rootView: SetupPasscodeView(isLockActive: .constant(false)))
             vc.isModalInPresentation = true
 

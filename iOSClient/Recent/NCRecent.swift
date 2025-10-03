@@ -64,10 +64,11 @@ class NCRecent: NCCollectionViewCommon {
     // MARK: - DataSource
 
     override func reloadDataSource() async {
-
         if let metadatas = await self.database.getMetadatasAsync(predicate: NSPredicate(format: "account == %@ AND fileName != %@", session.account, NextcloudKit.shared.nkCommonInstance.rootFileName), sortedByKeyPath: "date", ascending: false) {
 
-            self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: layoutForView, account: session.account)
+            self.dataSource = NCCollectionViewDataSource(metadatas: metadatas,
+                                                         layoutForView: layoutForView,
+                                                         account: session.account)
 
             cachingAsync(metadatas: metadatas)
         }
@@ -78,7 +79,7 @@ class NCRecent: NCCollectionViewCommon {
         await super.reloadDataSource()
     }
 
-    override func getServerData(refresh: Bool = false) async {
+    override func getServerData(forced: Bool = false) async {
         await super.getServerData()
 
         defer {
@@ -152,7 +153,7 @@ class NCRecent: NCCollectionViewCommon {
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
         let lessDateString = dateFormatter.string(from: Date())
         let requestBody = String(format: requestBodyRecent, "/files/" + session.userId, lessDateString)
-        let showHiddenFiles = NCKeychain().getShowHiddenFiles(account: session.account)
+        let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: session.account)
 
         showLoadingTitle()
 

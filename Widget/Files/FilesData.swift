@@ -109,7 +109,7 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
     }
 
     // NETWORKING
-    let password = NCKeychain().getPassword(account: activeTableAccount.account)
+    let password = NCPreferences().getPassword(account: activeTableAccount.account)
 
     NextcloudKit.shared.setup(groupIdentifier: NCBrandOptions.shared.capabilitiesGroup, delegate: NCNetworking.shared)
     NextcloudKit.shared.appendSession(account: activeTableAccount.account,
@@ -179,12 +179,12 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
     dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
     let lessDateString = dateFormatter.string(from: Date())
     let requestBody = String(format: requestBodyRecent, "/files/" + activeTableAccount.userId, lessDateString)
-    let showHiddenFiles = NCKeychain().getShowHiddenFiles(account: activeTableAccount.account)
+    let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: activeTableAccount.account)
 
     // LOG
     let versionNextcloudiOS = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, utility.getVersionApp())
 
-    NextcloudKit.configureLogger(logLevel: (NCBrandOptions.shared.disable_log ? .disabled : NCKeychain().log))
+    NextcloudKit.configureLogger(logLevel: (NCBrandOptions.shared.disable_log ? .disabled : NCPreferences().log))
 
     nkLog(debug: "Start \(NCBrandOptions.shared.brand) widget session " + versionNextcloudiOS)
 
@@ -215,15 +215,27 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
                 guard let url = URL(string: urlString) else { continue }
 
                 // IMAGE
-                image = utility.getImage(ocId: file.ocId, etag: file.etag, ext: NCGlobal.shared.previewExt512)
+                image = utility.getImage(ocId: file.ocId,
+                                         etag: file.etag,
+                                         ext: NCGlobal.shared.previewExt512,
+                                         userId: activeTableAccount.userId,
+                                         urlBase: activeTableAccount.urlBase)
                 if image == nil, file.hasPreview {
                     let result = await NextcloudKit.shared.downloadPreviewAsync(fileId: file.fileId,
                                                                                 etag: file.etag,
                                                                                 account: activeTableAccount.account,
                                                                                 options: options)
                     if result.error == .success, let data = result.responseData?.data {
-                        utility.createImageFileFrom(data: data, ocId: file.ocId, etag: file.etag)
-                        image = utility.getImage(ocId: file.ocId, etag: file.etag, ext: NCGlobal.shared.previewExt256)
+                        utility.createImageFileFrom(data: data,
+                                                    ocId: file.ocId,
+                                                    etag: file.etag,
+                                                    userId: activeTableAccount.userId,
+                                                    urlBase: activeTableAccount.urlBase)
+                        image = utility.getImage(ocId: file.ocId,
+                                                 etag: file.etag,
+                                                 ext: NCGlobal.shared.previewExt256,
+                                                 userId: activeTableAccount.userId,
+                                                 urlBase: activeTableAccount.urlBase)
                     }
                 }
                 if image == nil {
@@ -235,8 +247,7 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
                     useTypeIconFile = true
                 }
 
-                let isDirectoryE2EE = utilityFileSystem.isDirectoryE2EE(file: file)
-                let metadata = await NCManageDatabase.shared.convertFileToMetadataAsync(file, isDirectoryE2EE: isDirectoryE2EE)
+                let metadata = await NCManageDatabase.shared.convertFileToMetadataAsync(file)
 
                 // DATA
 				let data = FilesData(id: metadata.ocId, image: image ?? UIImage(), title: metadata.fileNameView, subTitle: subTitle, url: url, useTypeIconFile: useTypeIconFile, color: colorByImageName(file.iconName))

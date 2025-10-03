@@ -66,7 +66,11 @@ final class NCImageCache: @unchecked Sendable {
                                     self.cache.removeAllValues()
                                     break
                                 }
-                                if let image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: self.global.previewExt256) {
+                                if let image = self.utility.getImage(ocId: metadata.ocId,
+                                                                     etag: metadata.etag,
+                                                                     ext: self.global.previewExt256,
+                                                                     userId: metadata.userId,
+                                                                     urlBase: metadata.urlBase) {
                                     self.addImageCache(ocId: metadata.ocId, etag: metadata.etag, image: image, ext: self.global.previewExt256, cost: cost)
                                     cost += 1
                                 }
@@ -77,7 +81,6 @@ final class NCImageCache: @unchecked Sendable {
                     self.isLoadingCache = false
                 }
             }
-
 #endif
         }
     }
@@ -123,9 +126,9 @@ final class NCImageCache: @unchecked Sendable {
         var predicate = NSPredicate()
         let startServerUrl = self.utilityFileSystem.getHomeServer(session: session) + mediaPath
 
-            var showBothPredicateMediaString = "account == %@ AND serverUrl BEGINSWITH %@ AND hasPreview == true AND (classFile == '\(NKTypeClassFile.image.rawValue)' OR classFile == '\(NKTypeClassFile.video.rawValue)') AND NOT (status IN %@)"
+            var showBothPredicateMediaString = "account == %@ AND serverUrl BEGINSWITH %@ AND mediaSearch == true AND hasPreview == true AND (classFile == '\(NKTypeClassFile.image.rawValue)' OR classFile == '\(NKTypeClassFile.video.rawValue)') AND NOT (status IN %@)"
 
-            var showOnlyPredicateMediaString = "account == %@ AND serverUrl BEGINSWITH %@ AND hasPreview == true AND classFile == %@ AND NOT (status IN %@)"
+            var showOnlyPredicateMediaString = "account == %@ AND serverUrl BEGINSWITH %@ AND mediaSearch == true AND hasPreview == true AND classFile == %@ AND NOT (status IN %@)"
 
             if filterLivePhotoFile {
                 showBothPredicateMediaString = showBothPredicateMediaString + " AND NOT (livePhotoFile != '' AND classFile == '\(NKTypeClassFile.video.rawValue)')"
@@ -145,8 +148,8 @@ final class NCImageCache: @unchecked Sendable {
 
     // MARK: -
 
-    func getImageFile() -> UIImage {
-        return utility.loadImage(named: "doc", colors: [NCBrandColor.shared.iconImageColor2])
+    func getImageFile(colors: [UIColor] = [NCBrandColor.shared.iconImageColor2]) -> UIImage {
+        return utility.loadImage(named: "doc", colors: colors)
     }
 
     func getImageShared() -> UIImage {
@@ -211,12 +214,12 @@ final class NCImageCache: @unchecked Sendable {
         return UIImage(resource: .more).withTintColor(NCBrandColor.shared.brandElement)
     }
 
-    func getImageButtonStop() -> UIImage {
-        return utility.loadImage(named: "stop.circle", colors: [NCBrandColor.shared.iconImageColor])
+    func getImageButtonStop(colors: [UIColor] = [NCBrandColor.shared.iconImageColor]) -> UIImage {
+        return utility.loadImage(named: "stop.circle", colors: colors)
     }
 
-    func getImageButtonMoreLock() -> UIImage {
-        return utility.loadImage(named: "lock.fill", colors: [NCBrandColor.shared.iconImageColor])
+    func getImageButtonMoreLock(colors: [UIColor] = [NCBrandColor.shared.iconImageColor]) -> UIImage {
+        return utility.loadImage(named: "lock.fill", colors: colors)
     }
 
 	func getFolder() -> UIImage {

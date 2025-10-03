@@ -60,7 +60,7 @@ class NCViewerProviderContextMenu: UIViewController {
             imageView.image = image
             imageView.frame = resize(CGSize(width: sizeIcon, height: sizeIcon))
             // PREVIEW
-            if let image = NCUtility().getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal.shared.previewExt512) {
+            if let image = NCUtility().getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal.shared.previewExt512, userId: metadata.userId, urlBase: metadata.urlBase) {
                 imageView.image = image
                 imageView.frame = resize(image.size)
             }
@@ -74,7 +74,7 @@ class NCViewerProviderContextMenu: UIViewController {
             }
             // VIEW VIDEO
             if metadata.isVideo {
-                if !NCUtility().existsImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal.shared.previewExt512) {
+                if !NCUtility().existsImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal.shared.previewExt512, userId: metadata.userId, urlBase: metadata.urlBase) {
                     let newSize = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
                     imageView.image = nil
                     imageView.frame = newSize
@@ -98,7 +98,7 @@ class NCViewerProviderContextMenu: UIViewController {
                             if let metadata = await NCManageDatabase.shared.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,
                                                                                                                   session: self.networking.sessionDownload,
                                                                                                                   selector: "") {
-                                self.networking.download(metadata: metadata)
+                                await self.networking.downloadFile(metadata: metadata)
                             }
                         }
                     }
@@ -107,12 +107,12 @@ class NCViewerProviderContextMenu: UIViewController {
             // DOWNLOAD IMAGE GIF SVG
             if !utilityFileSystem.fileProviderStorageExists(metadata),
                self.networking.isOnline,
-               (metadata.contentType == "image/gif" || metadata.contentType == "image/svg+xml") {
+               metadata.contentType == "image/gif" || metadata.contentType == "image/svg+xml" {
                 Task {
                     if let metadata = await NCManageDatabase.shared.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,
                                                                                                           session: self.networking.sessionDownload,
                                                                                                           selector: "") {
-                        self.networking.download(metadata: metadata)
+                        await self.networking.downloadFile(metadata: metadata)
                     }
                 }
             }
@@ -124,7 +124,7 @@ class NCViewerProviderContextMenu: UIViewController {
                     if let metadata = await NCManageDatabase.shared.setMetadataSessionInWaitDownloadAsync(ocId: metadataLivePhoto.ocId,
                                                                                                           session: self.networking.sessionDownload,
                                                                                                           selector: "") {
-                        self.networking.download(metadata: metadata)
+                        await self.networking.downloadFile(metadata: metadata)
                     }
                 }
             }
@@ -139,7 +139,9 @@ class NCViewerProviderContextMenu: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        self.networking.addDelegate(self)
+        Task {
+            await NCNetworking.shared.transferDispatcher.addDelegate(self)
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -151,19 +153,27 @@ class NCViewerProviderContextMenu: UIViewController {
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
 
-        self.networking.removeDelegate(self)
+        Task {
+            await NCNetworking.shared.transferDispatcher.removeDelegate(self)
+        }
     }
 
     // MARK: - Viewer
 
     private func viewImage(metadata: tableMetadata) {
         var image: UIImage?
-        let filePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView)
+        let filePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,
+                                                                         fileName: metadata.fileNameView,
+                                                                         userId: metadata.userId,
+                                                                         urlBase: metadata.urlBase)
 
         if metadata.contentType == "image/gif" {
             image = UIImage.animatedImage(withAnimatedGIFURL: URL(fileURLWithPath: filePath))
         } else if metadata.contentType == "image/svg+xml" {
-            let imagePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView)
+            let imagePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,
+                                                                              fileName: metadata.fileNameView,
+                                                                              userId: metadata.userId,
+                                                                              urlBase: metadata.urlBase)
             if let svgImage = SVGKImage(contentsOfFile: imagePath) {
                 svgImage.size = NCGlobal.shared.size1024
                 image = svgImage.uiImage
@@ -282,7 +292,7 @@ extension NCViewerProviderContextMenu: NCTransferDelegate {
 
         DispatchQueue.main.async {
             switch status {
-            /// DOWNLOAD
+            // DOWNLOAD
             case self.global.networkingStatusDownloading:
                 if metadata.ocId == self.metadata?.ocId || metadata.ocId == self.metadataLivePhoto?.ocId {
                     NCActivityIndicator.shared.start(backgroundView: self.view)

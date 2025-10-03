@@ -55,12 +55,14 @@ class NCContextMenu: NSObject {
         let share = UIAction(title: NSLocalizedString("_share_", comment: ""),
                              image: NCImagesRepository.menuIconShare) { _ in
             if self.utilityFileSystem.fileProviderStorageExists(self.metadata) {
-                self.networking.notifyAllDelegates { delegate in
-                    let metadata = self.metadata.detachedCopy()
-                    metadata.sessionSelector = self.global.selectorOpenIn
-                    delegate.transferChange(status: self.global.networkingStatusDownloaded,
-                                            metadata: metadata,
-                                            error: .success)
+                Task {
+                    await self.networking.transferDispatcher.notifyAllDelegates { delegate in
+                        let metadata = self.metadata.detachedCopy()
+                        metadata.sessionSelector = self.global.selectorOpenIn
+                        delegate.transferChange(status: self.global.networkingStatusDownloaded,
+                                                metadata: metadata,
+                                                error: .success)
+                    }
                 }
             } else {
                 Task { @MainActor in
@@ -71,23 +73,21 @@ class NCContextMenu: NSObject {
                         return
                     }
 
-                    hud.initHudRing(text: NSLocalizedString("_downloading_", comment: ""), tapToCancelDetailText: true) {
+                    hud.ringProgress(text: NSLocalizedString("_downloading_", comment: ""), tapToCancelDetailText: true) {
                         if let request = downloadRequest {
                             request.cancel()
                         }
                     }
 
-                    self.networking.download(metadata: metadata) {
-                    } requestHandler: { request in
+                    let results = await self.networking.downloadFile(metadata: metadata) { request in
                         downloadRequest = request
                     } progressHandler: { progress in
                         hud.progress(progress.fractionCompleted)
-                    } completion: { afError, error in
-                        if error == .success || afError?.isExplicitlyCancelledError ?? false {
-                            hud.dismiss()
-                        } else {
-                            hud.error(text: error.errorDescription)
-                        }
+                    }
+                    if results.nkError == .success || results.afError?.isExplicitlyCancelledError ?? false {
+                        hud.dismiss()
+                    } else {
+                        hud.error(text: results.nkError.errorDescription)
                     }
                 }
             }
@@ -106,16 +106,16 @@ class NCContextMenu: NSObject {
 
         let modify = UIAction(title: NSLocalizedString("_modify_", comment: ""),
                               image: NCImagesRepository.menuIconModifyWithQuickLook) { _ in
-            if self.utilityFileSystem.fileProviderStorageExists(self.metadata) {
-                self.networking.notifyAllDelegates { delegate in
-                    let metadata = self.metadata.detachedCopy()
-                    metadata.sessionSelector = self.global.selectorLoadFileQuickLook
-                    delegate.transferChange(status: self.global.networkingStatusDownloaded,
-                                            metadata: metadata,
-                                            error: .success)
-                }
-            } else {
-                Task { @MainActor in
+            Task { @MainActor in
+                if self.utilityFileSystem.fileProviderStorageExists(self.metadata) {
+                    await self.networking.transferDispatcher.notifyAllDelegates { delegate in
+                        let metadata = self.metadata.detachedCopy()
+                        metadata.sessionSelector = self.global.selectorLoadFileQuickLook
+                        delegate.transferChange(status: self.global.networkingStatusDownloaded,
+                                                metadata: metadata,
+                                                error: .success)
+                    }
+                } else {
                     guard let metadata = await self.database.setMetadataSessionInWaitDownloadAsync(ocId: self.metadata.ocId,
                                                                                                    session: self.networking.sessionDownload,
                                                                                                    selector: self.global.selectorLoadFileQuickLook,
@@ -123,23 +123,21 @@ class NCContextMenu: NSObject {
                         return
                     }
 
-                    hud.initHudRing(text: NSLocalizedString("_downloading_", comment: "")) {
+                    hud.ringProgress(text: NSLocalizedString("_downloading_", comment: "")) {
                         if let request = downloadRequest {
                             request.cancel()
                         }
                     }
 
-                    self.networking.download(metadata: metadata) {
-                    } requestHandler: { request in
+                    let results = await self.networking.downloadFile(metadata: metadata) { request in
                         downloadRequest = request
                     } progressHandler: { progress in
                         hud.progress(progress.fractionCompleted)
-                    } completion: { afError, error in
-                        if error == .success || afError?.isExplicitlyCancelledError ?? false {
-                            hud.dismiss()
-                        } else {
-                            hud.error(text: error.errorDescription)
-                        }
+                    }
+                    if results.nkError == .success || results.afError?.isExplicitlyCancelledError ?? false {
+                        hud.dismiss()
+                    } else {
+                        hud.error(text: results.nkError.errorDescription)
                     }
                 }
             }
@@ -178,7 +176,7 @@ class NCContextMenu: NSObject {
                 let error = await self.networking.deleteCache(self.metadata, sceneIdentifier: self.sceneIdentifier)
                 metadatasError[self.metadata.detachedCopy()] = error
 
-                self.networking.notifyAllDelegates { delegate in
+                await self.networking.transferDispatcher.notifyAllDelegates { delegate in
                     delegate.transferChange(status: self.global.networkingStatusDelete,
                                             metadatasError: metadatasError)
                 }

@@ -92,12 +92,12 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
     // MARK: -
 
     func loadItems() {
-        guard let tableAccount = self.database.getTableAccount(predicate: NSPredicate(format: "account == %@", session.account)) else {
+        guard let tableAccount = self.database.getTableAccount(predicate: NSPredicate(format: "account == %@", session.account)),
+              let capabilities = NCNetworking.shared.capabilities[tableAccount.account] else {
             return
         }
         var item = NKExternalSite()
         var quota: String = ""
-        let capabilities = NCNetworking.shared.capabilities[tableAccount.account] ?? NKCapabilities.Capabilities()
 
         // Clear
         functionMenu.removeAll()
@@ -404,6 +404,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         } else if item.url == "openSettings" {
             let settingsView = NCSettingsView(model: NCSettingsModel(controller: self.controller))
             let settingsController = UIHostingController(rootView: settingsView)
+            settingsController.title = NSLocalizedString("_settings_", comment: "")
             navigationController?.pushViewController(settingsController, animated: true)
         } else {
             applicationHandle.didSelectItem(item, viewController: self)

@@ -99,6 +99,7 @@
 "_file_conflict_exists_"    = "Already existing files";
 "_file_not_rewite_doc_"     = "It is not possible to overwrite a document but only to create a new one.";
 "_move_or_copy_"            = "Move or copy";
+"_move_copy_diff_account_"  = "You cannot copy or move files between different accounts.";
 "_copy_"                    = "Copy";
 "_now_"                     = "Now";
 "_wait_"                    = "Please wait …";
@@ -161,6 +162,7 @@
 "_more_action_title_" = "More Details";
 "_wait_file_preparation_" = "Please wait, preparing file upload…";
 "_keep_active_for_upload_" = "Keep the application active until the sending is completed…";
+"_keep_active_for_transfers_" = "Keep the application active until the transfers are completed…";
 "_wait_file_encryption_"  = "Please wait, encrypting file…";
 "_passcode_counter_fail_" = "Too many failed attempts, please wait before reattempting.";
 "_seconds_"               = "seconds";
@@ -330,6 +332,7 @@
 "_files_"                       = "files";
 "_file_"                        = "file";
 "_no_file_pull_down_"           = "Upload a file or pull down to refresh";
+"_no_file_no_permission_to_create_" = "You don't have permission to create or upload files in this folder.";
 "_limited_dimension_"           = "Maximum size reached";
 "_save_selected_files_"         = "Save to photo gallery";
 "_file_not_saved_cameraroll_"   = "Error: File not saved in photo album";
@@ -433,6 +436,7 @@
 "_share_reshare_disabled_"      = "You are not allowed to reshare this file/folder.";
 "_share_reshare_restricted_"    = "Note: You only have limited permission to reshare this file/folder.";
 "_remote_"                      = "Remote";
+"_remote_group_"                = "Remote group";
 "_conversation_"                = "Conversation";
 
 "_no_transfer_"                     = "No transfers yet";
@@ -473,6 +477,7 @@
 "_e2e_settings_remove_message_"     = "Confirm removal of encryption along with the passphrase.";
 "_e2e_set_folder_encrypted_"        = "Encrypt";
 "_e2e_remove_folder_encrypted_"     = "Decrypt";
+"_e2e_file_encrypted_"              = "File encrypted";
 "_e2e_goto_settings_for_enable_"    = "This is an encrypted directory, go to \"Settings\" and enable end-to-end encryption";
 "_e2e_error_"                       = "An internal end-to-end encryption error occurred.";
 "_e2e_in_upload_"                   = "Upload in progress, please wait for all files to be transferred.";
@@ -642,8 +647,6 @@
 "_recent_activity_"         = "Recent activity";
 "_maintenance_mode_"        = "The server is currently in maintenance mode, which may take a while.";
 "_account_disabled_"        = "Account disabled";
-
-//Video
 "_user_"                    = "User";
 "_add_subtitle_"            = "Add an external subtitle";
 "_add_audio_"               = "Add an external audio";
@@ -661,6 +664,7 @@
 "_terms_accept_"            = "I acknowledge that I have read and agree to the above terms of service.";
 "_terms_accepted_"          = "Terms accepted";
 "_recommended_files_"       = "Recommended Files";
+"_propagate_layout_"        = "Apply the following change to all subfolders";
 
 // Tip
 "_tip_pdf_thumbnails_"      = "Swipe left from the right edge of the screen to show the thumbnails";
@@ -760,4 +764,12 @@ You can stop it at any time, adjust the settings, and enable it again.";
 "_auto_upload_all_photos_warning_title_" = "Are you sure you want to upload all photos?";
 "_auto_upload_all_photos_warning_message_" = "This can take some time to process depending on the amount of photos.";
 "_item_with_same_name_already_exists_" = "An item with the same name already exists.";
+
+// MARK: Migration Multi Domains
+
+"_preparing_migration_" = "Preparing migration …";
+"_scanning_files_" = "Scanning files …";
+"_moving_items_to_domain_" = "Moving items to correct domain …";
+"_finishing_up_" = "Finishing up …";
+
 "_download_"                    = "Download";

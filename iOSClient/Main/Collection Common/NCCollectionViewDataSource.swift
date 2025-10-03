@@ -1,25 +1,6 @@
-//
-//  NCCollectionViewDataSource.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 06/09/2020.
-//  Copyright © 2020 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2020 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import NextcloudKit
@@ -53,10 +34,10 @@ class NCCollectionViewDataSource: NSObject {
         self.metadatas = metadatas
         self.layoutForView = layoutForView
         if let account {
-            self.directoryOnTop = NCKeychain().getDirectoryOnTop(account: account)
-            self.favoriteOnTop = NCKeychain().getFavoriteOnTop(account: account)
+            self.directoryOnTop = NCPreferences().getDirectoryOnTop(account: account)
+            self.favoriteOnTop = NCPreferences().getFavoriteOnTop(account: account)
         }
-        /// unified search
+        // unified search
         self.providers = providers
         self.searchResults = searchResults
 
@@ -87,7 +68,7 @@ class NCCollectionViewDataSource: NSObject {
 
     internal func createSections() {
         for metadata in self.metadatas {
-            /// skipped livePhoto VIDEO part
+            // skipped livePhoto VIDEO part
             if metadata.isLivePhoto, metadata.classFile == NKTypeClassFile.video.rawValue {
                 continue
             }
@@ -96,7 +77,7 @@ class NCCollectionViewDataSource: NSObject {
                 self.sectionsValue.append(section)
             }
         }
-        /// Unified search
+        // Unified search
         if let providers = self.providers, !providers.isEmpty {
             let sectionsDictionary = ThreadSafeDictionary<String, Int>()
             for section in self.sectionsValue {
@@ -114,7 +95,7 @@ class NCCollectionViewDataSource: NSObject {
                 }
             }
         } else {
-            /// normal
+            // normal
             let favorite = NSLocalizedString("favorite", comment: "").lowercased().firstUppercased
             let directory = NSLocalizedString("directory", comment: "").lowercased().firstUppercased
 

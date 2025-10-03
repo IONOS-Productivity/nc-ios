@@ -79,7 +79,7 @@ class NCUploadScanDocument: ObservableObject {
 
     func createPDF(metadata: tableMetadata, completion: @escaping (_ error: Bool) -> Void) {
         DispatchQueue.global(qos: .userInteractive).async {
-            let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView)
+            let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileName: metadata.fileNameView, userId: metadata.userId, urlBase: metadata.urlBase)
             let pdfData = NSMutableData()
 
             if self.password.isEmpty {
@@ -303,9 +303,9 @@ struct UploadScanDocumentView: View {
     @State var footer = ""
     @State var password: String = ""
     @State var isSecuredPassword: Bool = true
-    @State var isTextRecognition: Bool = NCKeychain().textRecognitionStatus
-    @State var quality = NCKeychain().qualityScanDocument
-    @State var removeAllFiles: Bool = NCKeychain().deleteAllScanImages
+    @State var isTextRecognition: Bool = NCPreferences().textRecognitionStatus
+    @State var quality = NCPreferences().qualityScanDocument
+    @State var removeAllFiles: Bool = NCPreferences().deleteAllScanImages
     @State var isPresentedSelect = false
     @State var isPresentedUploadConflict = false
 
@@ -357,17 +357,15 @@ struct UploadScanDocumentView: View {
                             isPresentedSelect = true
                         }
                         .complexModifier { view in
-                            if #available(iOS 16, *) {
-                                view.alignmentGuide(.listRowSeparatorLeading) { _ in
-                                    return 0
-                                }
+                            view.alignmentGuide(.listRowSeparatorLeading) { _ in
+                                return 0
                             }
                         }
                         HStack {
                             Text(NSLocalizedString("_filename_", comment: ""))
                             TextField(NSLocalizedString("_enter_filename_", comment: ""), text: $fileName)
                                 .multilineTextAlignment(.trailing)
-                                .onChange(of: fileName) { _ in
+                                .onChange(of: fileName) {
                                     if let fileNameError = FileNameValidator.checkFileName(fileName, account: self.model.controller?.account, capabilities: capabilities) {
                                         footer = fileNameError.errorDescription
                                     } else {
@@ -397,8 +395,8 @@ struct UploadScanDocumentView: View {
                         HStack {
                             Toggle(NSLocalizedString("_text_recognition_", comment: ""), isOn: $isTextRecognition)
                                 .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.switchColor)))
-                                .onChange(of: isTextRecognition) { newValue in
-                                    NCKeychain().textRecognitionStatus = newValue
+                                .onChange(of: isTextRecognition) { _, newValue in
+                                    NCPreferences().textRecognitionStatus = newValue
                                 }
                         }
                     }
@@ -413,8 +411,8 @@ struct UploadScanDocumentView: View {
                         VStack(spacing: 20) {
                             Toggle(NSLocalizedString("_delete_all_scanned_images_", comment: ""), isOn: $removeAllFiles)
                                 .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.getElement(account: model.session.account))))
-                                .onChange(of: removeAllFiles) { newValue in
-                                    NCKeychain().deleteAllScanImages = newValue
+                                .onChange(of: removeAllFiles) { _, newValue in
+                                    NCPreferences().deleteAllScanImages = newValue
                                 }
                             Button(NSLocalizedString("_save_", comment: "")) {
                                 let fileName = model.fileName(fileName)
@@ -442,7 +440,7 @@ struct UploadScanDocumentView: View {
                         VStack {
                             Slider(value: $quality, in: 0...4, step: 1, onEditingChanged: { touch in
                                 if !touch {
-                                    NCKeychain().qualityScanDocument = quality
+                                    NCPreferences().qualityScanDocument = quality
                                 }
                             })
                             .accentColor(Color(NCBrandColor.shared.getElement(account: model.session.account)))

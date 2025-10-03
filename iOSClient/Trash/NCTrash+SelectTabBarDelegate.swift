@@ -79,13 +79,15 @@ extension NCTrash: HiDriveCollectionViewCommonSelectToolbarDelegate {
     }
 
     func setEditMode(_ editMode: Bool) {
-        isEditMode = editMode
-        selectOcId.removeAll()
+        Task {
+        	isEditMode = editMode
+        	selectOcId.removeAll()
 
-        updateSelectionToolbar()
+        	updateSelectionToolbar()
 
-        navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
-        navigationItem.hidesBackButton = editMode
-        collectionView.reloadData()
+        	navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
+        	navigationItem.hidesBackButton = editMode
+        	collectionView.reloadData()
+        }
     }
 }

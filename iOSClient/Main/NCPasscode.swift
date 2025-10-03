@@ -1,25 +1,6 @@
-//
-//  NCPasscode.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 13/02/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import LocalAuthentication
@@ -43,11 +24,11 @@ class NCPasscode: NSObject, TOPasscodeViewControllerDelegate {
         return instance
     }()
     var isPasscodeReset: Bool {
-        let passcodeCounterFailReset = NCKeychain().passcodeCounterFailReset
-        return NCKeychain().resetAppCounterFail && passcodeCounterFailReset >= NCBrandOptions.shared.resetAppPasscodeAttempts
+        let passcodeCounterFailReset = NCPreferences().passcodeCounterFailReset
+        return NCPreferences().resetAppCounterFail && passcodeCounterFailReset >= NCBrandOptions.shared.resetAppPasscodeAttempts
     }
     var isPasscodeCounterFail: Bool {
-        let passcodeCounterFail = NCKeychain().passcodeCounterFail
+        let passcodeCounterFail = NCPreferences().passcodeCounterFail
         return passcodeCounterFail > 0 && passcodeCounterFail.isMultiple(of: 3)
     }
     var passcodeViewController: TOPasscodeViewController!
@@ -62,7 +43,7 @@ class NCPasscode: NSObject, TOPasscodeViewControllerDelegate {
         passcodeViewController = TOPasscodeViewController(passcodeType: .sixDigits, allowCancel: false)
         passcodeViewController.delegate = self
         passcodeViewController.keypadButtonShowLettering = false
-        if NCKeychain().touchFaceID, LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+        if NCPreferences().touchFaceID, LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
             if error == nil {
                 if LAContext().biometryType == .faceID {
                     passcodeViewController.biometryType = .faceID
@@ -81,8 +62,8 @@ class NCPasscode: NSObject, TOPasscodeViewControllerDelegate {
     }
 
     func enableTouchFaceID() {
-        guard NCKeychain().touchFaceID,
-              NCKeychain().presentPasscode,
+        guard NCPreferences().touchFaceID,
+              NCPreferences().presentPasscode,
               !isPasscodeCounterFail,
               let passcodeViewController
         else { return }
@@ -92,10 +73,10 @@ class NCPasscode: NSObject, TOPasscodeViewControllerDelegate {
                 if success {
                     DispatchQueue.main.async {
                         passcodeViewController.dismiss(animated: true) {
-                            NCKeychain().passcodeCounterFail = 0
-                            NCKeychain().passcodeCounterFailReset = 0
+                            NCPreferences().passcodeCounterFail = 0
+                            NCPreferences().passcodeCounterFailReset = 0
                             self.delegate?.evaluatePolicy(passcodeViewController, isCorrectCode: true)
-                            if NCKeychain().accountRequest {
+                            if NCPreferences().accountRequest {
                                 self.delegate?.requestedAccount(controller: self.viewController)
                             }
                         }
@@ -105,25 +86,25 @@ class NCPasscode: NSObject, TOPasscodeViewControllerDelegate {
                         switch error._code {
                         case LAError.userFallback.rawValue, LAError.authenticationFailed.rawValue:
                             if LAContext().biometryType == .faceID {
-                                NCKeychain().passcodeCounterFail = 2
-                                NCKeychain().passcodeCounterFailReset += 2
+                                NCPreferences().passcodeCounterFail = 2
+                                NCPreferences().passcodeCounterFailReset += 2
                             } else {
-                                NCKeychain().passcodeCounterFail = 3
-                                NCKeychain().passcodeCounterFailReset += 3
+                                NCPreferences().passcodeCounterFail = 3
+                                NCPreferences().passcodeCounterFailReset += 3
                             }
                             self.openAlert(passcodeViewController: passcodeViewController)
                         case LAError.biometryLockout.rawValue:
                             LAContext().evaluatePolicy(LAPolicy.deviceOwnerAuthentication, localizedReason: NSLocalizedString("_deviceOwnerAuthentication_", comment: ""), reply: { success, _ in
                                 if success {
                                     DispatchQueue.main.async {
-                                        NCKeychain().passcodeCounterFail = 0
+                                        NCPreferences().passcodeCounterFail = 0
                                         self.enableTouchFaceID()
                                     }
                                 }
                             })
                         case LAError.userCancel.rawValue:
-                            NCKeychain().passcodeCounterFail += 1
-                            NCKeychain().passcodeCounterFailReset += 1
+                            NCPreferences().passcodeCounterFail += 1
+                            NCPreferences().passcodeCounterFailReset += 1
                         default:
                             break
                         }
@@ -136,9 +117,9 @@ class NCPasscode: NSObject, TOPasscodeViewControllerDelegate {
     func didInputCorrectPasscode(in passcodeViewController: TOPasscodeViewController) {
         DispatchQueue.main.async {
             passcodeViewController.dismiss(animated: true) {
-                NCKeychain().passcodeCounterFail = 0
-                NCKeychain().passcodeCounterFailReset = 0
-                if NCKeychain().accountRequest {
+                NCPreferences().passcodeCounterFail = 0
+                NCPreferences().passcodeCounterFailReset = 0
+                if NCPreferences().accountRequest {
                     self.delegate?.requestedAccount(controller: self.viewController)
                 }
             }
@@ -146,12 +127,12 @@ class NCPasscode: NSObject, TOPasscodeViewControllerDelegate {
     }
 
     func passcodeViewController(_ passcodeViewController: TOPasscodeViewController, isCorrectCode code: String) -> Bool {
-        if code == NCKeychain().passcode {
+        if code == NCPreferences().passcode {
             self.delegate?.evaluatePolicy(passcodeViewController, isCorrectCode: true)
             return true
         } else {
-            NCKeychain().passcodeCounterFail += 1
-            NCKeychain().passcodeCounterFailReset += 1
+            NCPreferences().passcodeCounterFail += 1
+            NCPreferences().passcodeCounterFailReset += 1
             openAlert(passcodeViewController: passcodeViewController)
             self.delegate?.evaluatePolicy(passcodeViewController, isCorrectCode: false)
             return false
@@ -187,7 +168,7 @@ class NCPasscode: NSObject, TOPasscodeViewControllerDelegate {
                         timer.invalidate()
                         alertController.dismiss(animated: true)
                         passcodeViewController.setContentHidden(false, animated: true)
-                        NCKeychain().passcodeCounterFail = 0
+                        NCPreferences().passcodeCounterFail = 0
                         self.enableTouchFaceID()
                     }
                 }

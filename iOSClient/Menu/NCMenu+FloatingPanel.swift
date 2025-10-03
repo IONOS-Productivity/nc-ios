@@ -30,11 +30,19 @@ class NCMenuFloatingPanelLayout: FloatingPanelLayout {
     var position: FloatingPanelPosition = .bottom
     var initialState: FloatingPanelState = .full
     var anchors: [FloatingPanelState: FloatingPanelLayoutAnchoring] {
-        [.full: FloatingPanelLayoutAnchor(absoluteInset: topInset, edge: .top, referenceGuide: .superview)]
-    }
-    let topInset: CGFloat
+            [
+                .full: FloatingPanelLayoutAnchor(
+                    absoluteInset: finalPanelHeight,
+                    edge: .bottom,
+                    referenceGuide: .superview
+                )
+            ]
+        }
+    private let panelHeight: CGFloat
+    private let finalPanelHeight: CGFloat
 
-    init(actionsHeight: CGFloat, controller: NCMainTabBarController?) {
+    init(panelHeight: CGFloat, controller: NCMainTabBarController?) {
+        self.panelHeight = panelHeight
         var window: UIWindow?
 
         if let controller {
@@ -43,24 +51,22 @@ class NCMenuFloatingPanelLayout: FloatingPanelLayout {
             window = windowScene.windows.first(where: { $0.isKeyWindow })
         }
 
-        guard let window
-        else {
-            topInset = 48
-            return
-        }
-        let screenHeight = UIDevice.current.isVirtualOrientationLandscape
-        ? min(window.frame.size.width, window.frame.size.height)
-        : max(window.frame.size.width, window.frame.size.height)
-        let bottomInset = window.rootViewController?.view.safeAreaInsets.bottom ?? 0
-        let panelHeight = actionsHeight + bottomInset
+        let safeBottom = controller?.viewIfLoaded?.safeAreaInsets.bottom ?? 0
+        let requestedHeight = panelHeight + safeBottom
 
-        topInset = max(48, screenHeight - panelHeight)
-     }
+        // ✅ Limite massimo: finestra - topMargin
+        let topMargin: CGFloat = 64
+        let windowHeight = window?.bounds.height ?? UIScreen.main.bounds.height
+        let maxHeight = windowHeight - topMargin
+
+        // ✅ Imposta finalPanelHeight con limite
+        self.finalPanelHeight = min(requestedHeight, maxHeight)
+    }
 
     func prepareLayout(surfaceView: UIView, in view: UIView) -> [NSLayoutConstraint] {
         return [
-            surfaceView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 0),
-            surfaceView.rightAnchor.constraint(equalTo: view.rightAnchor, constant: 0)
+            surfaceView.leftAnchor.constraint(equalTo: view.leftAnchor),
+            surfaceView.rightAnchor.constraint(equalTo: view.rightAnchor)
         ]
     }
 

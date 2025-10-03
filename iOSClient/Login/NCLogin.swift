@@ -70,8 +70,8 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
 
         if let dirGroupApps = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: NCBrandOptions.shared.capabilitiesGroupApps) {
             // Nextcloud update share accounts
-            if let error = NCAccount().updateAppsShareAccounts() {
-                nkLog(error: "Create share accounts \(error.localizedDescription)")
+            Task {
+                await NCAccount().updateAppsShareAccounts()
             }
             // Nextcloud get share accounts
             if let shareAccounts = NKShareAccounts().getShareAccount(at: dirGroupApps, application: UIApplication.shared) {
@@ -98,7 +98,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
 
         if !NCManageDatabase.shared.getAllTableAccount().isEmpty,
            self.navigationController?.viewControllers.count ?? 0 == 1 {
-            let navigationItemCancel = UIBarButtonItem(image: UIImage(systemName: "xmark"), style: .done, target: self, action: #selector(actionCancel(_:)))
+            let navigationItemCancel = UIBarButtonItem(image: UIImage(systemName: "xmark"), style: .plain, target: self, action: #selector(actionCancel(_:)))
             navigationItemCancel.tintColor = textColor
             navigationItem.leftBarButtonItem = navigationItemCancel
         }
@@ -327,7 +327,9 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
             NCNetworking.shared.writeCertificate(host: host)
         }
 
-        NCAccount().createAccount(viewController: self, urlBase: urlBase, user: user, password: password, controller: self.controller)
+        Task {
+            await NCAccount().createAccount(viewController: self, urlBase: urlBase, user: user, password: password, controller: self.controller)
+        }
     }
 }
 

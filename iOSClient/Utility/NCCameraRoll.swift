@@ -74,7 +74,10 @@ final class NCCameraRoll: CameraRollExtractor {
             : NCGlobal.shared.chunkSizeMBCellular
 
         guard !metadataSource.assetLocalIdentifier.isEmpty else {
-            let filePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadataSource.ocId, fileNameView: metadataSource.fileName)
+            let filePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadataSource.ocId,
+                                                                             fileName: metadataSource.fileName,
+                                                                             userId: metadataSource.userId,
+                                                                             urlBase: metadata.urlBase)
             let results = await NKTypeIdentifiers.shared.getInternalType(fileName: metadataSource.fileNameView, mimeType: metadataSource.contentType, directory: false, account: metadataSource.account)
 
             metadataSource.contentType = results.mimeType
@@ -109,7 +112,10 @@ final class NCCameraRoll: CameraRollExtractor {
                 modifyMetadataForUpload: true
             )
 
-            let toPath = self.utilityFileSystem.getDirectoryProviderStorageOcId(result.metadata.ocId, fileNameView: result.metadata.fileNameView)
+            let toPath = self.utilityFileSystem.getDirectoryProviderStorageOcId(result.metadata.ocId,
+                                                                                fileName: result.metadata.fileNameView,
+                                                                                userId: result.metadata.userId,
+                                                                                urlBase: result.metadata.urlBase)
             self.utilityFileSystem.moveFile(atPath: result.filePath, toPath: toPath)
             metadatas.append(result.metadata)
 
@@ -172,7 +178,7 @@ final class NCCameraRoll: CameraRollExtractor {
 
         metadata.fileName = fileName
         metadata.fileNameView = fileName
-        metadata.serverUrlFileName = metadata.serverUrl + "/" + metadata.fileName
+        metadata.serverUrlFileName = utilityFileSystem.createServerUrl(serverUrl: metadata.serverUrl, fileName: metadata.fileName)
 
         // Safely set the content type if available
         if let type = contentType(for: asset, ext: ext) {
@@ -319,12 +325,16 @@ final class NCCameraRoll: CameraRollExtractor {
     /// This method is compatible with Swift 6, avoids non-Sendable captures,
     /// and performs safe background processing.
     private func createMetadataLivePhoto(metadata: tableMetadata, asset: PHAsset?) async -> tableMetadata? {
-        guard let asset else { return nil }
-
+        guard let asset else {
+            return nil
+        }
+        let session = NCSession.shared.getSession(account: metadata.account)
         let options = PHLivePhotoRequestOptions()
         let ocId = UUID().uuidString
         let fileName = (metadata.fileName as NSString).deletingPathExtension + ".mov"
-        let fileNamePath = utilityFileSystem.getDirectoryProviderStorageOcId(ocId, fileNameView: fileName)
+        let fileNamePath = utilityFileSystem.getDirectoryProviderStorageOcId(ocId, fileName: fileName,
+                                                                             userId: metadata.userId,
+                                                                             urlBase: metadata.urlBase)
         let chunkSize = NCNetworking.shared.networkReachability == .reachableEthernetOrWiFi
             ? NCGlobal.shared.chunkSizeMBEthernetOrWiFi
             : NCGlobal.shared.chunkSizeMBCellular
@@ -365,8 +375,11 @@ final class NCCameraRoll: CameraRollExtractor {
                     continuation.resume(returning: nil)
                     return
                 }
-                let session = NCSession.shared.getSession(account: metadata.account)
-                self.database.createMetadata(fileName: fileName, ocId: ocId, serverUrl: metadata.serverUrl, session: session, sceneIdentifier: metadata.sceneIdentifier) { metadataLivePhoto in
+                NCManageDatabase.shared.createMetadata(fileName: fileName,
+                                             ocId: ocId,
+                                             serverUrl: metadata.serverUrl,
+                                             session: session,
+                                             sceneIdentifier: metadata.sceneIdentifier) { metadataLivePhoto in
                     metadataLivePhoto.livePhotoFile = metadata.fileName
                     metadataLivePhoto.isExtractFile = true
                     metadataLivePhoto.session = metadata.session

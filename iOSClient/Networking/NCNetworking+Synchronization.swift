@@ -25,8 +25,8 @@ import UIKit
 import NextcloudKit
 
 extension NCNetworking {
-    internal func synchronization(account: String, serverUrl: String, metadatasInDownload: [tableMetadata]?) async {
-        let showHiddenFiles = NCKeychain().getShowHiddenFiles(account: account)
+    internal func synchronization(account: String, serverUrl: String, userId: String, urlBase: String, metadatasInDownload: [tableMetadata]?) async {
+        let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: account)
         let options = NKRequestOptions(timeout: 300, taskDescription: NCGlobal.shared.taskDescriptionSynchronization, queue: NextcloudKit.shared.nkCommonInstance.backgroundQueue)
 
         nkLog(tag: self.global.logTagSync, emoji: .start, message: "Start read infinite folder: \(serverUrl)")
@@ -38,20 +38,19 @@ extension NCNetworking {
 
             for file in files {
                 if file.directory {
-                    let metadata = await self.database.convertFileToMetadataAsync(file, isDirectoryE2EE: false)
+                    let metadata = await self.database.convertFileToMetadataAsync(file)
                     await self.database.addMetadataAsync(metadata)
-                    await self.database.addDirectoryAsync(e2eEncrypted: metadata.e2eEncrypted,
-                                                          favorite: metadata.favorite,
+                    await self.database.addDirectoryAsync(serverUrl: metadata.serverUrlFileName,
                                                           ocId: metadata.ocId,
                                                           fileId: metadata.fileId,
                                                           etag: metadata.etag,
                                                           permissions: metadata.permissions,
                                                           richWorkspace: metadata.richWorkspace,
-                                                          serverUrl: metadata.serverUrlFileName,
+                                                          favorite: metadata.favorite,
                                                           account: metadata.account)
                 } else {
-                    if await isFileDifferent(ocId: file.ocId, fileName: file.fileName, etag: file.etag, metadatasInDownload: metadatasInDownload) {
-                        let metadata = await self.database.convertFileToMetadataAsync(file, isDirectoryE2EE: false)
+                    if await isFileDifferent(ocId: file.ocId, fileName: file.fileName, etag: file.etag, metadatasInDownload: metadatasInDownload, userId: userId, urlBase: urlBase) {
+                        let metadata = await self.database.convertFileToMetadataAsync(file)
                         metadata.session = self.sessionDownloadBackground
                         metadata.sessionSelector = NCGlobal.shared.selectorSynchronizationOffline
                         metadata.sessionTaskIdentifier = 0
@@ -74,7 +73,12 @@ extension NCNetworking {
         nkLog(tag: self.global.logTagSync, emoji: .stop, message: "Stop read infinite folder: \(serverUrl)")
     }
 
-    internal func isFileDifferent(ocId: String, fileName: String, etag: String, metadatasInDownload: [tableMetadata]?) async -> Bool {
+    internal func isFileDifferent(ocId: String,
+                                  fileName: String,
+                                  etag: String,
+                                  metadatasInDownload: [tableMetadata]?,
+                                  userId: String,
+                                  urlBase: String) async -> Bool {
         let match = metadatasInDownload?.contains { $0.ocId == ocId } ?? false
         if match {
             return false
@@ -83,7 +87,7 @@ extension NCNetworking {
         guard let localFile = await self.database.getTableLocalFileAsync(predicate: NSPredicate(format: "ocId == %@", ocId)) else {
             return true
         }
-        let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(ocId, fileNameView: fileName)
+        let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(ocId, fileName: fileName, userId: userId, urlBase: urlBase)
         let size = await self.utilityFileSystem.fileSizeAsync(atPath: fileNamePath)
         let isDifferent = (localFile.etag != etag) || size == 0
 

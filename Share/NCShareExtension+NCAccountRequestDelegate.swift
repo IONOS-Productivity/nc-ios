@@ -59,7 +59,7 @@ extension NCShareExtension: NCAccountRequestDelegate {
                                               urlBase: tblAccount.urlBase,
                                               user: tblAccount.user,
                                               userId: tblAccount.userId,
-                                              password: NCKeychain().getPassword(account: tblAccount.account),
+                                              password: NCPreferences().getPassword(account: tblAccount.account),
                                               userAgent: userAgent,
                                               httpMaximumConnectionsPerHost: NCBrandOptions.shared.httpMaximumConnectionsPerHost,
                                               httpMaximumConnectionsPerHostInDownload: NCBrandOptions.shared.httpMaximumConnectionsPerHostInDownload,
@@ -67,8 +67,9 @@ extension NCShareExtension: NCAccountRequestDelegate {
                                               groupIdentifier: NCBrandOptions.shared.capabilitiesGroup)
 
             autoUploadFileName = self.database.getAccountAutoUploadFileName(account: account)
-            autoUploadDirectory = self.database.getAccountAutoUploadDirectory(session: session)
-
+            autoUploadDirectory = self.database.getAccountAutoUploadDirectory(account: session.account,
+                                                                              urlBase: session.urlBase,
+                                                                              userId: session.userId)
             serverUrl = utilityFileSystem.getHomeServer(session: session)
 
             setNavigationBar(navigationTitle: NCBrandOptions.shared.brand)
@@ -81,15 +82,15 @@ extension NCShareExtension: NCAccountRequestDelegate {
 
 extension NCShareExtension: NCCreateFormUploadConflictDelegate {
     func dismissCreateFormUploadConflict(metadatas: [tableMetadata]?) {
-        guard let metadatas = metadatas else {
-            uploadStarted = false
+        guard let metadatas else {
             uploadMetadata.removeAll()
             return
         }
 
         self.uploadMetadata.append(contentsOf: metadatas)
-        uploadStarted = true
-        self.upload()
+        Task {
+            await uploadAndExit()
+        }
     }
 }
 
@@ -98,7 +99,7 @@ extension NCShareExtension: NCShareCellDelegate {
         guard let capabilities = NCNetworking.shared.capabilities[account] else {
             return
         }
-        let alert = UIAlertController.renameFile(fileName: fileName, serverUrl: "", nativeFormat: true, capabilities: capabilities, account: account) { [self] newFileName in
+        let alert = UIAlertController.renameFile(fileName: fileName, capabilities: capabilities, account: account) { [self] newFileName in
             renameFile(oldName: fileName, newName: newFileName, account: account)
         }
 

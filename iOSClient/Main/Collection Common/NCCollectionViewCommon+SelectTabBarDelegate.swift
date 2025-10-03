@@ -1,26 +1,7 @@
-//
-//  NCCollectionViewCommon+SelectTabBar.swift
-//  Nextcloud
-//
-//  Created by Milen on 01.03.24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import Foundation
@@ -129,22 +110,24 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
     }
 
     func setEditMode(_ editMode: Bool) {
-        isEditMode = editMode
-        fileSelect.removeAll()
+    	Task {
+        	isEditMode = editMode
+        	fileSelect.removeAll()
 
-        navigationItem.hidesBackButton = editMode
-        navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
-        searchController(enabled: !editMode)
-        isHiddenPlusButton(editMode)
+        	navigationItem.hidesBackButton = editMode
+        	navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
+        	searchController(enabled: !editMode)
+        	isHiddenPlusButton(editMode)
 
-        if editMode {
-            navigationItem.leftBarButtonItems = nil
-        } else {
-            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
+        	if editMode {
+        	    navigationItem.leftBarButtonItems = nil
+        	} else {
+        	    (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
+        	}
+        	(self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+
+        	self.collectionView.reloadData()
         }
-        (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
-
-        self.collectionView.reloadData()
     }
     
     func toolbarWillAppear() {

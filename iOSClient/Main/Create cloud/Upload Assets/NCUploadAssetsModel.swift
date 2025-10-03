@@ -32,13 +32,13 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
     @Published var useAutoUploadSubFolder = false
     @Published var showHUD = false
     @Published var uploadInProgress = false
-    /// Root View Controller
+    // Root View Controller
     @Published var controller: NCMainTabBarController?
-    /// Session
+    // Session
     var session: NCSession.Session {
         NCSession.shared.getSession(controller: controller)
     }
-    /// Capabilities
+    // Capabilities
     var capabilities: NKCapabilities.Capabilities {
         NCNetworking.shared.capabilities[controller?.account ?? ""] ?? NKCapabilities.Capabilities()
     }
@@ -68,7 +68,8 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
                 continue
             }
 
-            self.previewStore.append(PreviewStore(id: localIdentifier, asset: asset, assetType: asset.type, uti: uti, nativeFormat: !NCKeychain().formatCompatibility, fileName: ""))
+            self.previewStore.append(PreviewStore(id: localIdentifier, asset: asset, assetType: asset.type, uti: uti, nativeFormat: !NCPreferences().formatCompatibility, fileName: ""))
+
         }
 
         self.hiddenSave = false
@@ -185,7 +186,7 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
             var metadatasUploadInConflict: [tableMetadata] = []
             let autoUploadServerUrlBase = database.getAccountAutoUploadServerUrlBase(session: self.session)
             var serverUrl = useAutoUploadFolder ? autoUploadServerUrlBase : serverUrl
-            let isInDirectoryE2EE = NCUtilityFileSystem().isDirectoryE2EE(session: session, serverUrl: serverUrl)
+            let isInDirectoryE2EE = NCUtilityFileSystem().isDirectoryE2EE(serverUrl: serverUrl, urlBase: session.urlBase, userId: session.userId, account: session.account)
 
             for tlAsset in assets {
                 guard let asset = tlAsset.phAsset, let previewStore = previewStore.first(where: { $0.id == asset.localIdentifier }) else { continue }
@@ -198,7 +199,7 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
 
                 if previewStore.assetType == .livePhoto,
                    !isInDirectoryE2EE,
-                   NCKeychain().livePhoto,
+                   NCPreferences().livePhoto,
                    previewStore.data == nil {
                     livePhoto = true
                 }
@@ -244,7 +245,10 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
                         metadataForUpload.fileNameView = fileNameNoExtension + ".jpg"
                         metadataForUpload.nativeFormat = false
                     }
-                    let fileNamePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadataForUpload.ocId, fileNameView: metadataForUpload.fileNameView)
+                    let fileNamePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadataForUpload.ocId,
+                                                                                         fileName: metadataForUpload.fileNameView,
+                                                                                         userId: metadataForUpload.userId,
+                                                                                         urlBase: metadataForUpload.urlBase)
                     do {
                         try data.write(to: URL(fileURLWithPath: fileNamePath))
                         metadataForUpload.isExtractFile = true

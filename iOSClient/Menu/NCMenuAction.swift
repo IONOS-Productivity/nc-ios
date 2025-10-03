@@ -40,7 +40,7 @@ class NCMenuAction {
     var selected: Bool = false
     var isOn: Bool = false
     var action: ((_ menuAction: NCMenuAction) -> Void)?
-    var rowHeight: CGFloat { self.title == NCMenuAction.seperatorIdentifier ? NCMenuAction.seperatorHeight : self.details != nil ? 76 : 56 }
+    var rowHeight: CGFloat { self.title == NCMenuAction.seperatorIdentifier ? NCMenuAction.seperatorHeight : self.details != nil ? 76 : 60 }
     var order: Int = 0
 	var isHeader = false
     var sender: Any?
@@ -129,8 +129,8 @@ extension NCMenuAction {
             }
 
             if let metadataFolder = metadataFolder {
-                let isShare = metadata.permissions.contains(permissions.permissionShared) && !metadataFolder.permissions.contains(permissions.permissionShared)
-                let isMounted = metadata.permissions.contains(permissions.permissionMounted) && !metadataFolder.permissions.contains(permissions.permissionMounted)
+                let isShare = metadata.permissions.contains(NCMetadataPermissions.permissionShared) && !metadataFolder.permissions.contains(NCMetadataPermissions.permissionShared)
+                let isMounted = metadata.permissions.contains(NCMetadataPermissions.permissionMounted) && !metadataFolder.permissions.contains(NCMetadataPermissions.permissionMounted)
                 if isShare || isMounted {
                     titleDelete = NSLocalizedString("_leave_share_", comment: "")
                     icon = NCImagesRepository.menuIconUnshare
@@ -219,26 +219,27 @@ extension NCMenuAction {
             order: order,
             sender: sender,
             action: { _ in
-                var fileNameError: NKError?
-                guard let capabilities = NCNetworking.shared.capabilities[account] else {
-                    return
-                }
+                Task { @MainActor in
+                    var fileNameError: NKError?
+                    let capabilities = await NKCapabilities.shared.getCapabilities(for: account)
 
-                for metadata in selectedMetadatas {
-                    if let sceneIdentifier = metadata.sceneIdentifier,
-                       let controller = SceneManager.shared.getController(sceneIdentifier: sceneIdentifier),
-                       let checkError = FileNameValidator.checkFileName(metadata.fileNameView, account: controller.account, capabilities: capabilities) {
+                    for metadata in selectedMetadatas {
+                        if let sceneIdentifier = metadata.sceneIdentifier,
+                           let controller = SceneManager.shared.getController(sceneIdentifier: sceneIdentifier),
+                           let checkError = FileNameValidator.checkFileName(metadata.fileNameView, account: controller.account, capabilities: capabilities) {
 
-                        fileNameError = checkError
-                        break
+                            fileNameError = checkError
+                            break
+                        }
                     }
-                }
 
-                if let fileNameError {
-                    viewController.present(UIAlertController.warning(message: "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true, completion: nil)
-                } else {
-                    let controller = viewController.mainTabBarController
-                    NCDownloadAction.shared.openSelectView(items: selectedMetadatas, controller: controller)
+                    if let fileNameError {
+                        let message = "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"
+                        await UIAlertController.warningAsync( message: message, presenter: viewController)
+                    } else {
+                        let controller = viewController.mainTabBarController
+                        NCDownloadAction.shared.openSelectView(items: selectedMetadatas, controller: controller)
+                    }
                     completion?()
                 }
             }
