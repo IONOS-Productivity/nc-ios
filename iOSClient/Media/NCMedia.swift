@@ -172,7 +172,7 @@ class NCMedia: UIViewController {
 													onAccountDetailsOpen: { [weak self] in self?.setEditMode(false) },
 													presentVC: { [weak self] vc in self?.present(vc, animated: true) })
 	}
-	
+
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
 		
@@ -183,23 +183,24 @@ class NCMedia: UIViewController {
                 await loadDataSource()
             }
 		}
-		
+
 		setNavigationRightItems()
 		setNavigationLeftItems()
 		updateHeadersView()
 		setNavigationBarLogoIfNeeded()
-		
+
 		activeTransfersListener = TransfersListener
 			.shared
 			.activeTransfersListener
+            .receive(on: DispatchQueue.main)
 			.sink { [weak self] in self?.setNavigationRightItems() }
 	}
-	
+
 	override func viewWillDisappear(_ animated: Bool) {
 		super.viewWillDisappear(animated)
 		activeTransfersListener = nil
 	}
-	
+
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
 
@@ -221,7 +222,7 @@ class NCMedia: UIViewController {
 			return .lightContent
 		}
 	}
-	
+
 	override func viewWillLayoutSubviews() {
 		super.viewWillLayoutSubviews()
 		tabBarSelect.onViewWillLayoutSubviews()

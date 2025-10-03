@@ -43,30 +43,31 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
                                                     presentVC: { [weak self] vc in self?.present(vc, animated: true) },
                                                     onMenuOpened: { [weak self] in self?.collectionViewCommon?.dismissTip() })
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         activeTransfersListener = TransfersListener
             .shared
             .activeTransfersListener
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.setNavigationRightItems() }
     }
-    
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         activeTransfersListener = nil
     }
-    
+
     func setNavigationLeftItems() {
         guard let collectionViewCommon else {
             return
         }
-        
+
         if collectionViewCommon.isSearchingMode && (UIDevice.current.userInterfaceIdiom == .phone) {
             collectionViewCommon.navigationItem.leftBarButtonItems = nil
             return
         }
-        
+
         if isCurrentScreenInMainTabBar() {
             collectionViewCommon.navigationItem.leftItemsSupplementBackButton = true
             if viewControllers.count == 1 {
@@ -92,19 +93,19 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
             }
         }
     }
-    
+
     func setNavigationRightItems() {
         guard let collectionViewCommon else {
             return
         }
-        
+
         if collectionViewCommon.isSearchingMode && (UIDevice.current.userInterfaceIdiom == .phone) {
             collectionViewCommon.navigationItem.rightBarButtonItems = nil
             return
         }
-        
+
         guard collectionViewCommon.layoutKey != NCGlobal.shared.layoutViewTransfers else { return }
-        
+
         if collectionViewCommon.isEditMode {
             collectionViewCommon.tabBarSelect?.update(fileSelect: collectionViewCommon.fileSelect,
                                                      metadatas: collectionViewCommon.getSelectedMetadatas(),
@@ -117,11 +118,11 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
             : []
         }
     }
-    
+
     private func createAccountButton() -> UIBarButtonItem {
         accountButtonFactory.createAccountButton()
     }
-    
+
     private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
         guard TransfersListener.shared.areActiveTransfersPresent else {
             return nil

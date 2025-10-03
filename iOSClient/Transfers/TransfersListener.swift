@@ -35,13 +35,14 @@ class TransfersListener {
     }
 
     private func onTimerTick() {
-        areActiveTransfersPresent = calculatePresenceOfActiveTransfers()
-        activeTransfersListener.send()
+        Task {
+            areActiveTransfersPresent = await calculatePresenceOfActiveTransfers()
+            activeTransfersListener.send()
+        }
     }
 
-    private func calculatePresenceOfActiveTransfers() -> Bool {
-        return false
-//        let resultsCount = NCManageDatabase.shared.getResultsMetadatas(predicate: NSPredicate(format: "status != %i", NCGlobal.shared.metadataStatusNormal))?.count ?? 0
-//        return resultsCount > 0
+    private func calculatePresenceOfActiveTransfers() async -> Bool {
+        let resultsCount = await NCManageDatabase.shared.getMetadatasAsync(predicate: NSPredicate(format: "status != %i", NCGlobal.shared.metadataStatusNormal))?.count ?? 0
+        return resultsCount > 0
     }
 }
