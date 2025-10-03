@@ -44,11 +44,14 @@ class NCMedia: UIViewController {
 	let utility = NCUtility()
 	let database = NCManageDatabase.shared
 	let imageCache = NCImageCache.shared
+    let networking = NCNetworking.shared
 	var dataSource = NCMediaDataSource()
 	let refreshControl = UIRefreshControl()
 	var isTop: Bool = true
 	var isEditMode = false
 	var fileSelect: [String] = []
+    var ocIdVerified: [String] = []
+    var ocIdDeleted: [String] = []
 	var filesExists: ThreadSafeArray<String> = ThreadSafeArray()
 	var ocIdDoNotExists: ThreadSafeArray<String> = ThreadSafeArray()
 	var searchMediaInProgress: Bool = false
@@ -133,27 +136,37 @@ class NCMedia: UIViewController {
 		
 		collectionView.refreshControl = refreshControl
 		refreshControl.action(for: .valueChanged) { _ in
-			self.loadDataSource()
-			self.searchMediaUI(true)
+            Task {
+                await self.loadDataSource()
+                await self.searchMediaUI(true)
+            }
 		}
 		
 		pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinchGesture(_:)))
 		collectionView.addGestureRecognizer(pinchGesture)
 		
 		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { _ in
-			self.layoutType = self.database.getLayoutForView(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "").layout
-			self.imageCache.removeAll()
-			self.loadDataSource()
-			self.searchMediaUI(true)
+            Task { @MainActor in
+                self.layoutType = await self.database.getLayoutForViewAsync(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "").layout
+                self.imageCache.removeAll()
+                await self.loadDataSource()
+                await self.searchMediaUI(true)
+            }
 		}
 		
 		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterClearCache), object: nil, queue: nil) { _ in
-			self.dataSource.metadatas.removeAll()
-			self.imageCache.removeAll()
-			self.searchMediaUI(true)
+            Task {
+                await self.dataSource.clearMetadatas()
+                self.imageCache.removeAll()
+                await self.searchMediaUI(true)
+            }
 		}
 		
-		NotificationCenter.default.addObserver(self, selector: #selector(networkRemoveAll(_:)), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
+            Task {
+                await self.networkRemoveAll()
+            }
+        }
 		
 		accountButtonFactory = AccountButtonFactory(controller: controller,
 													onAccountDetailsOpen: { [weak self] in self?.setEditMode(false) },
@@ -166,7 +179,9 @@ class NCMedia: UIViewController {
 		navigationController?.setNavigationBarAppearance()
 		navigationItem.largeTitleDisplayMode = .never
 		if dataSource.metadatas.isEmpty {
-			loadDataSource()
+            Task {
+                await loadDataSource()
+            }
 		}
 		
 		setNavigationRightItems()
@@ -185,22 +200,18 @@ class NCMedia: UIViewController {
 		activeTransfersListener = nil
 	}
 	
-	override func viewDidAppear(_ animated: Bool) {
-		super.viewDidAppear(animated)
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
 
-		NotificationCenter.default.addObserver(self, selector: #selector(enterForeground(_:)), name: UIApplication.willEnterForegroundNotification, object: nil)
-		
-		searchNewMedia()
-	}
-	
-	override func viewDidDisappear(_ animated: Bool) {
-		super.viewDidDisappear(animated)
-				
-		NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
-		
-		networkRemoveAll(nil)
-	}
-	
+        networking.removeDelegate(self)
+
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+
+        Task {
+            await networkRemoveAll()
+        }
+    }
+
 	override var preferredStatusBarStyle: UIStatusBarStyle {
 		if self.traitCollection.userInterfaceStyle == .dark {
 			return .lightContent
@@ -216,64 +227,22 @@ class NCMedia: UIViewController {
 		tabBarSelect.onViewWillLayoutSubviews()
 	}
 	
-	func searchNewMedia() {
-		timerSearchNewMedia?.invalidate()
-		timerSearchNewMedia = Timer.scheduledTimer(timeInterval: timeIntervalSearchNewMedia, target: self, selector: #selector(searchMediaUI(_:)), userInfo: nil, repeats: false)
-	}
-	
 	// MARK: - NotificationCenter
 	
-	@objc func networkRemoveAll(_ sender: Any?) {
-		timerSearchNewMedia?.invalidate()
-		timerSearchNewMedia = nil
-		filesExists.removeAll()
-		
-		NCNetworking.shared.fileExistsQueue.cancelAll()
-		NCNetworking.shared.downloadThumbnailQueue.cancelAll()
-		
-		Task {
-			let tasks = await NCNetworking.shared.getAllDataTask()
-			for task in tasks.filter({ $0.taskDescription == global.taskDescriptionRetrievesProperties }) {
-				task.cancel()
-			}
-		}
-	}
-	
-	@objc func reloadDataSource(_ notification: NSNotification) {
-		self.loadDataSource()
-	}
-	
-	@objc func deleteFile(_ notification: NSNotification) {
-		guard let userInfo = notification.userInfo as NSDictionary?,
-			  let error = userInfo["error"] as? NKError
-		else {
-			return
-		}
-		
-		// This is only a fail safe "dead lock", I don't think the timeout will ever be called but at least nothing gets stuck, if after 5 sec. (which is a long time in this routine), the semaphore is still locked
-		//
-		if self.semaphoreNotificationCenter.wait(timeout: .now() + 5) == .timedOut {
-			self.semaphoreNotificationCenter.signal()
-		}
-		
-		if error.errorCode == self.global.errorResourceNotFound,
-		   let ocIds = userInfo["ocId"] as? [String],
-		   let ocId = ocIds.first {
-			self.database.deleteMetadataOcId(ocId)
-			self.loadDataSource {
-				self.semaphoreNotificationCenter.signal()
-			}
-		} else if error != .success {
-			self.loadDataSource {
-				self.semaphoreNotificationCenter.signal()
-			}
-		} else {
-			semaphoreNotificationCenter.signal()
-		}
-	}
-	
-	@objc func enterForeground(_ notification: NSNotification) {
-		searchNewMedia()
+	@objc func networkRemoveAll() async {
+        timerSearchNewMedia?.invalidate()
+        timerSearchNewMedia = nil
+
+        networking.fileExistsQueue.cancelAll()
+        networking.downloadThumbnailQueue.cancelAll()
+
+        ocIdVerified.removeAll()
+        ocIdDeleted.removeAll()
+
+        let tasks = await networking.getAllDataTask()
+        for task in tasks.filter({ $0.taskDescription == global.taskDescriptionRetrievesProperties }) {
+            task.cancel()
+        }
 	}
 	
 	@objc func fileExists(_ notification: NSNotification) {
@@ -299,19 +268,6 @@ class NCMedia: UIViewController {
 		}
 	}
 	
-	@objc func copyMoveFile(_ notification: NSNotification) {
-		guard let userInfo = notification.userInfo as NSDictionary?,
-			  let dragDrop = userInfo["dragdrop"] as? Bool,
-			  dragDrop else { return }
-		
-		setEditMode(false)
-		
-		DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-			self.loadDataSource()
-			self.searchMediaUI()
-		}
-	}
-	
 	func buildMediaPhotoVideo(columnCount: Int) {
 		var pointSize: CGFloat = 0
 		
@@ -328,39 +284,6 @@ class NCMedia: UIViewController {
 		if let image = UIImage(systemName: "video.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))?.withTintColor(.systemGray4, renderingMode: .alwaysOriginal) {
 			videoImage = image
 		}
-	}
-}
-
-// MARK: -
-
-extension NCMedia: UIScrollViewDelegate {
-	
-	func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-		if !decelerate {
-			if !decelerate {
-				searchNewMedia()
-			}
-		}
-	}
-	
-	func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-		searchNewMedia()
-	}
-}
-
-// MARK: -
-
-extension NCMedia: NCSelectDelegate {
-	func dismissSelect(serverUrl: String?, metadata: tableMetadata?, type: String, items: [Any], overwrite: Bool, copy: Bool, move: Bool, session: NCSession.Session) {
-		guard let serverUrl else { return }
-		let home = utilityFileSystem.getHomeServer(session: session)
-		let mediaPath = serverUrl.replacingOccurrences(of: home, with: "")
-		
-		database.setAccountMediaPath(mediaPath, account: session.account)
-		
-		imageCache.removeAll()
-		loadDataSource()
-		searchNewMedia()
 	}
 }
 
@@ -454,4 +377,22 @@ extension NCMedia {
 	func updateHeadersMenu() {
 		fileActionsHeader?.setSortingMenu(sortingMenuElements: createMenuElements(), title: NSLocalizedString("_media_options_", tableName: nil, bundle: Bundle.main, value: "Media Options", comment: ""), image: nil)
 	}
+}
+
+// MARK: -
+
+extension NCMedia: NCSelectDelegate {
+    func dismissSelect(serverUrl: String?, metadata: tableMetadata?, type: String, items: [Any], overwrite: Bool, copy: Bool, move: Bool, session: NCSession.Session) {
+        guard let serverUrl else { return }
+
+        Task {
+            let home = utilityFileSystem.getHomeServer(session: session)
+            let mediaPath = serverUrl.replacingOccurrences(of: home, with: "")
+
+            await database.setAccountMediaPathAsync(mediaPath, account: session.account)
+
+            imageCache.removeAll()
+            await loadDataSource()
+        }
+    }
 }

@@ -61,14 +61,12 @@ extension NCMedia {
                 return false
             }
             self.searchMediaInProgress = true
-            self.activityIndicator.startAnimating()
             return true
         }
 
         guard shouldContinue,
               let tblAccount = await self.database.getTableAccountAsync(predicate: NSPredicate(format: "account == %@", session.account)) else {
             await MainActor.run {
-                self.activityIndicator.stopAnimating()
                 self.searchMediaInProgress = false
             }
             return
@@ -139,7 +137,6 @@ extension NCMedia {
             nkLog(error: "Media search failed: \(result.error.errorDescription)")
             await MainActor.run {
                 self.collectionViewReloadData()
-                self.activityIndicator.stopAnimating()
                 self.searchMediaInProgress = false
             }
             return
@@ -194,7 +191,6 @@ extension NCMedia {
             }
 
             await MainActor.run {
-                self.activityIndicator.stopAnimating()
                 self.searchMediaInProgress = false
             }
         }

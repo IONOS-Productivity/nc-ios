@@ -112,8 +112,6 @@ class NCShare: UIViewController, NCSharePagingContent {
                 if capabilities.e2EEApiVersion == NCGlobal.shared.e2eeVersionV12 ||
                     (capabilities.e2EEApiVersion == NCGlobal.shared.e2eeVersionV20 && direcrory?.e2eEncrypted ?? false) {
                     searchFieldTopConstraint.constant = -50
-                    searchField.alpha = 0
-                    btnContact.alpha = 0
                 }
             } else {
                 checkSharedWithYou()
@@ -124,9 +122,6 @@ class NCShare: UIViewController, NCSharePagingContent {
             networking = NCShareNetworking(metadata: metadata, view: self.view, delegate: self, session: session)
             let isVisible = (self.navigationController?.topViewController as? NCSharePaging)?.page == .sharing
             networking?.readShare(showLoadingIndicator: isVisible)
-
-            searchField.searchTextField.font = .systemFont(ofSize: 14)
-            searchField.delegate = self
         }
     }
 

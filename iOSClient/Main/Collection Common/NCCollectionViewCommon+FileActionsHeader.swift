@@ -77,11 +77,12 @@ extension NCCollectionViewCommon {
         
         let sortSubmenu = UIMenu(title: NSLocalizedString("_order_by_", comment: ""), options: .displayInline, children: [byName, byNewest, byLargest])
         
-		let foldersOnTop = UIAction(title: NSLocalizedString("_directory_on_top_no_", comment: ""), image: utility.loadImage(named: "folder"), state: dataSource.directoryOnTop ? .on : .off) { [weak self]  _ in
-            self?.notifyAboutLayoutChange(layoutForView)
+        let directoryOnTop = NCKeychain().getDirectoryOnTop(account: self.session.account)
+        let directoryOnTopAction = UIAction(title: NSLocalizedString("_directory_on_top_", comment: ""), state: directoryOnTop ? .on : .off) { _ in
+            NCKeychain().setDirectoryOnTop(account: self.session.account, value: !directoryOnTop)
         }
-        
-        let additionalSubmenu = UIMenu(title: "", options: .displayInline, children: [foldersOnTop])
+
+        let additionalSubmenu = UIMenu(title: "", options: .displayInline, children: [directoryOnTopAction])
         return [sortSubmenu, additionalSubmenu]
     }
     

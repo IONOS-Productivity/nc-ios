@@ -196,15 +196,13 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
     // MARK: - View Life Cycle
 
-	private func forceRefreshDataSource() {
-		dataSource.removeAll()
-		getServerData()
-		if isRecommendationActived {
-			Task.detached {
-				await NCNetworking.shared.createRecommendations(session: self.session, serverUrl: self.serverUrl, collectionView: self.collectionView)
-			}
-		}
-	}
+    private func forceRefreshDataSource() async {
+        dataSource.removeAll()
+        await getServerData()
+        if isRecommendationActived {
+            await NCNetworking.shared.createRecommendations(session: self.session, serverUrl: self.serverUrl, collectionView: self.collectionView)
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -254,7 +252,9 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
         collectionView.refreshControl = refreshControl
         refreshControl.action(for: .valueChanged) { _ in
-			self.forceRefreshDataSource()
+            Task {
+                await self.forceRefreshDataSource()
+            }
         }
 
         let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(longPressCollecationView(_:)))
@@ -829,7 +829,6 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
             (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
             self.updateHeadersView()
-            self.refreshControlEndRefreshing()
         }
     }
 
