@@ -139,27 +139,35 @@ class NCViewer: NSObject {
                 if metadata.url.isEmpty {
                     let fileNamePath = utilityFileSystem.getFileNamePath(metadata.fileName, serverUrl: metadata.serverUrl, session: session)
 
-                    NCActivityIndicator.shared.start(backgroundView: viewController.view)
-                    NextcloudKit.shared.textOpenFile(fileNamePath: fileNamePath, editor: editor, account: metadata.account, options: options) { _, url, _, error in
-                        NCActivityIndicator.shared.stop()
-                        if error == .success, url != nil {
-                            if let navigationController = viewController.navigationController,
-                               let viewController: NCViewerNextcloudText = UIStoryboard(name: "NCViewerNextcloudText", bundle: nil).instantiateInitialViewController() as? NCViewerNextcloudText {
-                                viewController.metadata = metadata
-                                viewController.editor = editorViewController
-                                viewController.link = url!
-                                viewController.imageIcon = image
-                                navigationController.pushViewController(viewController, animated: true)
-                            }
-                        } else if error != .success {
-                            NCContentPresenter().showError(error: error)
-                        }
+                    NCActivityIndicator.shared.start(backgroundView: delegate?.view)
+                    let results = await NextcloudKit.shared.textOpenFileAsync(fileNamePath: fileNamePath, editor: editor, account: metadata.account, options: options)
+                    NCActivityIndicator.shared.stop()
+
+                    guard results.error == .success, let url = results.url else {
+                        NCContentPresenter().showError(error: results.error)
+                        return nil
                     }
+
+                    let vc = UIStoryboard(name: "NCViewerNextcloudText", bundle: nil).instantiateInitialViewController() as? NCViewerNextcloudText
+
+                    vc?.metadata = metadata
+                    vc?.editor = editorViewController
+                    vc?.link = url
+                    vc?.imageIcon = image
+                    vc?.navigationItem.title = metadata.fileNameView
+
+                    return vc
                 } else {
-                    if let navigationController = viewController.navigationController,
-                       let viewController: NCViewerNextcloudText = UIStoryboard(name: "NCViewerNextcloudText", bundle: nil).instantiateInitialViewController() as? NCViewerNextcloudText {
-                        viewController.metadata = metadata
-                        viewController.editor = editorViewController
+                    let vc = UIStoryboard(name: "NCViewerNextcloudText", bundle: nil).instantiateInitialViewController() as? NCViewerNextcloudText
+
+                    vc?.metadata = metadata
+                    vc?.editor = editorViewController
+                    vc?.link = metadata.url
+                    vc?.imageIcon = image
+                    vc?.navigationItem.title = metadata.fileNameView
+
+                    return vc
+                }
             }
         }
         // QLPreview

@@ -49,7 +49,6 @@ class NCFiles: NCCollectionViewCommon {
                        controller == self.controller {
                         controller.account = account
                         let color = NCBrandColor.shared.getElement(account: account)
-                        self.plusButton.backgroundColor = color
                     } else {
                         return
                     }
@@ -75,7 +74,7 @@ class NCFiles: NCCollectionViewCommon {
                 (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
 
                 Task {
-                    await (self.navigationController as? NCMainNavigationController)?.setNavigationLeftItems()
+                    (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
                     await self.reloadDataSource()
                     await self.getServerData()
                 }
@@ -139,11 +138,6 @@ class NCFiles: NCCollectionViewCommon {
         }
         if let metadataFolder {
             nkLog(info: "Inside metadata folder \(metadataFolder.fileName) with permissions: \(metadataFolder.permissions)")
-
-            // disable + button if no create permission
-            let color = NCBrandColor.shared.getElement(account: self.session.account)
-            plusButton.isEnabled = metadataFolder.isCreatable
-            plusButton.backgroundColor = metadataFolder.isCreatable ? color : .lightGray
         }
 
         let metadatas = await self.database.getMetadatasAsync(predicate: predicate,

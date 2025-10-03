@@ -120,10 +120,6 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        if tabBarSelect == nil {
-            tabBarSelect = NCTrashSelectTabBar(controller: tabBarController, viewController: self, delegate: self)
-        }
-
         navigationController?.setNavigationBarAppearance()
         navigationItem.title = titleCurrentFolder
 
@@ -140,7 +136,7 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
 		updateHeadersView()
 		
         Task {
-            await (self.navigationController as? NCMainNavigationController)?.setNavigationRightItems()
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
             await self.reloadDataSource()
             await loadListingTrash()
         }
@@ -231,7 +227,7 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
     func reloadDataSource(withQueryDB: Bool = true) async {
         let results = await self.database.getTableTrashAsync(filePath: getFilePath(), account: session.account)
 
-        await (self.navigationController as? NCMainNavigationController)?.updateRightMenu()
+        (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 
         await MainActor.run {
             self.datasource = results

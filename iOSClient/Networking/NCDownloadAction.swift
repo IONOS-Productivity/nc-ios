@@ -337,8 +337,12 @@ class NCDownloadAction: NSObject, UIDocumentInteractionControllerDelegate, NCSel
 	}
 	
 	private func openDocumentController(metadata: tableMetadata, viewToPresentOn: UIView, rectToPresentFrom: CGRect) {
-		let fileURL = URL(fileURLWithPath: utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView))
-		
+        let path  = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,
+                                                                      fileName: metadata.fileNameView,
+                                                                      userId: metadata.userId,
+                                                                      urlBase: metadata.urlBase)
+		let fileURL = URL(fileURLWithPath: path)
+
 		documentController = UIDocumentInteractionController(url: fileURL)
 		documentController?.presentOptionsMenu(from: rectToPresentFrom, in: viewToPresentOn, animated: true)
 	}

@@ -92,7 +92,6 @@ class NCShareLinkCell: UITableViewCell {
         labelTitle.textColor = NCBrandColor.shared.textColor
 
         statusStackView.isHidden = true
-        let permissions = NCPermissions()
         if let tableShare {
             statusStackView.isHidden = false
             labelQuickStatus.text = NSLocalizedString("_custom_permissions_", comment: "")

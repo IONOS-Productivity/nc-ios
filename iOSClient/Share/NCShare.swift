@@ -442,14 +442,18 @@ extension NCShare: CNContactPickerDelegate {
 // MARK: - UISearchBarDelegate
 
 extension NCShare: UISearchBarDelegate {
-	func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+    func searchTextDidChange(_ searchText: String) {
         NSObject.cancelPreviousPerformRequests(withTarget: self, selector: #selector(searchSharees(_:)), object: nil)
 
         if searchText.isEmpty {
             dropDown.hide()
         } else {
-            perform(#selector(searchSharees(_:)), with: nil, afterDelay: 1)
+            perform(#selector(searchSharees(_:)), with: nil, afterDelay: 0.5)
         }
+    }
+
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        searchTextDidChange(searchText)
     }
 
     @objc private func searchSharees(_ sender: Any?) {

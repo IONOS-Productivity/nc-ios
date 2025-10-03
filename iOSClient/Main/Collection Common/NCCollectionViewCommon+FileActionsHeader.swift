@@ -66,7 +66,7 @@ extension NCCollectionViewCommon {
             layoutForView.sort = "date"
             self?.notifyAboutLayoutChange(layoutForView)
         }
-        
+
         let byLargest = UIAction(title: NSLocalizedString("_size_", comment: ""), image: isSize ? ascendingChevronImage : nil, state: isSize ? .on : .off) { [weak self]  _ in
             if isSize { // repeated press
                 layoutForView.ascending = !layoutForView.ascending
@@ -74,18 +74,18 @@ extension NCCollectionViewCommon {
             layoutForView.sort = "size"
             self?.notifyAboutLayoutChange(layoutForView)
         }
-        
+
         let sortSubmenu = UIMenu(title: NSLocalizedString("_order_by_", comment: ""), options: .displayInline, children: [byName, byNewest, byLargest])
         
-        let directoryOnTop = NCKeychain().getDirectoryOnTop(account: self.session.account)
+        let directoryOnTop = NCPreferences().getDirectoryOnTop(account: self.session.account)
         let directoryOnTopAction = UIAction(title: NSLocalizedString("_directory_on_top_", comment: ""), state: directoryOnTop ? .on : .off) { _ in
-            NCKeychain().setDirectoryOnTop(account: self.session.account, value: !directoryOnTop)
+            NCPreferences().setDirectoryOnTop(account: self.session.account, value: !directoryOnTop)
         }
 
         let additionalSubmenu = UIMenu(title: "", options: .displayInline, children: [directoryOnTopAction])
         return [sortSubmenu, additionalSubmenu]
     }
-    
+
     private func createViewModeMenuActions() -> [UIMenuElement] {
         let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
 

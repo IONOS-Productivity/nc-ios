@@ -106,26 +106,28 @@ extension NCMenuAction {
         )
     }
 
-    /// Delete files either from cache or from Nextcloud
-    static func deleteAction(selectedMetadatas: [tableMetadata], metadataFolder: tableMetadata? = nil, controller: NCMainTabBarController?, order: Int = 0, sender: Any?, completion: (() -> Void)? = nil) -> NCMenuAction {
-		var isDestructive = true
+    /// Delete files either from cache or from Nextcloud, or unshare (depending on context)
+    static func deleteOrUnshareAction(selectedMetadatas: [tableMetadata], metadataFolder: tableMetadata? = nil, controller: NCMainTabBarController?, order: Int = 0, sender: Any?, completion: (() -> Void)? = nil) -> NCMenuAction {
         var titleDelete = NSLocalizedString("_delete_", comment: "")
         var message = NSLocalizedString("_want_delete_", comment: "")
-        var icon = NCImagesRepository.menuIconDelete
-        let permissions = NCPermissions()
+        var icon = "trash"
+        var destructive = false
+        var color = NCBrandColor.shared.iconImageColor
 
         if selectedMetadatas.count > 1 {
             titleDelete = NSLocalizedString("_delete_selected_files_", comment: "")
+            destructive = true
         } else if let metadata = selectedMetadatas.first {
             if NCManageDatabase.shared.isMetadataShareOrMounted(metadata: metadata, metadataFolder: metadataFolder) {
                 titleDelete = NSLocalizedString("_leave_share_", comment: "")
                 message = NSLocalizedString("_want_leave_share_", comment: "")
-                icon = NCImagesRepository.menuIconUnshare
-				isDestructive = false
+                icon = "person.2.slash"
             } else if metadata.directory {
                 titleDelete = NSLocalizedString("_delete_folder_", comment: "")
+                destructive = true
             } else {
                 titleDelete = NSLocalizedString("_delete_file_", comment: "")
+                destructive = true
             }
 
             if let metadataFolder = metadataFolder {
@@ -133,8 +135,7 @@ extension NCMenuAction {
                 let isMounted = metadata.permissions.contains(NCMetadataPermissions.permissionMounted) && !metadataFolder.permissions.contains(NCMetadataPermissions.permissionMounted)
                 if isShare || isMounted {
                     titleDelete = NSLocalizedString("_leave_share_", comment: "")
-                    icon = NCImagesRepository.menuIconUnshare
-					isDestructive = false
+                    icon = "person.2.slash"
                 }
             }
         } // else: no metadata selected
@@ -145,11 +146,12 @@ extension NCMenuAction {
             guard ix < 3 else { fileList += "\n - ..."; break }
             fileList += "\n - " + metadata.fileNameView
         }
+        if destructive { color = .red }
 
         return NCMenuAction(
             title: titleDelete,
-			destructive: isDestructive,
-            icon: icon,
+            destructive: destructive,
+            icon: NCUtility().loadImage(named: icon, colors: [color]),
             order: order,
             sender: sender,
             action: { _ in

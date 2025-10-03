@@ -166,7 +166,9 @@ class NCAccountSettingsModel: ObservableObject, ViewOnAppearHandling {
         if let tableAccount = database.getTableAccount(predicate: NSPredicate(format: "account == %@", account)) {
             self.tblAccount = tableAccount
             self.alias = tableAccount.alias
-            NCAccount().changeAccount(tableAccount.account, userProfile: nil, controller: self.controller) { }
+            Task {
+                await NCAccount().changeAccount(tableAccount.account, userProfile: nil, controller: self.controller)
+            }
         }
     }
     
