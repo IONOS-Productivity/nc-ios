@@ -32,7 +32,7 @@ class NCFiles: NCCollectionViewCommon {
 
     override func viewDidLoad() {
         enableSearchBar = !isOpenedFromSearchResults()
-        
+
         super.viewDidLoad()
 
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeTheming), object: nil, queue: nil) { notification in
@@ -41,7 +41,6 @@ class NCFiles: NCCollectionViewCommon {
                    let account = userInfo["account"] as? String,
                    self.controller?.account == account {
                     let color = NCBrandColor.shared.getElement(account: account)
-                    self.mainNavigationController?.menuToolbar.items?.forEach { $0.tintColor = color }
                 }
             }
         }
@@ -68,9 +67,6 @@ class NCFiles: NCCollectionViewCommon {
                     if let userInfo = notification.userInfo,
                        let account = userInfo["account"] as? String {
                         let color = NCBrandColor.shared.getElement(account: account)
-                        self.mainNavigationController?.menuToolbar.items?.forEach {
-                            $0.tintColor = color
-                        }
                     }
 
                     self.navigationController?.popToRootViewController(animated: false)
@@ -104,7 +100,7 @@ class NCFiles: NCCollectionViewCommon {
 
         Task {
             let capabilities = await database.getCapabilities(account: self.session.account) ?? NKCapabilities.Capabilities()
-            mainNavigationController?.createPlusMenu(session: self.session, capabilities: capabilities)
+//            mainNavigationController?.createPlusMenu(session: self.session, capabilities: capabilities)
 
             await self.reloadDataSource()
         }
@@ -161,12 +157,12 @@ class NCFiles: NCCollectionViewCommon {
             // disable + button if no create permission
             let color = NCBrandColor.shared.getElement(account: self.session.account)
 
-            if let items = self.mainNavigationController?.menuToolbar.items {
-                for item in items {
-                    item.isEnabled = metadataFolder.isCreatable
-                    item.tintColor = metadataFolder.isCreatable ? color : .lightGray
-                }
-            }
+//            if let items = self.mainNavigationController?.menuToolbar.items {
+//                for item in items {
+//                    item.isEnabled = metadataFolder.isCreatable
+//                    item.tintColor = metadataFolder.isCreatable ? color : .lightGray
+//                }
+//            }
         }
 
         let metadatas = await self.database.getMetadatasAsyncDataSource(withServerUrl: self.serverUrl,

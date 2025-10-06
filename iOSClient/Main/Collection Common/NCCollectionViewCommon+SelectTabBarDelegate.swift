@@ -117,7 +117,6 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
         	navigationItem.hidesBackButton = editMode
         	navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
         	searchController(enabled: !editMode)
-        	isHiddenPlusButton(editMode)
 
         	if editMode {
         	    navigationItem.leftBarButtonItems = nil
@@ -129,21 +128,12 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
         	self.collectionView.reloadData()
         }
     }
-    
+
     func toolbarWillAppear() {
         self.tabBarController?.tabBar.isHidden = true
     }
-    
+
     func toolbarWillDisappear() {
         self.tabBarController?.tabBar.isHidden = false
-    }
-
-    func convertLivePhoto(metadataFirst: tableMetadata?, metadataLast: tableMetadata?) {
-        if let metadataFirst, let metadataLast {
-            Task {
-                await self.networking.setLivePhoto(metadataFirst: metadataFirst, metadataLast: metadataLast)
-            }
-        }
-        setEditMode(false)
     }
 }

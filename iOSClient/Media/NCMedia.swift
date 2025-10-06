@@ -127,19 +127,19 @@ class NCMedia: UIViewController {
 		pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinchGesture(_:)))
 		collectionView.addGestureRecognizer(pinchGesture)
 		
-		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { _ in
-            Task { @MainActor in
-                guard let userInfo = notification.userInfo,
-                   let account = userInfo["account"] as? String else {
-                    return
-                }
-
-                self.layoutType = self.database.getLayoutForView(account: account, key: self.global.layoutViewMedia, serverUrl: "").layout
-                self.imageCache.removeAll()
-                await self.loadDataSource()
-                await self.searchMediaUI(true)
-            }
-		}
+//		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { _ in
+//            Task { @MainActor in
+//                guard let userInfo = notification.userInfo,
+//                   let account = userInfo["account"] as? String else {
+//                    return
+//                }
+//
+//                self.layoutType = self.database.getLayoutForView(account: account, key: self.global.layoutViewMedia, serverUrl: "").layout
+//                self.imageCache.removeAll()
+//                await self.loadDataSource()
+//                await self.searchMediaUI(true)
+//            }
+//		}
 		
 		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterClearCache), object: nil, queue: nil) { _ in
             Task {

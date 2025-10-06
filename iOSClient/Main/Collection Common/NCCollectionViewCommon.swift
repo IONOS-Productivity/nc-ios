@@ -554,7 +554,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
     // MARK: - NotificationCenter
 
     @objc func applicationWillResignActive(_ notification: NSNotification) {
-        mainNavigationController?.resetPlusButtonAlpha()
+//        mainNavigationController?.resetPlusButtonAlpha()
     }
 
     @objc func closeRichWorkspaceWebView() {
@@ -686,7 +686,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         // TIP
         dismissTip()
         //
-        mainNavigationController?.isHiddenPlusButton(true)
+//        mainNavigationController?.isHiddenPlusButton(true)
     }
 
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
@@ -706,7 +706,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
             await self.reloadDataSource()
         }
         //
-        mainNavigationController?.isHiddenPlusButton(false)
+//        mainNavigationController?.isHiddenPlusButton(false)
     }
 
     // MARK: - TAP EVENT

@@ -117,7 +117,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             }
 
             if NCBrandOptions.shared.disable_intro {
-                appDelegate.openLogin(selector: NCGlobal.shared.introLogin, window: window)
+                appDelegate?.openLogin(selector: NCGlobal.shared.introLogin, window: window)
             } else {
                 if let viewController = UIStoryboard(name: "NCIntro", bundle: nil).instantiateInitialViewController() as? NCIntroViewController {
                     let navigationController = NCLoginNavigationController(rootViewController: viewController)
