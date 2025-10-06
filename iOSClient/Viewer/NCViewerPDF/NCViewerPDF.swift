@@ -79,7 +79,19 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
                                                                              userId: metadata.userId,
                                                                              urlBase: metadata.urlBase)
             pdfDocument = PDFDocument(url: URL(fileURLWithPath: filePath))
-            navigationItem.rightBarButtonItem = UIBarButtonItem(image: NCImageCache.shared.getImageButtonMore(), style: .plain, target: self, action: #selector(openMenuMore(_:)))
+            
+            navigationItem.rightBarButtonItem = UIBarButtonItem(
+                image: NCImageCache.shared.getImageButtonMore(),
+                primaryAction: nil,
+                menu: UIMenu(title: "", children: [
+                    UIDeferredMenuElement.uncached { [self] completion in
+                        guard let metadata = self.metadata else { return }
+
+                        if let menu = NCViewerContextMenu.makeContextMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: metadata, webView: false, sender: self) {
+                            completion(menu.children)
+                        }
+                    }
+                ]))
         }
         defaultBackgroundColor = NCBrandColor.shared.appBackgroundColor
         view.backgroundColor = defaultBackgroundColor
@@ -121,7 +133,6 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
 
         // NOTIFIFICATION
 
-        NotificationCenter.default.addObserver(self, selector: #selector(viewUnload), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(searchText), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterMenuSearchTextPDF), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(goToPage), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterMenuGotToPageInPDF), object: nil)
 
@@ -129,7 +140,6 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterMenuSearchTextPDF), object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterMenuGotToPageInPDF), object: nil)
 
@@ -280,12 +290,6 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
         })
     }
 
-    @objc func viewUnload() {
-        DispatchQueue.main.async {
-            self.navigationController?.popViewController(animated: true)
-        }
-    }
-
     @objc func viewDismiss() {
         DispatchQueue.main.async {
             self.dismiss(animated: true)
@@ -322,17 +326,6 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
         }))
 
         self.present(alertController, animated: true)
-    }
-
-    // MARK: - Action
-
-    @objc private func openMenuMore(_ sender: Any?) {
-        guard let metadata = self.metadata else { return }
-        if imageIcon == nil {
-            imageIcon = UIImage(named: "file_pdf")
-        }
-
-        NCViewer().toggleMenu(controller: (self.tabBarController as? NCMainTabBarController), metadata: metadata, webView: false, imageIcon: imageIcon, sender: sender)
     }
 
     // MARK: - Gesture Recognizer
@@ -541,7 +534,9 @@ extension NCViewerPDF: NCTransferDelegate {
                 key.ocId == self.metadata?.ocId && error == .success
             }
             if shouldUnloadView {
-                self.viewUnload()
+                DispatchQueue.main.async {
+                    self.navigationController?.popViewController(animated: true)
+                }
             }
         default:
             break

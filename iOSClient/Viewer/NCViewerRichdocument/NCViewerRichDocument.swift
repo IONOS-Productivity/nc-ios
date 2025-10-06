@@ -54,7 +54,16 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
         super.viewDidLoad()
 
         if !metadata.ocId.hasPrefix("TEMP") {
-            navigationItem.rightBarButtonItem = UIBarButtonItem(image: NCImageCache.shared.getImageButtonMore(), style: .plain, target: self, action: #selector(openMenuMore(_:)))
+            navigationItem.rightBarButtonItem = UIBarButtonItem(
+                image: NCImageCache.shared.getImageButtonMore(),
+                primaryAction: nil,
+                menu: UIMenu(title: "", children: [
+                    UIDeferredMenuElement.uncached { [self] completion in
+                        if let menu = NCViewerContextMenu.makeContextMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: self.metadata, webView: true, sender: self) {
+                            completion(menu.children)
+                        }
+                    }
+                ]))
         }
         navigationItem.hidesBackButton = true
 
@@ -100,9 +109,7 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
 
         tabBarController?.tabBar.isHidden = true
 
-        NotificationCenter.default.addObserver(self, selector: #selector(viewUnload), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.grabFocus), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterRichdocumentGrabFocus), object: nil)
-
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow), name: UIResponder.keyboardDidShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
@@ -137,15 +144,9 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
 
         webView.configuration.userContentController.removeScriptMessageHandler(forName: "RichDocumentsMobileInterface")
 
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterRichdocumentGrabFocus), object: nil)
-
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidShowNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
-    }
-
-    @objc func viewUnload() {
-        navigationController?.popViewController(animated: true)
     }
 
     // MARK: - NotificationCenter
@@ -162,19 +163,12 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
         bottomConstraint?.constant = 0
     }
 
-    // MARK: - Action
-
-    @objc private func openMenuMore(_ sender: Any?) {
-        if imageIcon == nil { imageIcon = NCUtility().loadImage(named: "doc.text", colors: [NCBrandColor.shared.iconImageColor]) }
-        NCViewer().toggleMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: metadata, webView: true, imageIcon: imageIcon, sender: nil)
-    }
-
     // MARK: -
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if message.name == "RichDocumentsMobileInterface" {
             if message.body as? String == "close" {
-                viewUnload()
+                navigationController?.popViewController(animated: true)
             }
 
             if message.body as? String == "insertGraphic" {
@@ -198,7 +192,6 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
             }
 
             if let param = message.body as? [AnyHashable: Any] {
-
                 if param["MessageName"] as? String == "downloadAs" {
                     if let values = param["Values"] as? [AnyHashable: Any] {
                         guard let type = values["Type"] as? String else { return }
@@ -221,6 +214,11 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
                             NextcloudKit.shared.download(serverUrlFileName: url, fileNameLocalPath: fileNameLocalPath, account: self.metadata.account, requestHandler: { _ in
                             }, taskHandler: { task in
                                 Task {
+                                    let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: self.metadata.account,
+                                                                                                                path: url.absoluteString,
+                                                                                                                name: "download")
+                                    await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+
                                     let ocId = self.metadata.ocId
                                     await self.database.setMetadataSessionAsync(ocId: ocId,
                                                                                 sessionTaskIdentifier: task.taskIdentifier,
@@ -315,7 +313,14 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
         if let serverUrl, let metadata {
             let path = utilityFileSystem.getFileNamePath(metadata.fileName, serverUrl: serverUrl, session: session)
 
-            NextcloudKit.shared.createAssetRichdocuments(path: path, account: metadata.account) { _, url, _, error in
+            NextcloudKit.shared.createAssetRichdocuments(path: path, account: metadata.account) { task in
+                Task {
+                    let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: metadata.account,
+                                                                                                path: path,
+                                                                                                name: "createAssetRichdocuments")
+                    await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+                }
+            } completion: { _, url, _, error in
                 if error == .success, let url {
                     let functionJS = "OCA.RichDocuments.documentsMain.postAsset('\(metadata.fileNameView)', '\(url)')"
                     self.webView.evaluateJavaScript(functionJS, completionHandler: { _, _ in })
@@ -329,7 +334,14 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
     func select(_ metadata: tableMetadata!, serverUrl: String!) {
         let path = utilityFileSystem.getFileNamePath(metadata!.fileName, serverUrl: serverUrl!, session: session)
 
-        NextcloudKit.shared.createAssetRichdocuments(path: path, account: metadata.account) { _, url, _, error in
+        NextcloudKit.shared.createAssetRichdocuments(path: path, account: metadata.account) { task in
+            Task {
+                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: metadata.account,
+                                                                                            path: path,
+                                                                                            name: "createAssetRichdocuments")
+                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+            }
+        } completion: { _, url, _, error in
             if error == .success, let url {
                 let functionJS = "OCA.RichDocuments.documentsMain.postAsset('\(metadata.fileNameView)', '\(url)')"
                 self.webView.evaluateJavaScript(functionJS, completionHandler: { _, _ in })

@@ -17,7 +17,7 @@ class NCMainTabBarController: UITabBarController {
     var sceneIdentifier: String = UUID().uuidString
     var account: String = "" {
         didSet {
-            NCImageCache.shared.controller = self
+            // NCImageCache.shared.controller = self
         }
     }
     var availableNotifications: Bool = false
@@ -40,6 +40,9 @@ class NCMainTabBarController: UITabBarController {
 		if #available(iOS 17.0, *) {
 			traitOverrides.horizontalSizeClass = .compact
 		}
+
+        NCNetworking.shared.controller = self
+        NCImageCache.shared.controller = self
 
         NCDownloadAction.shared.setup(sceneIdentifier: sceneIdentifier)
 

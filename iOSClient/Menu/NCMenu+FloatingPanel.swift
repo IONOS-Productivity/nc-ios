@@ -76,7 +76,6 @@ class NCMenuFloatingPanelLayout: FloatingPanelLayout {
 }
 
 class NCMenuPanelController: FloatingPanelController {
-
     var parentPresenter: UIViewController?
 
     // MARK: - View Life Cycle

@@ -154,8 +154,8 @@ class NCContextMenu: NSObject {
             alertController.view.backgroundColor = NCBrandColor.shared.appBackgroundColor
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_delete_file_", comment: ""), style: .destructive) { _ in
                 if let viewController = self.viewController as? NCCollectionViewCommon {
-                    self.networking.setStatusWaitDelete(metadatas: [self.metadata], sceneIdentifier: self.sceneIdentifier)
                     Task {
+                        await self.networking.setStatusWaitDelete(metadatas: [self.metadata], sceneIdentifier: self.sceneIdentifier)
                         await viewController.reloadDataSource()
                     }
                 }

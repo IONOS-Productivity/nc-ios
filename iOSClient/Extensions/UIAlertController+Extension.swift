@@ -50,7 +50,14 @@ extension UIAlertController {
                 }
                 Task {
                     let serverUrlFileName = NCUtilityFileSystem().createServerUrl(serverUrl: serverUrl, fileName: fileNameFolder)
-                    let createFolderResults = await NextcloudKit.shared.createFolderAsync(serverUrlFileName: serverUrlFileName, account: session.account)
+                    let createFolderResults = await NextcloudKit.shared.createFolderAsync(serverUrlFileName: serverUrlFileName, account: session.account) { task in
+                        Task {
+                            let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: session.account,
+                                                                                                        path: serverUrlFileName,
+                                                                                                        name: "createFolder")
+                            await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+                        }
+                    }
                     if createFolderResults.error == .success {
                         let error = await NCNetworkingE2EEMarkFolder().markFolderE2ee(account: session.account, serverUrlFileName: serverUrlFileName, userId: session.userId)
                         if error != .success {
@@ -70,8 +77,8 @@ extension UIAlertController {
             } else {
                 #if EXTENSION
                 Task {
-                    let results = await NCNetworking.shared.createFolder(fileName: fileNameFolder, serverUrl: serverUrl, overwrite: false, session: session)
-                    completion?(results.error)
+                    let error = await NCNetworking.shared.createFolder(fileName: fileNameFolder, serverUrl: serverUrl, overwrite: false, session: session)
+                    completion?(error)
                 }
                 #else
                 var metadata = tableMetadata()
@@ -169,7 +176,9 @@ extension UIAlertController {
             preferredStyle: .alert)
         if canDeleteServer {
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_yes_", comment: ""), style: .destructive) { (_: UIAlertAction) in
-                NCNetworking.shared.setStatusWaitDelete(metadatas: selectedMetadatas, sceneIdentifier: sceneIdentifier)
+                Task {
+                    await NCNetworking.shared.setStatusWaitDelete(metadatas: selectedMetadatas, sceneIdentifier: sceneIdentifier)
+                }
                 completion(false)
             })
         }
@@ -216,7 +225,7 @@ extension UIAlertController {
 
         let oldExtension = fileName.fileExtension
 
-        let text = alertController.textFields?.first?.text ?? ""
+        let text = alertController.textFields?.first?.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let textCheck = FileNameValidator.checkFileName(text, account: account, capabilities: capabilities)
         var message = textCheck?.error.localizedDescription ?? ""
         var messageColor = UIColor.red

@@ -36,13 +36,20 @@ class NCNetworkingE2EEDelete: NSObject {
         //
         let serverUrlFileName = self.utilityFileSystem.createServerUrl(serverUrl: metadata.serverUrl, fileName: metadata.fileName)
         let options = NKRequestOptions(customHeader: ["e2e-token": e2eToken])
-        let result = await NextcloudKit.shared.deleteFileOrFolderAsync(serverUrlFileName: serverUrlFileName, account: metadata.account, options: options)
+        let result = await NextcloudKit.shared.deleteFileOrFolderAsync(serverUrlFileName: serverUrlFileName, account: metadata.account, options: options) { task in
+            Task {
+                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: metadata.account,
+                                                                                            path: serverUrlFileName,
+                                                                                            name: "deleteFileOrFolder")
+                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+            }
+        }
         if result.error == .success || result.error.errorCode == NCGlobal.shared.errorResourceNotFound {
             do {
                 try FileManager.default.removeItem(atPath: NCUtilityFileSystem().getDirectoryProviderStorageOcId(metadata.ocId, userId: metadata.userId, urlBase: metadata.urlBase))
                 await database.deleteVideoAsync(metadata.ocId)
-                await database.deleteMetadataOcIdAsync(metadata.ocId)
-                await database.deleteLocalFileOcIdAsync(metadata.ocId)
+                await database.deleteMetadataAsync(id: metadata.ocId)
+                await database.deleteLocalFileAsync(id: metadata.ocId)
                 // LIVE PHOTO SERVER
                 if let metadataLive = await self.database.getMetadataLivePhotoAsync(metadata: metadata),
                     metadataLive.isFlaggedAsLivePhotoByServer {
@@ -50,8 +57,8 @@ class NCNetworkingE2EEDelete: NSObject {
                         try FileManager.default.removeItem(atPath: NCUtilityFileSystem().getDirectoryProviderStorageOcId(metadataLive.ocId, userId: metadataLive.userId, urlBase: metadataLive.urlBase))
                     } catch { }
                     await self.database.deleteVideoAsync(metadataLive.ocId)
-                    await self.database.deleteMetadataOcIdAsync(metadataLive.ocId)
-                    await self.database.deleteLocalFileOcIdAsync(metadataLive.ocId)
+                    await self.database.deleteMetadataAsync(id: metadataLive.ocId)
+                    await self.database.deleteLocalFileAsync(id: metadataLive.ocId)
                 }
                 if metadata.directory {
                     await self.database.deleteDirectoryAndSubDirectoryAsync(serverUrl: self.utilityFileSystem.createServerUrl(serverUrl: metadata.serverUrl, fileName: metadata.fileName), account: metadata.account)

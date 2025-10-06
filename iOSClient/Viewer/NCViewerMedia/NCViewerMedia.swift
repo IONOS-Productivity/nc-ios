@@ -149,8 +149,6 @@ class NCViewerMedia: UIViewController {
 
         Task {
             await NCNetworking.shared.transferDispatcher.addDelegate(self)
-            // Set Last Opening Date
-            await self.database.setLastOpeningDateAsync(metadata: metadata)
         }
 
         viewerMediaPage?.clearCommandCenter()
@@ -351,7 +349,14 @@ class NCViewerMedia: UIViewController {
             NextcloudKit.shared.downloadPreview(fileId: metadata.fileId,
                                                 etag: metadata.etag,
                                                 account: metadata.account,
-                                                options: NKRequestOptions(queue: .main)) { _, _, _, _, responseData, error in
+                                                options: NKRequestOptions(queue: .main)) { task in
+                Task {
+                    let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: metadata.account,
+                                                                                                path: metadata.fileId,
+                                                                                                name: "DownloadPreview")
+                    await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+                }
+            } completion: { _, _, _, _, responseData, error in
                 if error == .success, let data = responseData?.data {
                     let image = UIImage(data: data)
                     self.image = image

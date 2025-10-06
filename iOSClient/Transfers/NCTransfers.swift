@@ -232,6 +232,12 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
         }
         cell.accessibilityLabel = metadata.fileNameView + ", " + (cell.labelInfo.text ?? "")
 
+        // Error
+        if (metadata.errorCode != 0 || !metadata.sessionError.isEmpty) && cell.labelInfo.text?.isEmpty == true {
+            cell.imageStatus?.image = utility.loadImage(named: "exclamationmark.circle", colors: [.red, .label])
+            cell.labelInfo.text = metadata.sessionError + " cod. \(metadata.errorCode)"
+        }
+
         // Remove last separator
         if collectionView.numberOfItems(inSection: indexPath.section) == indexPath.row + 1 {
             cell.separator.isHidden = true
@@ -265,7 +271,6 @@ class NCTransfers: NCCollectionViewCommon, NCTransferCellDelegate {
     }
 
     override func getServerData(forced: Bool = false) async {
-        await super.getServerData()
         await reloadDataSource()
     }
 

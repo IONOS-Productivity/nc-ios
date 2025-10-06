@@ -33,9 +33,13 @@ class NCAccount: NSObject {
                                           httpMaximumConnectionsPerHostInDownload: NCBrandOptions.shared.httpMaximumConnectionsPerHostInDownload,
                                           httpMaximumConnectionsPerHostInUpload: NCBrandOptions.shared.httpMaximumConnectionsPerHostInUpload,
                                           groupIdentifier: NCBrandOptions.shared.capabilitiesGroup)
-
-        let resultsGetUserProfile = await NextcloudKit.shared.getUserProfileAsync(account: account)
-
+        let resultsGetUserProfile = await NextcloudKit.shared.getUserProfileAsync(account: account) { task in
+            Task {
+                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: account,
+                                                                                            name: "getUserProfile")
+                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+            }
+        }
         guard resultsGetUserProfile.error == .success, let userProfile = resultsGetUserProfile.userProfile else {
             NextcloudKit.shared.nkCommonInstance.nksessions.remove(account: account)
             let alertController = UIAlertController(title: NSLocalizedString("_error_", comment: ""), message: resultsGetUserProfile.error.errorDescription, preferredStyle: .alert)
@@ -91,8 +95,10 @@ class NCAccount: NSObject {
             if let userProfile {
                 await database.setAccountUserProfileAsync(account: account, userProfile: userProfile)
             }
+            // Networking Certificate
+            NCNetworking.shared.activeAccountCertificate(account: account)
             // Subscribing Push Notification
-            appDelegate.subscribingPushNotification(account: tblAccount.account, urlBase: tblAccount.urlBase, user: tblAccount.user)
+            await NCPushNotification.shared.subscribingNextcloudServerPushNotification(account: tblAccount.account, urlBase: tblAccount.urlBase)
             // Start the service
             Task(priority: .utility) {
                 await NCService().startRequestServicesServer(account: account, controller: controller)
@@ -107,6 +113,7 @@ class NCAccount: NSObject {
             nkLog(start: "Auto upload with \(num) photo")
             // Networking Process
             await NCNetworkingProcess.shared.setCurrentAccount(account)
+
             // Color
             NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterChangeTheming, userInfo: ["account": account])
             // Notification
@@ -124,7 +131,7 @@ class NCAccount: NSObject {
 
         // Unsubscribing Push Notification & Domain
         if let tblAccount {
-            NCPushNotification.shared.unsubscribingNextcloudServerPushNotification(account: tblAccount.account, urlBase: tblAccount.urlBase, user: tblAccount.user)
+            await NCPushNotification.shared.unsubscribingNextcloudServerPushNotification(account: tblAccount.account, urlBase: tblAccount.urlBase)
             try? await FileProviderDomain().ensureDomainRemoved(userId: tblAccount.userId, urlBase: tblAccount.urlBase)
         }
 
@@ -140,7 +147,7 @@ class NCAccount: NSObject {
                 }
             }
             // Remove account in all database
-            database.clearDatabase(account: account, removeAccount: true, removeAutoUpload: true)
+            database.clearDatabase(account: account)
         } else {
             // Remove account
             await database.clearTableAsync(tableAccount.self, account: account)
@@ -192,12 +199,26 @@ class NCAccount: NSObject {
 
         NCContentPresenter().showCustomMessage(title: "", message: String(format: NSLocalizedString("_account_unauthorized_", comment: ""), account), priority: .high, delay: global.dismissAfterSecondLong, type: .error)
 
-        let resultsWipe = await NextcloudKit.shared.getRemoteWipeStatusAsync(serverUrl: tblAccount.urlBase, token: token, account: account)
+        let resultsWipe = await NextcloudKit.shared.getRemoteWipeStatusAsync(serverUrl: tblAccount.urlBase, token: token, account: account) { task in
+            Task {
+                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: account,
+                                                                                            path: tblAccount.urlBase,
+                                                                                            name: "getRemoteWipeStatus")
+                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+            }
+        }
 
         // REMOVE ACCOUNT
         await NCAccount().deleteAccount(account, wipe: resultsWipe.wipe)
         if resultsWipe.wipe {
-            let resultsSetWipe = await NextcloudKit.shared.setRemoteWipeCompletitionAsync(serverUrl: tblAccount.urlBase, token: token, account: tblAccount.account)
+            let resultsSetWipe = await NextcloudKit.shared.setRemoteWipeCompletitionAsync(serverUrl: tblAccount.urlBase, token: token, account: tblAccount.account) { task in
+                Task {
+                    let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: tblAccount.account,
+                                                                                                path: tblAccount.urlBase,
+                                                                                                name: "setRemoteWipeCompletition")
+                    await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+                }
+            }
             nkLog(debug: "Set Remote Wipe Completition error code: \(resultsSetWipe.error.errorCode)")
         }
 

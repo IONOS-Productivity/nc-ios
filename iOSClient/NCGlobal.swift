@@ -175,6 +175,8 @@ final class NCGlobal: Sendable {
     let errorDisableFilesApp: Int               = -99992
     let errorUnexpectedResponseFromDB: Int      = -99991
     let errorIncorrectFileName: Int             = -99990
+    let errorVersionMismatch: Int               = -99989
+    let errorNCSessionNotFound: Int             = -99988
 
     // E2EE
     let errorE2EENotEnabled: Int                = -98000
@@ -260,7 +262,7 @@ final class NCGlobal: Sendable {
     let notificationCenterReloadAvatar                          = "reloadAvatar"
     let notificationCenterClearCache                            = "clearCache"
     let notificationCenterCheckUserDelaultErrorDone             = "checkUserDelaultErrorDone"       // userInfo: account, controller
-    let notificationCenterUpdateNotification                    = "updateNotification"
+    let notificationCenterServerDidUpdate                       = "serverDidUpdate"                 // userInfo: account
 
     let notificationCenterMenuSearchTextPDF                     = "menuSearchTextPDF"
     let notificationCenterMenuGotToPageInPDF                    = "menuGotToPageInPDF"
@@ -371,20 +373,26 @@ final class NCGlobal: Sendable {
     //
     let groupAdmin                          = "admin"
 
-    // DATA TASK DESCRIPTION
+    // TASK DESCRIPTION
     //
     let taskDescriptionRetrievesProperties  = "retrievesProperties"
     let taskDescriptionSynchronization      = "synchronization"
 
     // LOG TAG
+    //
     let logTagTask                          = "BGT"
     let logTagLocation                      = "LOCATION"
     let logTagBgSync                        = "BGSYNC"
     let logTagE2EE                          = "E2EE"
-    let logTagPN                            = "PUSH NOTIF"
+    let logTagPN                            = "PUSH NOTIFICATION"
     let logTagSync                          = "SYNC"
     let logTagServiceProficer               = "SERVICE PROVIDER"
+    let logTagDatabase                      = "DB"
+    let logSpeedUpSyncMetadata              = "SYNC METADATA"
+    let logNetworkingTasks                  = "NETWORKING TASKS"
 
     // USER DEFAULTS
+    //
     let udMigrationMultiDomains             = "migrationMultiDomains"
+    let udLastVersion                       = "lastVersion"
 }

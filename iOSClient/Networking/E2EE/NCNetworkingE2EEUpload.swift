@@ -18,11 +18,19 @@ class NCNetworkingE2EEUpload: NSObject {
 
     @discardableResult
     @MainActor
-    func upload(metadata: tableMetadata, controller: UIViewController? = nil) async -> NKError {
+    func upload(metadata: tableMetadata, session: NCSession.Session? = nil, controller: UIViewController? = nil) async -> NKError {
         var finalError: NKError = .success
-        let session = NCSession.shared.getSession(account: metadata.account)
+        var session = session
         let hud = NCHud(controller?.view)
         let ocId = metadata.ocIdTransfer
+
+        if session == nil {
+            session = NCSession.shared.getSession(account: metadata.account)
+        }
+        guard let session,
+              !session.account.isEmpty else {
+            return NKError(errorCode: NCGlobal.shared.errorNCSessionNotFound, errorDescription: NSLocalizedString("_e2e_error_", comment: ""))
+        }
 
         // HUD ENCRYPTION
         //
@@ -31,7 +39,7 @@ class NCNetworkingE2EEUpload: NSObject {
         defer {
             if finalError != .success {
                 Task {
-                    await self.database.deleteMetadataOcIdAsync(ocId)
+                    await self.database.deleteMetadataAsync(id: ocId)
                 }
             }
             hud.dismiss()
@@ -162,8 +170,9 @@ class NCNetworkingE2EEUpload: NSObject {
         if resultsSendFile.error == .success, let ocId = resultsSendFile.ocId {
             let metadata = metadata.detachedCopy()
 
-            await self.database.deleteMetadataOcIdAsync(metadata.ocId)
-            utilityFileSystem.moveFileInBackground(atPath: utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, userId: metadata.userId, urlBase: metadata.urlBase), toPath: utilityFileSystem.getDirectoryProviderStorageOcId(ocId, userId: metadata.userId, urlBase: metadata.urlBase))
+            await self.database.deleteMetadataAsync(id: metadata.ocId)
+            await utilityFileSystem.moveFileAsync(atPath: utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, userId: metadata.userId, urlBase: metadata.urlBase),
+                                                  toPath: utilityFileSystem.getDirectoryProviderStorageOcId(ocId, userId: metadata.userId, urlBase: metadata.urlBase))
 
             metadata.date = (resultsSendFile.date as? NSDate) ?? NSDate()
             metadata.etag = resultsSendFile.etag ?? ""

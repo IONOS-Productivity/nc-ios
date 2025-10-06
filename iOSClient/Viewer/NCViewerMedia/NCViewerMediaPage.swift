@@ -62,7 +62,17 @@ class NCViewerMediaPage: UIViewController {
     var timerAutoHide: Timer?
     private var timerAutoHideSeconds: Double = 4
 
-    private lazy var moreNavigationItem = UIBarButtonItem(image: NCImageCache.shared.getImageButtonMore(), style: .plain, target: self, action: #selector(openMenuMore(_:)))
+    private lazy var moreNavigationItem = UIBarButtonItem(
+        image: NCImageCache.shared.getImageButtonMore(),
+        primaryAction: nil,
+        menu: UIMenu(title: "", children: [
+            UIDeferredMenuElement.uncached { [self] completion in
+                if let menu = NCViewerContextMenu.makeContextMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: currentViewController.metadata, webView: false, sender: self) {
+                    completion(menu.children)
+                }
+            }
+        ]))
+
     private lazy var imageDetailNavigationItem = UIBarButtonItem(image: NCUtility().loadImage(named: "info.circle", colors: [NCBrandColor.shared.iconImageColor]), style: .plain, target: self, action: #selector(toggleDetail(_:)))
 
     // swiftlint:disable force_cast
@@ -124,8 +134,6 @@ class NCViewerMediaPage: UIViewController {
 
         let viewerMedia = getViewerMedia(index: currentIndex, metadata: metadata)
         pageViewController.setViewControllers([viewerMedia], direction: .forward, animated: true, completion: nil)
-
-        NotificationCenter.default.addObserver(self, selector: #selector(viewUnload), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil)
 
         NotificationCenter.default.addObserver(self, selector: #selector(pageViewController.enableSwipeGesture), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterEnableSwipeGesture), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(pageViewController.disableSwipeGesture), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterDisableSwipeGesture), object: nil)
@@ -219,20 +227,6 @@ class NCViewerMediaPage: UIViewController {
         singleTapGestureRecognizer.require(toFail: viewerMedia.doubleTapGestureRecognizer)
 
         return viewerMedia
-    }
-
-    @objc func viewUnload() {
-        navigationController?.popViewController(animated: true)
-    }
-
-    @objc private func openMenuMore(_ sender: Any?) {
-        let imageIcon = NCUtility().getImage(ocId: currentViewController.metadata.ocId,
-                                             etag: currentViewController.metadata.etag,
-                                             ext: NCGlobal.shared.previewExt512,
-                                             userId: currentViewController.metadata.userId,
-                                             urlBase: currentViewController.metadata.urlBase)
-
-        NCViewer().toggleMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: currentViewController.metadata, webView: false, imageIcon: imageIcon, sender: sender)
     }
 
     @objc private func toggleDetail(_ sender: Any?) {
@@ -638,7 +632,7 @@ extension NCViewerMediaPage: NCTransferDelegate {
                     if let ncplayer = self.currentViewController.ncplayer, ncplayer.isPlaying() {
                         ncplayer.playerPause()
                     }
-                    self.viewUnload()
+                    self.navigationController?.popViewController(animated: true)
                 }
             default:
                 break

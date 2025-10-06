@@ -30,12 +30,12 @@ final class NCImageCache: @unchecked Sendable {
 
     init() {
         NotificationCenter.default.addObserver(forName: LRUCacheMemoryWarningNotification, object: nil, queue: nil) { _ in
-            self.cache.removeAllValues()
+            self.cache.removeAll()
             self.cache = LRUCache<String, UIImage>(countLimit: self.countLimit)
         }
 
         NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
-            self.cache.removeAllValues()
+            self.cache.removeAll()
             self.cache = LRUCache<String, UIImage>(countLimit: self.countLimit)
         }
 
@@ -53,17 +53,19 @@ final class NCImageCache: @unchecked Sendable {
                 if let tblAccount = await self.database.getTableAccountAsync(predicate: NSPredicate(format: "account == %@", controller.account)),
                    NCImageCache.shared.cache.count == 0 {
 
-                    self.isLoadingCache = true
-
                     // MEDIA
-                    let predicate = self.getMediaPredicateAsync(filterLivePhotoFile: true, session: session, mediaPath: tblAccount.mediaPath, showOnlyImages: false, showOnlyVideos: false)
-                    if let metadatas = await self.database.getMetadatasAsync(predicate: predicate, sortedByKeyPath: "datePhotosOriginal", limit: self.countLimit) {
-                        autoreleasepool {
-                            self.cache.removeAllValues()
+                    let predicate = self.getMediaPredicate(session: session, mediaPath: tblAccount.mediaPath, showOnlyImages: false, showOnlyVideos: false)
+                    guard let metadatas = await self.database.getMetadatasAsync(predicate: predicate, sortedByKeyPath: "datePhotosOriginal", limit: self.countLimit) else {
+                        return
+                    }
 
+                    self.isLoadingCache = true
+                    self.database.filterAndNormalizeLivePhotos(from: metadatas) { metadatas in
+                        autoreleasepool {
+                            self.cache.removeAll()
                             for metadata in metadatas {
                                 guard !isAppInBackground else {
-                                    self.cache.removeAllValues()
+                                    self.cache.removeAll()
                                     break
                                 }
                                 if let image = self.utility.getImage(ocId: metadata.ocId,
@@ -75,10 +77,9 @@ final class NCImageCache: @unchecked Sendable {
                                     cost += 1
                                 }
                             }
+                            self.isLoadingCache = false
                         }
                     }
-
-                    self.isLoadingCache = false
                 }
             }
 #endif
@@ -117,34 +118,32 @@ final class NCImageCache: @unchecked Sendable {
     }
 
     func removeAll() {
-        cache.removeAllValues()
+        cache.removeAll()
     }
 
     // MARK: - MEDIA -
 
-    func getMediaPredicateAsync(filterLivePhotoFile: Bool, session: NCSession.Session, mediaPath: String, showOnlyImages: Bool, showOnlyVideos: Bool) -> NSPredicate {
+    func getMediaPredicate(session: NCSession.Session,
+                           mediaPath: String,
+                           showOnlyImages: Bool,
+                           showOnlyVideos: Bool) -> NSPredicate {
         var predicate = NSPredicate()
         let startServerUrl = self.utilityFileSystem.getHomeServer(session: session) + mediaPath
 
-            var showBothPredicateMediaString = "account == %@ AND serverUrl BEGINSWITH %@ AND mediaSearch == true AND hasPreview == true AND (classFile == '\(NKTypeClassFile.image.rawValue)' OR classFile == '\(NKTypeClassFile.video.rawValue)') AND NOT (status IN %@)"
+        var showBothPredicateMediaString = "account == %@ AND serverUrl BEGINSWITH %@ AND mediaSearch == true AND hasPreview == true AND (classFile == '\(NKTypeClassFile.image.rawValue)' OR classFile == '\(NKTypeClassFile.video.rawValue)') AND NOT (status IN %@)"
 
-            var showOnlyPredicateMediaString = "account == %@ AND serverUrl BEGINSWITH %@ AND mediaSearch == true AND hasPreview == true AND classFile == %@ AND NOT (status IN %@)"
+        var showOnlyPredicateMediaString = "account == %@ AND serverUrl BEGINSWITH %@ AND mediaSearch == true AND hasPreview == true AND classFile == %@ AND NOT (status IN %@)"
 
-            if filterLivePhotoFile {
-                showBothPredicateMediaString = showBothPredicateMediaString + " AND NOT (livePhotoFile != '' AND classFile == '\(NKTypeClassFile.video.rawValue)')"
-                showOnlyPredicateMediaString = showOnlyPredicateMediaString + " AND NOT (livePhotoFile != '' AND classFile == '\(NKTypeClassFile.video.rawValue)')"
-            }
-
-            if showOnlyImages {
-                predicate = NSPredicate(format: showOnlyPredicateMediaString, session.account, startServerUrl, NKTypeClassFile.image.rawValue, global.metadataStatusHideInView)
-            } else if showOnlyVideos {
-                predicate = NSPredicate(format: showOnlyPredicateMediaString, session.account, startServerUrl, NKTypeClassFile.video.rawValue, global.metadataStatusHideInView)
-            } else {
-                predicate = NSPredicate(format: showBothPredicateMediaString, session.account, startServerUrl, global.metadataStatusHideInView)
-            }
-
-            return predicate
+        if showOnlyImages {
+            predicate = NSPredicate(format: showOnlyPredicateMediaString, session.account, startServerUrl, NKTypeClassFile.image.rawValue, global.metadataStatusHideInView)
+        } else if showOnlyVideos {
+            predicate = NSPredicate(format: showOnlyPredicateMediaString, session.account, startServerUrl, NKTypeClassFile.video.rawValue, global.metadataStatusHideInView)
+        } else {
+            predicate = NSPredicate(format: showBothPredicateMediaString, session.account, startServerUrl, global.metadataStatusHideInView)
         }
+
+        return predicate
+    }
 
     // MARK: -
 

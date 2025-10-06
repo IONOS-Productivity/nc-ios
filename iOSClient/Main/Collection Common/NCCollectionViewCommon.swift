@@ -54,7 +54,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 		}
 	}
     var layoutForView: NCDBLayoutForView?
-    var dataSourceTask: URLSessionTask?
+    var searchDataSourceTask: URLSessionTask?
     var providers: [NKSearchProvider]?
     var searchResults: [NKSearchResult]?
     var listLayout = NCListLayout()
@@ -102,6 +102,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
     let heightHeaderRecommendations: CGFloat = 160
     let heightHeaderSection: CGFloat = 30
 
+    @MainActor
     var session: NCSession.Session {
         NCSession.shared.getSession(controller: controller)
     }
@@ -131,6 +132,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         layoutForView?.layout == global.layoutList ? " - " : ""
     }
 
+    @MainActor
     var controller: NCMainTabBarController? {
 		self.tabBarController as? NCMainTabBarController ?? mainTabBarController
     }
@@ -324,7 +326,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         // Cancel Queue & Retrieves Properties
         self.networking.downloadThumbnailQueue.cancelAll()
         self.networking.unifiedSearchQueue.cancelAll()
-        dataSourceTask?.cancel()
+        searchDataSourceTask?.cancel()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -552,7 +554,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
     // MARK: - NotificationCenter
 
     @objc func applicationWillResignActive(_ notification: NSNotification) {
-        self.resetPlusButtonAlpha()
+        mainNavigationController?.resetPlusButtonAlpha()
     }
 
     @objc func closeRichWorkspaceWebView() {
@@ -565,6 +567,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
     func changeLayout(layoutForView: NCDBLayoutForView) {
         let homeServer = utilityFileSystem.getHomeServer(urlBase: session.urlBase, userId: session.userId)
+        let numFoldersLayoutsForView = self.database.getLayoutsForView(keyStore: layoutForView.keyStore)?.count ?? 1
 
         func changeLayout(withSubFolders: Bool) {
         	defer {
@@ -601,7 +604,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         	(self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
         }
 
-        if serverUrl == homeServer {
+        if serverUrl == homeServer || numFoldersLayoutsForView == 1 {
             changeLayout(withSubFolders: false)
         } else {
             let alertController = UIAlertController(title: NSLocalizedString("_propagate_layout_", comment: ""), message: nil, preferredStyle: .alert)
@@ -627,10 +630,6 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
     }
 
     func accountSettingsDidDismiss(tblAccount: tableAccount?, controller: NCMainTabBarController?) { }
-
-    func resetPlusButtonAlpha(animated: Bool = true) { }
-
-    func isHiddenPlusButton(_ isHidden: Bool) { }
 
     @MainActor
     func showLoadingTitle() {
@@ -687,7 +686,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         // TIP
         dismissTip()
         //
-        isHiddenPlusButton(true)
+        mainNavigationController?.isHiddenPlusButton(true)
     }
 
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
@@ -707,7 +706,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
             await self.reloadDataSource()
         }
         //
-        isHiddenPlusButton(false)
+        mainNavigationController?.isHiddenPlusButton(false)
     }
 
     // MARK: - TAP EVENT
@@ -840,9 +839,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         self.updateHeadersView()
     }
 
-    func getServerData(forced: Bool = false) async {
-        dataSourceTask?.cancel()
-    }
+    func getServerData(forced: Bool = false) async { }
 
     @objc func networkSearch() {
         guard !networkSearchInProgress else {
@@ -863,7 +860,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
         if capabilities.serverVersionMajor >= global.nextcloudVersion20 {
             self.networking.unifiedSearchFiles(literal: literalSearch, account: session.account) { task in
-                self.dataSourceTask = task
+                self.searchDataSourceTask = task
                 Task {
                     await self.reloadDataSource()
                 }
@@ -886,7 +883,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
             }
         } else {
             self.networking.searchFiles(literal: literalSearch, account: session.account) { task in
-                self.dataSourceTask = task
+                self.searchDataSourceTask = task
                 Task {
                     await self.reloadDataSource()
                 }
@@ -924,7 +921,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         self.collectionView?.reloadData()
 
         self.networking.unifiedSearchFilesProvider(id: lastSearchResult.id, term: term, limit: 5, cursor: cursor, account: session.account) { task in
-            self.dataSourceTask = task
+            self.searchDataSourceTask = task
             Task {
                 await self.reloadDataSource()
             }
@@ -950,6 +947,11 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
             return
         }
         let serverUrlPush = utilityFileSystem.createServerUrl(serverUrl: metadata.serverUrl, fileName: metadata.fileName)
+
+        // Set Last Opening Date
+        Task {
+            await database.setDirectoryLastOpeningDateAsync(ocId: metadata.ocId)
+        }
 
         if let viewController = navigationCollectionViewCommon.first(where: { $0.navigationController == self.navigationController && $0.serverUrl == serverUrlPush})?.viewController, viewController.isViewLoaded {
             navigationController?.pushViewController(viewController, animated: true)

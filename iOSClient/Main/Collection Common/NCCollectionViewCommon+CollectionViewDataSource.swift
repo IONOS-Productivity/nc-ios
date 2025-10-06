@@ -237,8 +237,6 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         cell.fileUser = metadata.ownerId
 
         if isSearchingMode {
-            cell.fileTitleLabel?.text = metadata.fileName
-            cell.fileTitleLabel?.lineBreakMode = .byTruncatingTail
             if metadata.name == global.appName {
                 cell.fileInfoLabel?.text = NSLocalizedString("_in_", comment: "") + " " + utilityFileSystem.getPath(path: metadata.path, user: metadata.user)
             } else {
@@ -246,15 +244,22 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
             cell.fileSubinfoLabel?.isHidden = true
         } else if !metadata.sessionError.isEmpty, metadata.status != global.metadataStatusNormal {
-            cell.fileTitleLabel?.text = metadata.fileNameView
             cell.fileSubinfoLabel?.isHidden = false
             cell.fileInfoLabel?.text = metadata.sessionError
         } else {
             cell.fileSubinfoLabel?.isHidden = false
-            cell.fileTitleLabel?.text = metadata.fileNameView
-            cell.fileTitleLabel?.lineBreakMode = .byTruncatingMiddle
+
             cell.writeInfoDateSize(date: metadata.date, size: metadata.size)
         }
+
+//        if cell is NCListCell && cell.fileTitleLabel is BidiFilenameLabel {
+//            (cell.fileTitleLabel as? BidiFilenameLabel)?.fullFilename = metadata.fileNameView
+//            (cell.fileTitleLabel as? BidiFilenameLabel)?.isFolder = metadata.directory
+//            (cell.fileTitleLabel as? BidiFilenameLabel)?.numberOfLines = 1
+//
+//        } else {
+            cell.fileTitleLabel?.text = metadata.fileNameView
+//        }
 
         // Accessibility [shared] if metadata.ownerId != appDelegate.userId, appDelegate.account == metadata.account {
         if metadata.ownerId != metadata.userId {
@@ -505,13 +510,13 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
                 if isSearchingMode {
                     emptyImage = utility.loadImage(named: "magnifyingglass", colors: [NCBrandColor.shared.getElement(account: session.account)])
-                    if self.dataSourceTask?.state == .running {
+                    if self.searchDataSourceTask?.state == .running {
                         emptyTitle = NSLocalizedString("_search_in_progress_", comment: "")
                     } else {
                         emptyTitle = NSLocalizedString("_search_no_record_found_", comment: "")
                     }
                     emptyDescription = NSLocalizedString("_search_instruction_", comment: "")
-                } else if self.dataSourceTask?.state == .running {
+                } else if self.searchDataSourceTask?.state == .running {
                     emptyImage = utility.loadImage(named: "wifi", colors: [NCBrandColor.shared.getElement(account: session.account)])
                     emptyTitle = NSLocalizedString("_request_in_progress_", comment: "")
                     emptyDescription = ""

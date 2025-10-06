@@ -24,7 +24,7 @@ extension NCMedia {
         fileSelect.removeAll()
         tabBarSelect.update(fileSelect: fileSelect)
 
-        if let visibleCells = self.collectionView?.indexPathsForVisibleItems.compactMap({ self.collectionView?.cellForItem(at: $0) }) {
+        if let visibleCells = collectionView?.indexPathsForVisibleItems.compactMap({ collectionView?.cellForItem(at: $0) }) {
             for case let cell as NCMediaCell in visibleCells {
                 cell.selected(false)
             }
@@ -143,7 +143,9 @@ extension NCMedia: HiDriveCollectionViewCommonSelectToolbarDelegate {
         let ocIds = self.fileSelect.map { $0 }
         var alertStyle = UIAlertController.Style.actionSheet
 
-        if UIDevice.current.userInterfaceIdiom == .pad { alertStyle = .alert }
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            alertStyle = .alert
+        }
 
         if !ocIds.isEmpty {
             let alertController = UIAlertController(title: nil, message: nil, preferredStyle: alertStyle)
@@ -153,6 +155,8 @@ extension NCMedia: HiDriveCollectionViewCommonSelectToolbarDelegate {
                 self.updateHeadersView()
 
                 Task {
+                    await (self.navigationController as? NCMediaNavigationController)?.setNavigationRightItems()
+
                     for ocId in ocIds {
                         await self.deleteImage(with: ocId)
                     }
@@ -183,13 +187,20 @@ extension NCMedia: HiDriveCollectionViewCommonSelectToolbarDelegate {
             return
         }
 
-        let resultsDeleteFileOrFolder = await NextcloudKit.shared.deleteFileOrFolderAsync(serverUrlFileName: metadata.serverUrlFileName, account: metadata.account)
+        let resultsDeleteFileOrFolder = await NextcloudKit.shared.deleteFileOrFolderAsync(serverUrlFileName: metadata.serverUrlFileName, account: metadata.account) { task in
+            Task {
+                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: metadata.account,
+                                                                                            path: metadata.serverUrlFileName,
+                                                                                            name: "deleteFileOrFolder")
+                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+            }
+        }
 
         guard resultsDeleteFileOrFolder.error == .success || resultsDeleteFileOrFolder.error.errorCode == self.global.errorResourceNotFound else {
             return
         }
 
-        await self.database.deleteMetadataOcIdAsync(ocId)
+        await self.database.deleteMetadataAsync(id: ocId)
 
         await MainActor.run {
             if let indexPath = self.dataSource.indexPath(forOcId: ocId) {
