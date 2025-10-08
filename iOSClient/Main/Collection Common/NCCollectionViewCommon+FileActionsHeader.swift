@@ -15,25 +15,25 @@ extension NCCollectionViewCommon {
             navigationItem.preferredSearchBarPlacement = .stacked
         }
     }
-    
+
     // MARK: - Headers view
-    
+
     func updateHeadersView() {
         fileActionsHeader?.isHidden = isSearchingMode
         collectionViewTop?.constant = isSearchingMode ? 0 : fileActionsHeader?.bounds.height ?? 0
         fileActionsHeader?.setIsEditingMode(isEditingMode: isEditMode)
         fileActionsHeader?.enableSelection(enable: !self.dataSource.isEmpty())
-        
+
         fileActionsHeader?.setSortingMenu(sortingMenuElements: createSortMenuActions(), title: sortTitle, image: sortDirectionImage)
         fileActionsHeader?.setViewModeMenu(viewMenuElements: createViewModeMenuActions(), image: viewModeImage?.templateRendered())
-        
+
         fileActionsHeader?.onSelectModeChange = { [weak self] isSelectionMode in
             self?.setEditMode(isSelectionMode)
             (self?.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
             self?.updateHeadersView()
             self?.fileActionsHeader?.setSelectionState(selectionState: .none)
         }
-        
+
         fileActionsHeader?.onSelectAll = { [weak self] in
             guard let self = self else { return }
             self.selectAll()
@@ -41,16 +41,16 @@ extension NCCollectionViewCommon {
             self.fileActionsHeader?.setSelectionState(selectionState: selectionState)
         }
     }
-    
+
     private func createSortMenuActions() -> [UIMenuElement] {
         let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
-        
+
         let ascending = layoutForView.ascending
         let ascendingChevronImage = utility.loadImage(named: ascending ? "chevron.up" : "chevron.down")
         let isName = layoutForView.sort == "fileName"
         let isDate = layoutForView.sort == "date"
         let isSize = layoutForView.sort == "size"
-        
+
         let byName = UIAction(title: NSLocalizedString("_name_", comment: ""), image: isName ? ascendingChevronImage : nil, state: isName ? .on : .off) { [weak self] _ in
             if isName { // repeated press
                 layoutForView.ascending = !layoutForView.ascending
@@ -58,7 +58,7 @@ extension NCCollectionViewCommon {
             layoutForView.sort = "fileName"
             self?.notifyAboutLayoutChange(layoutForView)
         }
-        
+
         let byNewest = UIAction(title: NSLocalizedString("_date_", comment: ""), image: isDate ? ascendingChevronImage : nil, state: isDate ? .on : .off) { [weak self]  _ in
             if isDate { // repeated press
                 layoutForView.ascending = !layoutForView.ascending
@@ -76,10 +76,15 @@ extension NCCollectionViewCommon {
         }
 
         let sortSubmenu = UIMenu(title: NSLocalizedString("_order_by_", comment: ""), options: .displayInline, children: [byName, byNewest, byLargest])
-        
+
         let directoryOnTop = NCPreferences().getDirectoryOnTop(account: self.session.account)
         let directoryOnTopAction = UIAction(title: NSLocalizedString("_directory_on_top_", comment: ""), state: directoryOnTop ? .on : .off) { _ in
-            NCPreferences().setDirectoryOnTop(account: self.session.account, value: !directoryOnTop)
+            Task {
+                NCPreferences().setDirectoryOnTop(account: self.session.account, value: !directoryOnTop)
+                await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
+                    delegate.transferReloadData(serverUrl: self.serverUrl, status: nil)
+                }
+            }
         }
 
         let additionalSubmenu = UIMenu(title: "", options: .displayInline, children: [directoryOnTopAction])
@@ -115,15 +120,11 @@ extension NCCollectionViewCommon {
 
         return [list, grid, UIMenu(title: NSLocalizedString("_media_view_options_", comment: ""), children: [menuPhoto])]
     }
-    
+
     private func notifyAboutLayoutChange(_ layoutForView: NCDBLayoutForView) {
-//        NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterChangeLayout,
-//                                                    object: nil,
-//                                                    userInfo: ["account": self.session.account,
-//                                                               "serverUrl": self.serverUrl,
-//                                                               "layoutForView": layoutForView])
+        changeLayout(layoutForView: layoutForView)
     }
-    
+
     private var sortTitle: String? {
         let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
 
