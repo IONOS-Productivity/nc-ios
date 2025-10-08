@@ -121,7 +121,7 @@ class NCBrandColor: @unchecked Sendable {
     static let shared = NCBrandColorIONOS()
 
     // This is rewrited from customet theme, default is Nextcloud color
-    let customer: UIColor = UIColor(red: 0.0 / 255.0, green: 103.0 / 255.0, blue: 158.0 / 255.0, alpha: 1.0)         // Nextcloud : #00679e
+    let customer: UIColor = UIColor(red: 0.0 / 255.0, green: 130.0 / 255.0, blue: 201.0 / 255.0, alpha: 1.0)
     var customerText: UIColor = .white
 
     // INTERNAL DEFINE COLORS

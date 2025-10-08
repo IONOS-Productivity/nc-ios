@@ -100,10 +100,10 @@ extension AppDelegate {
         }
 
 		guard canCreateOfficeFiles else {
-			controller.presentMenu(with: actions, sender: sender)
+			controller.presentMenu(with: actions, controller: controller, sender: sender)
 			return
 		}
-		
+
         if NextcloudKit.shared.isNetworkReachable(),
            let creator = capabilities.directEditingCreators.first(where: { $0.editor == "onlyoffice" && $0.identifier == "onlyoffice_docx"}) {
 

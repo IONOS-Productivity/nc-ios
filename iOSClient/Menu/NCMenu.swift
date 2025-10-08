@@ -86,14 +86,14 @@ class NCMenu: UITableViewController {
         cell.accessibilityIdentifier = action.accessibilityIdentifier
         cell.tintColor = NCBrandColor.shared.customer
         cell.backgroundColor = menuColor
-		
+
 		cell.selectedBackgroundView = UIView()
 		cell.selectedBackgroundView?.backgroundColor =  UIColor(resource: .FileMenu.selectedRow)
-		
+
         let actionIconView = cell.viewWithTag(1) as? UIImageView
         let actionNameLabel = cell.viewWithTag(2) as? UILabel
         let actionDetailLabel = cell.viewWithTag(3) as? UILabel
-		
+
 		let iconWidthHeight = action.isHeader ? 36.0 : 20.0
 		actionIconView?.widthAnchor.constraint(equalToConstant: iconWidthHeight).isActive = true
 		actionIconView?.heightAnchor.constraint(equalToConstant: iconWidthHeight).isActive = true
@@ -127,7 +127,7 @@ class NCMenu: UITableViewController {
         if !action.isHeader {
             actionIconView?.image = actionIconView?.image?.withRenderingMode(.alwaysTemplate)
         }
-		
+
         if action.destructive {
 			let color = UIColor(resource: .destructiveAction)
 			actionIconView?.tintColor = color
@@ -135,13 +135,13 @@ class NCMenu: UITableViewController {
 		} else {
 			actionIconView?.tintColor = UIColor(resource: .FileMenu.icon)
 		}
-        
+
         if (action.selectable && action.selected) {
 			let checkmarkImage = UIImage(named: "checkmarkIcon")?.templateRendered()?.withTintColor(NCBrandColor.shared.brandElement)
             let checkmarkImageView = UIImageView(image: checkmarkImage)
             checkmarkImageView.frame = CGRect(x: 0, y: 0, width: 19, height: 19)
             checkmarkImageView.contentMode = .scaleAspectFit
-            
+
             cell.accessoryView = checkmarkImageView
         } else {
             cell.accessoryView = .none

@@ -60,6 +60,7 @@
 		42D34FD92D79A5B00020C106 /* ShareSearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42D34FD82D79A5B00020C106 /* ShareSearchField.swift */; };
 		42D3D0972C94284C008A5AD4 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
 		42D6C0AD2C6B8FA800DF5543 /* NCPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76882132C0DD1E7001CF441 /* NCPreferences.swift */; };
+		42E14EB82E96616000FBC8C3 /* AppDelegate+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E14EB72E96616000FBC8C3 /* AppDelegate+Menu.swift */; };
 		42E5D36B2D678F9C007150DE /* HiDriveMainNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E5D36A2D678F95007150DE /* HiDriveMainNavigationController.swift */; };
 		42F504802C6F553D001AA432 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
 		42F89EB12D71F30C00550A07 /* NCCollectionViewCommon+FileActionsHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42F89EB02D71F30C00550A07 /* NCCollectionViewCommon+FileActionsHeader.swift */; };
@@ -1335,6 +1336,7 @@
 		42C684B32CA1806000DD46F0 /* SecondaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondaryButton.swift; sourceTree = "<group>"; };
 		42C684B62CA1A20100DD46F0 /* CommonButtonConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonButtonConstants.swift; sourceTree = "<group>"; };
 		42D34FD82D79A5B00020C106 /* ShareSearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSearchField.swift; sourceTree = "<group>"; };
+		42E14EB72E96616000FBC8C3 /* AppDelegate+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+Menu.swift"; sourceTree = "<group>"; };
 		42E5D36A2D678F95007150DE /* HiDriveMainNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiDriveMainNavigationController.swift; sourceTree = "<group>"; };
 		42F5047F2C6F553D001AA432 /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
 		42F89EB02D71F30C00550A07 /* NCCollectionViewCommon+FileActionsHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCCollectionViewCommon+FileActionsHeader.swift"; sourceTree = "<group>"; };
@@ -2067,6 +2069,7 @@
 		371B5A2F23D0B04B00FAFAE9 /* Menu */ = {
 			isa = PBXGroup;
 			children = (
+				42E14EB72E96616000FBC8C3 /* AppDelegate+Menu.swift */,
 				F376A3732E5CC5FF0067EE25 /* ContextMenuActions.swift */,
 				F77A697C250A0FBC00FF1708 /* NCCollectionViewCommon+Menu.swift */,
 				F78C6FDD296D677300C952C3 /* NCContextMenu.swift */,
@@ -4847,6 +4850,7 @@
 				AF93471A27E2361E002537EE /* NCShareHeader.swift in Sources */,
 				F7F878AE1FB9E3B900599E4F /* NCEndToEndMetadata.swift in Sources */,
 				F7A7FDDD2C2DBD6200E9A93A /* NCDeepLinkHandler.swift in Sources */,
+				42E14EB82E96616000FBC8C3 /* AppDelegate+Menu.swift in Sources */,
 				F778231E2C42C07C001BB94F /* NCCollectionViewCommon+MediaLayout.swift in Sources */,
 				F710D1F52405770F00A6033D /* NCViewerPDF.swift in Sources */,
 				F389C9F52CEE383300049762 /* SelectAlbumView.swift in Sources */,

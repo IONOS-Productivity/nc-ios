@@ -46,16 +46,6 @@ class NCMainTabBarController: UITabBarController {
 
         NCDownloadAction.shared.setup(sceneIdentifier: sceneIdentifier)
 
-        tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
-
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterChangeTheming), object: nil, queue: .main) { [weak self] notification in
-            if let userInfo = notification.userInfo as? NSDictionary,
-               let account = userInfo["account"] as? String,
-               self?.account == account {
-                self?.tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
-            }
-        }
-
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterCheckUserDelaultErrorDone), object: nil, queue: nil) { notification in
             if let userInfo = notification.userInfo,
                let account = userInfo["account"] as? String,
