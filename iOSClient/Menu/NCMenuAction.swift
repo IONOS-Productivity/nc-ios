@@ -160,7 +160,7 @@ extension NCMenuAction {
                     completion?()
                 }
 
-                controller?.present(alertController, animated: true, completion: nil)
+                controller?.currentViewController()?.present(alertController, animated: true, completion: nil)
             })
     }
 
