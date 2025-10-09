@@ -46,6 +46,7 @@ stages:
     --output_name $scheme
     --archive_path $archive_path
     --export_method $export_method
+    --export_options ./ExportAlphaOptions.plist
     --silent
     --clean
     
@@ -70,7 +71,7 @@ stages:
   retry: 1
   stage: build
   tags:
-    - xcode16
+    - xcode26
   before_script:
     - *mac_general_scripts
   artifacts:
