@@ -1,25 +1,7 @@
-//
-//  NCViewerMediaPage.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 24/10/2020.
-//  Copyright © 2020 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2020 Marino Faggiana
+// SPDX-FileCopyrightText: 2025 Serhii Kaliberda
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import NextcloudKit
@@ -40,17 +22,12 @@ class NCViewerMediaPage: UIViewController {
     var delegateViewController: UIViewController?
 
     var modifiedOcId: [String] = []
-    var nextIndex: Int?
+    private var nextIndex: Int?
     var panGestureRecognizer: UIPanGestureRecognizer!
     var singleTapGestureRecognizer: UITapGestureRecognizer!
     var longtapGestureRecognizer: UILongPressGestureRecognizer!
     var textColor: UIColor = NCBrandColor.shared.textColor
-    var playCommand: Any?
-    var pauseCommand: Any?
-    var skipForwardCommand: Any?
-    var skipBackwardCommand: Any?
-    var nextTrackCommand: Any?
-    var previousTrackCommand: Any?
+
     let utilityFileSystem = NCUtilityFileSystem()
     let global = NCGlobal.shared
     let database = NCManageDatabase.shared
@@ -167,15 +144,12 @@ class NCViewerMediaPage: UIViewController {
 
         changeScreenMode(mode: viewerMediaScreenMode)
         tabBarController?.tabBar.isHidden = true
+
+        FloatingPlayerViewPresenter.shared.isMediaScreenVisible = true
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-
-        Task {
-            await NCNetworking.shared.transferDispatcher.addDelegate(self)
-        }
-
         startTimerAutoHide()
     }
 
@@ -184,18 +158,14 @@ class NCViewerMediaPage: UIViewController {
 
         changeScreenMode(mode: .normal)
         tabBarController?.tabBar.isHidden = false
+
+        FloatingPlayerViewPresenter.shared.isMediaScreenVisible = false
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
 
-        Task {
-            await NCNetworking.shared.transferDispatcher.removeDelegate(self)
-        }
-
-        currentViewController.ncplayer?.playerStop()
         timerAutoHide?.invalidate()
-        clearCommandCenter()
     }
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -214,7 +184,7 @@ class NCViewerMediaPage: UIViewController {
         return hideStatusBar
     }
 
-    func getViewerMedia(index: Int, metadata: tableMetadata) -> NCViewerMedia {
+    private func getViewerMedia(index: Int, metadata: tableMetadata) -> NCViewerMedia {
         // swiftlint:disable force_cast
         let viewerMedia = UIStoryboard(name: "NCViewerMediaPage", bundle: nil).instantiateViewController(withIdentifier: "NCViewerMedia") as! NCViewerMedia
         // swiftlint:enable force_cast
@@ -306,100 +276,6 @@ class NCViewerMediaPage: UIViewController {
         progressView.progress = 0
         changeScreenMode(mode: .normal)
     }
-
-    // MARK: - Command Center
-
-    func updateCommandCenter(ncplayer: NCPlayer, title: String) {
-        var nowPlayingInfo = [String: Any]()
-
-        UIApplication.shared.beginReceivingRemoteControlEvents()
-
-        // Add handler for Play Command
-        MPRemoteCommandCenter.shared().playCommand.isEnabled = true
-        playCommand = MPRemoteCommandCenter.shared().playCommand.addTarget { _ in
-
-            if !ncplayer.isPlaying() {
-                ncplayer.playerPlay()
-                return .success
-            }
-            return .commandFailed
-        }
-
-        // Add handler for Pause Command
-        MPRemoteCommandCenter.shared().pauseCommand.isEnabled = true
-        pauseCommand = MPRemoteCommandCenter.shared().pauseCommand.addTarget { _ in
-
-            if ncplayer.isPlaying() {
-                ncplayer.playerPause()
-                return .success
-            }
-            return .commandFailed
-        }
-
-        // >>
-        MPRemoteCommandCenter.shared().skipForwardCommand.isEnabled = true
-        skipForwardCommand = MPRemoteCommandCenter.shared().skipForwardCommand.addTarget { event in
-
-            let seconds = Int32((event as? MPSkipIntervalCommandEvent)?.interval ?? 0)
-            ncplayer.player.jumpForward(seconds)
-            return.success
-        }
-
-        // <<
-        MPRemoteCommandCenter.shared().skipBackwardCommand.isEnabled = true
-        skipBackwardCommand = MPRemoteCommandCenter.shared().skipBackwardCommand.addTarget { event in
-
-            let seconds = Int32((event as? MPSkipIntervalCommandEvent)?.interval ?? 0)
-            ncplayer.player.jumpBackward(seconds)
-            return.success
-        }
-
-        nowPlayingInfo[MPMediaItemPropertyTitle] = title
-        if let image = currentViewController.image {
-            nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: image.size) { _ in
-                return image
-            }
-        }
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
-    }
-
-    func clearCommandCenter() {
-
-        UIApplication.shared.endReceivingRemoteControlEvents()
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = [:]
-
-        MPRemoteCommandCenter.shared().playCommand.isEnabled = false
-        MPRemoteCommandCenter.shared().pauseCommand.isEnabled = false
-        MPRemoteCommandCenter.shared().skipForwardCommand.isEnabled = false
-        MPRemoteCommandCenter.shared().skipBackwardCommand.isEnabled = false
-        MPRemoteCommandCenter.shared().nextTrackCommand.isEnabled = false
-        MPRemoteCommandCenter.shared().previousTrackCommand.isEnabled = false
-
-        if let playCommand = playCommand {
-            MPRemoteCommandCenter.shared().playCommand.removeTarget(playCommand)
-            self.playCommand = nil
-        }
-        if let pauseCommand = pauseCommand {
-            MPRemoteCommandCenter.shared().pauseCommand.removeTarget(pauseCommand)
-            self.pauseCommand = nil
-        }
-        if let skipForwardCommand = skipForwardCommand {
-            MPRemoteCommandCenter.shared().skipForwardCommand.removeTarget(skipForwardCommand)
-            self.skipForwardCommand = nil
-        }
-        if let skipBackwardCommand = skipBackwardCommand {
-            MPRemoteCommandCenter.shared().skipBackwardCommand.removeTarget(skipBackwardCommand)
-            self.skipBackwardCommand = nil
-        }
-        if let nextTrackCommand = nextTrackCommand {
-            MPRemoteCommandCenter.shared().nextTrackCommand.removeTarget(nextTrackCommand)
-            self.nextTrackCommand = nil
-        }
-        if let previousTrackCommand = previousTrackCommand {
-            MPRemoteCommandCenter.shared().previousTrackCommand.removeTarget(previousTrackCommand)
-            self.previousTrackCommand = nil
-        }
-    }
 }
 
 // MARK: - UIPageViewController Delegate Datasource
@@ -410,16 +286,14 @@ extension NCViewerMediaPage: UIPageViewControllerDelegate, UIPageViewControllerD
         guard currentIndex > 0,
               let metadata = database.getMetadataFromOcId(ocIds[currentIndex - 1]) else { return nil }
 
-        let viewerMedia = getViewerMedia(index: currentIndex - 1, metadata: metadata)
-        return viewerMedia
+        return getViewerMedia(index: currentIndex - 1, metadata: metadata)
     }
 
     func pageViewController(_ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController? {
         guard currentIndex < ocIds.count - 1,
               let metadata = database.getMetadataFromOcId(ocIds[currentIndex + 1]) else { return nil }
 
-        let viewerMedia = getViewerMedia(index: currentIndex + 1, metadata: metadata)
-        return viewerMedia
+        return getViewerMedia(index: currentIndex + 1, metadata: metadata)
     }
 
     // START TRANSITION
@@ -445,12 +319,13 @@ extension NCViewerMediaPage: UIPageViewControllerDelegate, UIPageViewControllerD
         if completed && nextIndex != nil {
             previousViewControllers.forEach { viewController in
                 let viewerMedia = viewController as? NCViewerMedia
-                viewerMedia?.ncplayer?.playerStop()
                 viewerMedia?.closeDetail()
             }
             currentIndex = nextIndex!
         }
-
+        if completed {
+            NCMediaCoordinator.shared.finishMediaSession(clearQueue: false)
+        }
         changeScreenMode(mode: viewerMediaScreenMode)
         startTimerAutoHide()
 
@@ -545,6 +420,14 @@ extension UIPageViewController {
 }
 
 extension NCViewerMediaPage: NCViewerMediaViewDelegate {
+    func movedToAnotherItem(oldItem: tableMetadata, newItem: tableMetadata) {
+        guard currentIndex < ocIds.count - 1 else { return }
+
+        currentIndex = NCMediaCoordinator.shared.currentItemIndex ?? 0
+        let viewerMedia = getViewerMedia(index: currentIndex, metadata: newItem)
+        pageViewController.setViewControllers([viewerMedia], direction: .forward, animated: false)
+    }
+
     func didOpenDetail() {
         changeScreenMode(mode: .normal)
         imageDetailNavigationItem.image = NCUtility().loadImage(named: "info.circle.fill")
@@ -589,21 +472,7 @@ extension NCViewerMediaPage: NCTransferDelegate {
                 }
                 self.progressView.progress = 0
 
-                if metadata.isAudioOrVideo, let ncplayer = self.currentViewController.ncplayer {
-                    let url = URL(fileURLWithPath: self.utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,
-                                                                                                          fileName: metadata.fileNameView,
-                                                                                                          userId: metadata.userId,
-                                                                                                          urlBase: metadata.urlBase))
-                    if ncplayer.isPlaying() {
-                        ncplayer.playerPause()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            ncplayer.openAVPlayer(url: url)
-                            ncplayer.playerPlay()
-                        }
-                    } else {
-                        ncplayer.openAVPlayer(url: url)
-                    }
-                } else if metadata.isImage {
+                if metadata.isImage {
                     self.currentViewController.loadImage()
                 }
                 // UPLOAD

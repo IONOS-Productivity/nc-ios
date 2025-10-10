@@ -1,25 +1,7 @@
-//
-//  NCViewer.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 16/10/2020.
-//  Copyright © 2020 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2020 Marino Faggiana
+// SPDX-FileCopyrightText: 2025 Serhii Kaliberda
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import NextcloudKit
@@ -32,7 +14,7 @@ class NCViewer: NSObject {
     private var viewerQuickLook: NCViewerQuickLook?
 
     @MainActor
-    func getViewerController(metadata: tableMetadata, ocIds: [String]? = nil, image: UIImage? = nil, delegate: UIViewController? = nil) async -> UIViewController? {
+    func getViewerController(metadata: tableMetadata, ocIds: [String]? = nil, siblingMedia: [tableMetadata] = [], image: UIImage? = nil, delegate: UIViewController? = nil) async -> UIViewController? {
         let session = NCSession.shared.getSession(account: metadata.account)
         // Set Last Opening Date
         await self.database.setLocalFileLastOpeningDateAsync(metadata: metadata)
@@ -59,19 +41,25 @@ class NCViewer: NSObject {
         }
 
         // IMAGE AUDIO VIDEO
-        else if metadata.isImage || metadata.isAudioOrVideo {
-            let viewerMediaPageContainer = UIStoryboard(name: "NCViewerMediaPage", bundle: nil).instantiateInitialViewController() as? NCViewerMediaPage
+        else if metadata.isImage || metadata.isAudioOrVideo,
+            let viewerMediaPageContainer = UIStoryboard(name: "NCViewerMediaPage", bundle: nil).instantiateInitialViewController() as? NCViewerMediaPage {
+                if metadata.isAudioOrVideo {
+                    let mediaCoordinator = NCMediaCoordinator.shared
+                    mediaCoordinator.finishMediaSession()
+                    mediaCoordinator.items = siblingMedia
+                }
 
-            viewerMediaPageContainer?.delegateViewController = delegate
-            if let ocIds {
-                viewerMediaPageContainer?.currentIndex = ocIds.firstIndex(where: { $0 == metadata.ocId }) ?? 0
-                viewerMediaPageContainer?.ocIds = ocIds
-            } else {
-                viewerMediaPageContainer?.currentIndex = 0
-                viewerMediaPageContainer?.ocIds = [metadata.ocId]
-            }
+                viewerMediaPageContainer.delegateViewController = delegate
 
-            return viewerMediaPageContainer
+                if let ocIds {
+                    viewerMediaPageContainer.currentIndex = ocIds.firstIndex(where: { $0 == metadata.ocId }) ?? 0
+                    viewerMediaPageContainer.ocIds = ocIds
+                } else {
+                    viewerMediaPageContainer.currentIndex = 0
+                    viewerMediaPageContainer.ocIds = [metadata.ocId]
+                }
+
+                return viewerMediaPageContainer
         }
 
         // DOCUMENTS
