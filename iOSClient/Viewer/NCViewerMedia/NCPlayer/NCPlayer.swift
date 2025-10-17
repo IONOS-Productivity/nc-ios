@@ -90,11 +90,6 @@ class NCPlayer: NSObject {
         }
         playerToolBar?.playbackSliderEvent = .began
 
-        if let result = self.database.getVideoOrAudio(metadata: metadata), let position = result.position {
-            mediaCoordinator.position = position
-            playerToolBar?.playbackSliderEvent = .moved
-        }
-
         mediaCoordinator.play()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
