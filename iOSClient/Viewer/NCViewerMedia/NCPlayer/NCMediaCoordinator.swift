@@ -299,7 +299,7 @@ class NCMediaCoordinator: NSObject {
         player?.jumpBackward(seconds)
     }
 
-    func savePosition() {
+    private func savePosition() {
         guard let metadata = self.item, let media = self.media else { return }
         guard currentMediaIsInPlayer() else { return }
         guard media.lengthInSeconds > Self.secondsIn5Minutes else { return }
@@ -318,7 +318,7 @@ class NCMediaCoordinator: NSObject {
 
     private var downloadRequest: DownloadRequest?
     private func prepareAndStartPlayback(for metadata: tableMetadata) {
-        stateSubject.send(.gettingURL)
+        self.state = .gettingURL
         networking.getVideoUrl(metadata: metadata) { url, error in
             if error == .success, let url = url {
                 self.onReceived(playbackURL: url, metadata: metadata)
@@ -367,6 +367,7 @@ class NCMediaCoordinator: NSObject {
         }
         let nextItemIndex = items.index(after: index)
         let nextMetadata = items[nextItemIndex]
+        pause()
         play(item: nextMetadata)
     }
 
@@ -386,6 +387,7 @@ class NCMediaCoordinator: NSObject {
         }
         let prevItemIndex = items.index(before: index)
         let prevMetadata = items[prevItemIndex]
+        pause()
         play(item: prevMetadata)
     }
 
