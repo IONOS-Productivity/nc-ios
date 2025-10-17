@@ -115,7 +115,7 @@ class NCMedia: UIViewController {
 		gradient.startPoint = CGPoint(x: 0, y: 0.1)
 		gradient.endPoint = CGPoint(x: 0, y: 1)
 		gradient.colors = [UIColor.black.withAlphaComponent(UIAccessibility.isReduceTransparencyEnabled ? 0.8 : 0.4).cgColor, UIColor.clear.cgColor]
-		
+
 		collectionView.refreshControl = refreshControl
 		refreshControl.action(for: .valueChanged) { _ in
             Task {
@@ -123,24 +123,24 @@ class NCMedia: UIViewController {
                 await self.searchMediaUI(true)
             }
 		}
-		
+
 		pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinchGesture(_:)))
 		collectionView.addGestureRecognizer(pinchGesture)
-		
-//		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { _ in
-//            Task { @MainActor in
-//                guard let userInfo = notification.userInfo,
-//                   let account = userInfo["account"] as? String else {
-//                    return
-//                }
-//
-//                self.layoutType = self.database.getLayoutForView(account: account, key: self.global.layoutViewMedia, serverUrl: "").layout
-//                self.imageCache.removeAll()
-//                await self.loadDataSource()
-//                await self.searchMediaUI(true)
-//            }
-//		}
-		
+
+		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { notification in
+            Task { @MainActor in
+                guard let userInfo = notification.userInfo,
+                   let account = userInfo["account"] as? String else {
+                    return
+                }
+
+                self.layoutType = self.database.getLayoutForView(account: account, key: self.global.layoutViewMedia, serverUrl: "").layout
+                self.imageCache.removeAll()
+                await self.loadDataSource()
+                await self.searchMediaUI(true)
+            }
+		}
+
 		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterClearCache), object: nil, queue: nil) { _ in
             Task {
                 await self.dataSource.clearMetadatas()
@@ -148,13 +148,13 @@ class NCMedia: UIViewController {
                 await self.searchMediaUI(true)
             }
 		}
-		
+
         NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
             Task {
                 await self.networkRemoveAll()
             }
         }
-		
+
 		accountButtonFactory = AccountButtonFactory(controller: controller,
 													onAccountDetailsOpen: { [weak self] in self?.setEditMode(false) },
 													presentVC: { [weak self] vc in self?.present(vc, animated: true) })
