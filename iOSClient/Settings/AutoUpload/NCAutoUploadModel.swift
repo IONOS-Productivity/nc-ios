@@ -247,22 +247,6 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
         }
     }
 
-    /// Updates the auto-upload create subfolder setting.
-    func handleLocationChange(newValue: Bool) {
-        if let controller = self.controller {
-            if newValue {
-                Task { @MainActor in
-                    let result = await NCBackgroundLocationUploadManager.shared.requestAuthorizationAlwaysAsync(from: controller)
-                    self.permissionGranted = result
-                    NCPreferences().location = result
-                }
-            } else {
-                self.permissionGranted = false
-                NCPreferences().location = false
-            }
-        }
-    }
-
     func checkPermission() {
         let status = CLLocationManager().authorizationStatus
         permissionGranted = (status == .authorizedAlways && NCPreferences().location)

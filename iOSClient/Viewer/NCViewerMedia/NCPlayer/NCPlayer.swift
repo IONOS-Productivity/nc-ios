@@ -34,7 +34,6 @@ class NCPlayer: NSObject {
         super.init()
 
         configurePlayingUI()
-        NotificationCenter.default.addObserver(self, selector: #selector(applicationDidEnterBackground(_:)), name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
 
     deinit {
@@ -75,14 +74,6 @@ class NCPlayer: NSObject {
             viewerMediaPage.changeScreenMode(mode: .normal)
         } else {
             viewerMediaPage.changeScreenMode(mode: .full)
-        }
-    }
-
-    // MARK: - NotificationCenter
-
-    @objc func applicationDidEnterBackground(_ notification: NSNotification) {
-        if metadata.isVideo {
-            mediaCoordinator.pause()
         }
     }
 

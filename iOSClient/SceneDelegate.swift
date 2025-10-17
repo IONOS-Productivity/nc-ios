@@ -250,12 +250,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             nkLog(info: "Auto upload in background: \(tblAccount.autoUploadStart)")
             nkLog(info: "Update in background: \(UIApplication.shared.backgroundRefreshStatus == .available)")
 
-            if CLLocationManager().authorizationStatus == .authorizedAlways && NCPreferences().location && tblAccount.autoUploadStart {
-                NCBackgroundLocationUploadManager.shared.start()
-            } else {
-                NCBackgroundLocationUploadManager.shared.stop()
-            }
-
             if let error = await NCAccount().updateAppsShareAccounts() {
                 nkLog(error: "Create Apps share accounts \(error.localizedDescription)")
             }
