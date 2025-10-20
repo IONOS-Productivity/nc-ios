@@ -4,6 +4,27 @@
 
 import SwiftUI
 import Combine
+import UIKit
+
+private final class FloatingPlayerHostingController: UIHostingController<FloatingPlayerView> {
+    weak var presenter: FloatingPlayerViewPresenter?
+
+    init(rootView: FloatingPlayerView, presenter: FloatingPlayerViewPresenter) {
+        self.presenter = presenter
+        super.init(rootView: rootView)
+    }
+
+    @MainActor required dynamic init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.presenter?.updateAfterRotation()
+        }
+    }
+}
 
 class FloatingPlayerViewPresenter {
     static let shared = FloatingPlayerViewPresenter()
@@ -11,10 +32,11 @@ class FloatingPlayerViewPresenter {
     private var floatingWindow: UIWindow?
     private var hostingController: UIHostingController<FloatingPlayerView>?
     private(set) var currentPosition: CGPoint = .zero
+    private var isCompact: Bool = true
 
     private let windowLevel: UIWindow.Level = .alert + 1
 
-    private let fullViewSize = CGSize(width: 350, height: 115)
+    private let fullViewSize = CGSize(width: 372, height: 115)
     private let compactViewSize = CGSize(width: 50, height: 50)
     private let initialYOffset: CGFloat = 100
     private let initialXOffset: CGFloat = 20
@@ -42,6 +64,10 @@ class FloatingPlayerViewPresenter {
             .store(in: &cancellables)
     }
 
+    func updateAfterRotation() {
+        updateSize(isCompact)
+    }
+
     private func updateFloatingViewVisibility() {
         setFloatingView(visible: isCurrentItemSet && !isMediaScreenVisible)
     }
@@ -64,12 +90,13 @@ class FloatingPlayerViewPresenter {
         floatingWindow?.backgroundColor = .clear
         floatingWindow?.isHidden = false
 
-        hostingController = UIHostingController(rootView: FloatingPlayerView())
+        hostingController = FloatingPlayerHostingController(rootView: FloatingPlayerView(), presenter: self)
         hostingController?.view.backgroundColor = .clear
 
         let screenBounds = screenBounds()
         let initialY = screenBounds.height - initialYOffset
         currentPosition = CGPoint(x: initialXOffset, y: initialY)
+        isCompact = true
 
         floatingWindow?.frame = CGRect(origin: currentPosition, size: compactViewSize)
         hostingController?.view.frame = CGRect(origin: .zero, size: compactViewSize)
@@ -110,6 +137,7 @@ class FloatingPlayerViewPresenter {
 
         let newOrigin = self.newOrigin(for: isCompact)
         updatePosition(newOrigin)
+        self.isCompact = isCompact
     }
 
     private func newOrigin(for compact: Bool) -> CGPoint {
