@@ -51,7 +51,7 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     func onViewAppear() {
         let groups = NCManageDatabase.shared.getAccountGroups(account: session.account)
         isAdminGroup = groups.contains(NCGlobal.shared.groupAdmin)
-        
+
         mostCompatible = keychain.formatCompatibility
         livePhoto = keychain.livePhoto
         removeFromCameraRoll = keychain.removePhotoCameraRoll
@@ -179,31 +179,7 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
             metadata: nil
         )
 
-        controller?.present(viewerQuickLook, animated: true, completion: nil)
-    }
-}
-
-/// An enum that represents the level of the log
-enum LogLevel: Int, CaseIterable, Identifiable, Equatable {
-    /// Represents that logging is disabled
-    case disabled = 0
-    /// Represents standard logging level
-    case standard = 1
-    /// Represents maximum logging level
-    case maximum = 2
-    var id: Int { self.rawValue }
-}
-
-extension LogLevel {
-    var displayText: String {
-        switch self {
-        case .disabled:
-            return NSLocalizedString("_disabled_", comment: "")
-        case .standard:
-            return NSLocalizedString("_standard_", comment: "")
-        case .maximum:
-            return NSLocalizedString("_maximum_", comment: "")
-        }
+        controller?.currentViewController()?.present(viewerQuickLook, animated: true, completion: nil)
     }
 }
 

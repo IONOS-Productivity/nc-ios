@@ -118,11 +118,11 @@ struct NCSettingsAdvancedView: View {
 					.tint(Color(UIColor.label))
 					/// Set Log Level()
 					Picker(NSLocalizedString("_set_log_level_", comment: ""), selection: $model.selectedLogLevel) {
-						ForEach(LogLevel.allCases) { level in
+						ForEach(NKLogLevel.allCases) { level in
 							Text(level.displayText).tag(level)
 						}
 					}
-					.onChange(of: model.selectedLogLevel) { _ in
+					.onChange(of: model.selectedLogLevel) {
 						model.updateSelectedLogLevel()
 					}
 				}, header: {
