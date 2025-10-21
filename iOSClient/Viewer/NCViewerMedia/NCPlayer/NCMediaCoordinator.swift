@@ -141,9 +141,6 @@ class NCMediaCoordinator: NSObject {
     }
     private var coverImage: UIImage? {
         didSet {
-            guard let coverImage else {
-                return
-            }
             updateNowPlayingImage(coverImage)
         }
     }
@@ -484,10 +481,14 @@ class NCMediaCoordinator: NSObject {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
 
-    private func updateNowPlayingImage(_ image: UIImage) {
+    private func updateNowPlayingImage(_ image: UIImage?) {
         var nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
-        nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: image.size) { _ in
-            return image
+        if let image = image {
+            nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: image.size) { _ in
+                return image
+            }
+        } else {
+            nowPlayingInfo.removeValue(forKey: MPMediaItemPropertyArtwork)
         }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
@@ -521,6 +522,8 @@ class NCMediaCoordinator: NSObject {
 
     private func updateCoverImage() {
         guard let item else { return }
+
+        self.coverImage = nil
 
         if item.isVideo && !item.hasPreview {
             utility.createImageFileFrom(metadata: item)
