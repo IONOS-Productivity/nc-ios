@@ -45,6 +45,7 @@ enum NCPlayerState: Equatable {
     case gettingURL
     case downloading(progress: Double)
     case downloaded
+    case streamAdded
 
     init(vlcState: VLCMediaPlayerState) {
         switch vlcState {
@@ -55,6 +56,7 @@ enum NCPlayerState: Equatable {
         case .error: self = .error(error: nil)
         case .playing: self = .playing
         case .paused: self = .paused
+        case .esAdded: self = .streamAdded
         default: self = .stopped
         }
     }
@@ -183,7 +185,7 @@ class NCMediaCoordinator: NSObject {
 
     var currentAudioTrackIndex: Int32 {
         get { return player?.currentAudioTrackIndex ?? 0 }
-        set { player?.currentTitleIndex = newValue }
+        set { player?.currentAudioTrackIndex = newValue }
     }
 
     var currentVideoSubTitleIndex: Int32 {
