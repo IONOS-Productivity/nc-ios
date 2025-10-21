@@ -20,7 +20,9 @@ private final class FloatingPlayerHostingController: UIHostingController<Floatin
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+        coordinator.animate(alongsideTransition: { [weak self] _ in
+            self?.presenter?.animationAlongsideRotation()
+        }) { [weak self] _ in
             self?.presenter?.updateAfterRotation()
         }
     }
@@ -64,8 +66,14 @@ class FloatingPlayerViewPresenter {
             .store(in: &cancellables)
     }
 
+    func animationAlongsideRotation() {
+        floatingWindow?.isHidden = true
+    }
+
     func updateAfterRotation() {
-        updateSize(isCompact)
+        floatingWindow?.isHidden = false
+        floatingWindow?.frame.size = isCompact ? compactViewSize : fullViewSize
+        updatePosition(currentPosition)
     }
 
     private func updateFloatingViewVisibility() {
