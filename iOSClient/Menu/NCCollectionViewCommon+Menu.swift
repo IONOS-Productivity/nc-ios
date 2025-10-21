@@ -379,30 +379,6 @@ extension NCCollectionViewCommon {
         }
 
         //
-        // COLOR FOLDER
-        //
-        if self is NCFiles,
-           metadata.directory {
-            actions.append(
-                NCMenuAction(
-                    title: NSLocalizedString("_change_color_", comment: ""),
-                    icon: utility.loadImage(named: "paintpalette", colors: [NCBrandColor.shared.iconImageColor]),
-                    order: 160,
-                    sender: sender,
-                    action: { _ in
-                        if let picker = UIStoryboard(name: "NCColorPicker", bundle: nil).instantiateInitialViewController() as? NCColorPicker {
-                            picker.metadata = metadata
-                            picker.collectionViewCommon = self
-                            let popup = NCPopupViewController(contentController: picker, popupWidth: 200, popupHeight: 320)
-                            popup.backgroundAlpha = 0
-                            self.present(popup, animated: true)
-                        }
-                    }
-                )
-            )
-        }
-
-        //
         // DELETE
         //
         if metadata.isDeletable {
