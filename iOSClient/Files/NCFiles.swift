@@ -100,7 +100,6 @@ class NCFiles: NCCollectionViewCommon {
 
         Task {
             let capabilities = await database.getCapabilities(account: self.session.account) ?? NKCapabilities.Capabilities()
-//            mainNavigationController?.createPlusMenu(session: self.session, capabilities: capabilities)
 
             await self.reloadDataSource()
         }
@@ -156,13 +155,6 @@ class NCFiles: NCCollectionViewCommon {
 
             // disable + button if no create permission
             let color = NCBrandColor.shared.getElement(account: self.session.account)
-
-//            if let items = self.mainNavigationController?.menuToolbar.items {
-//                for item in items {
-//                    item.isEnabled = metadataFolder.isCreatable
-//                    item.tintColor = metadataFolder.isCreatable ? color : .lightGray
-//                }
-//            }
         }
 
         let metadatas = await self.database.getMetadatasAsyncDataSource(withServerUrl: self.serverUrl,

@@ -19,7 +19,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     var backgroundSessionCompletionHandler: (() -> Void)?
     var activeLogin: NCLogin?
     var activeLoginWeb: NCLoginProvider?
-    var taskAutoUploadDate: Date = Date()
     var isUiTestingEnabled: Bool {
         return ProcessInfo.processInfo.arguments.contains("UI_TESTING")
     }

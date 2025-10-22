@@ -685,8 +685,6 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         }
         // TIP
         dismissTip()
-        //
-//        mainNavigationController?.isHiddenPlusButton(true)
     }
 
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
@@ -705,8 +703,6 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         Task {
             await self.reloadDataSource()
         }
-        //
-//        mainNavigationController?.isHiddenPlusButton(false)
     }
 
     // MARK: - TAP EVENT

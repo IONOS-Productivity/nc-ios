@@ -68,7 +68,6 @@ extension NCMedia {
             UIView.animate(withDuration: 0.30) {
                 self.currentScale = 1.0
                 self.collectionView.transform = .identity
-//                self.setTitleDate()
             }
         default:
             break
