@@ -235,7 +235,7 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     func hideSeparator(_ status: Bool) {
         separator.isHidden = status
     }
-	
+
     func selected(_ isSelected: Bool, isEditMode: Bool) {
         if isEditMode {
             imageItemLeftConstraint.constant = 45

@@ -390,6 +390,7 @@ extension NCSelect: UICollectionViewDataSource {
 
         cell.imageItem.image = nil
         cell.imageItem.backgroundColor = nil
+        cell.imageItem.contentMode = .scaleAspectFit
 
         if metadata.directory {
             if metadata.e2eEncrypted {
