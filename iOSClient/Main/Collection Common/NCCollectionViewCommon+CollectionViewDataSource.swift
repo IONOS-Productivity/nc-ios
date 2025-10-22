@@ -8,7 +8,7 @@ import NextcloudKit
 import RealmSwift
 
 extension NCCollectionViewCommon: UICollectionViewDataSource {
-	
+
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return self.dataSource.numberOfSections()
     }
@@ -127,23 +127,23 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 		case sharedOnMe
 		case sharedInternally
 		case sharedByLink
-		
+
 		static func state(by metadata: tableMetadata, isShare: Bool) -> ItemShareState {
 			if isShare {
 				return .sharedOnMe
 			}
-			
+
 			if metadata.shareType.isEmpty {
 				return .notShared
 			}
-			
+
 			if metadata.shareType.contains(3) {
 				return .sharedByLink
 			}
-			
+
 			return .sharedInternally
 		}
-		
+
 		var iconImage: UIImage {
 			let imageCache = NCImageCache.shared
 			switch self {
@@ -153,7 +153,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 			case .sharedByLink: 	return imageCache.getIconSharedByLink()
 			}
 		}
-		
+
 		var folderImage: UIImage {
 			let imageCache = NCImageCache.shared
 			switch self {
@@ -346,13 +346,12 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
         }
 
-		
         // image Favorite
 		cell.fileFavoriteImage?.image = metadata.favorite ? imageCache.getImageFavorite() : nil
         if metadata.favorite {
             a11yValues.append(NSLocalizedString("_favorite_short_", comment: ""))
         }
-		
+
         // Share image
 		cell.fileSharedImage?.image = ItemShareState.state(by: metadata, isShare: isShare).iconImage
 

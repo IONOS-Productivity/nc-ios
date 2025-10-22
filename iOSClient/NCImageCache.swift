@@ -159,11 +159,6 @@ final class NCImageCache: @unchecked Sendable {
         return UIImage(resource: .Share.canShare).withTintColor(NCBrandColor.shared.brandElement)
     }
 
-	func getImageShareByLink() -> UIImage {
-		return UIImage(resource: .Share.shared)
-	}
-	
-	
 	func getIconSharedByLink() -> UIImage {
 		UIImage(resource: .Share.Icon.byLink)
 	}
@@ -188,7 +183,6 @@ final class NCImageCache: @unchecked Sendable {
 		UIImage(resource: .Share.Folder.withMe)
 	}
 
-	
     func getImageFavorite() -> UIImage {
         return UIImage(resource: .FileFolderCell.star)
     }

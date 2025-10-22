@@ -180,14 +180,6 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
     // MARK: - View Life Cycle
 
-    private func forceRefreshDataSource() async {
-        dataSource.removeAll()
-        await getServerData()
-        if isRecommendationActived {
-            await NCNetworking.shared.createRecommendations(session: self.session, serverUrl: self.serverUrl, collectionView: self.collectionView)
-        }
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -236,8 +228,12 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
         collectionView.refreshControl = refreshControl
         refreshControl.action(for: .valueChanged) { _ in
-            Task {
-                await self.forceRefreshDataSource()
+            Task { @MainActor in
+                // Perform async server forced
+                await self.getServerData(forced: true)
+
+                // Stop the refresh control after data is loaded
+                self.refreshControl.endRefreshing()
             }
         }
 
