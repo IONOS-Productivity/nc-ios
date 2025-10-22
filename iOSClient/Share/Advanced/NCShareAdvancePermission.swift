@@ -260,7 +260,6 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
                 handler: { _ in self.navigationController?.popViewController(animated: true) }))
 
             alert.addAction(UIAlertAction(title: NSLocalizedString("_continue_editing_", comment: ""), style: .default))
-            alert.view.backgroundColor = NCBrandColor.shared.appBackgroundColor
             self.present(alert, animated: true)
 
             return
