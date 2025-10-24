@@ -28,10 +28,16 @@ private final class FloatingPlayerHostingController: UIHostingController<Floatin
     }
 }
 
+private class FloatingPanelWindow: UIWindow {
+    override var canBecomeKey: Bool {
+        false
+    }
+}
+
 class FloatingPlayerViewPresenter {
     static let shared = FloatingPlayerViewPresenter()
 
-    private var floatingWindow: UIWindow?
+    private var floatingWindow: FloatingPanelWindow?
     private var hostingController: UIHostingController<FloatingPlayerView>?
     private(set) var currentPosition: CGPoint = .zero
     private var isCompact: Bool = true
@@ -93,7 +99,7 @@ class FloatingPlayerViewPresenter {
             return
         }
 
-        floatingWindow = UIWindow(windowScene: windowScene)
+        floatingWindow = FloatingPanelWindow(windowScene: windowScene)
         floatingWindow?.windowLevel = windowLevel
         floatingWindow?.backgroundColor = .clear
         floatingWindow?.isHidden = false
@@ -113,6 +119,7 @@ class FloatingPlayerViewPresenter {
 
     private func destroyFloatingWindow() {
         floatingWindow?.isHidden = true
+        floatingWindow?.windowScene = nil
         floatingWindow = nil
         hostingController = nil
     }
