@@ -15,7 +15,7 @@ class DataProtectionAgreementManager {
     private(set) static var shared = DataProtectionAgreementManager()
     private var dismissBlock: (() -> Void)?
 
-    var rootViewController: UIViewController
+    private var rootViewController: UIViewController
 
     struct DataProtectionKeys {
         static let agreementWasShown = "data_protection_agreement_was_shown"
@@ -35,25 +35,26 @@ class DataProtectionAgreementManager {
         rootViewController.dismiss(animated: false)
     }
 
-    func showView(viewController: UIViewController, dismissBlock: @escaping () -> Void) {
+    private func showPrivacyAgreementScreen(over viewController: UIViewController) {
         guard Thread.current.isMainThread else {
             return DispatchQueue.main.async { [weak self] in
-                self?.showView(viewController: viewController, dismissBlock: dismissBlock)
+                self?.showPrivacyAgreementScreen(over: viewController)
             }
         }
 
-        if rootViewController.presentingViewController == nil {
-            rootViewController.modalPresentationStyle = .fullScreen
-            viewController.present(rootViewController, animated: false)
+        guard rootViewController.presentingViewController != viewController else {
+            return
         }
+
+        rootViewController = DataProtectionHostingController(rootView: DataProtectionAgreementScreen())
+        rootViewController.modalPresentationStyle = .fullScreen
+        viewController.present(rootViewController, animated: false)
     }
 
     func showAgreement(viewController: UIViewController) {
         let wasAgreementShown = UserDefaults.standard.bool(forKey: DataProtectionKeys.agreementWasShown)
         if !wasAgreementShown {
-            showView(viewController: viewController) { [weak self] in
-                self?.setupAnalyticsCollection()
-            }
+            showPrivacyAgreementScreen(over: viewController)
         }
     }
 
@@ -80,8 +81,7 @@ class DataProtectionAgreementManager {
         askForTrackingPermission { [weak self] granted in
             if granted {
                 self?.redirectToSettings()
-            }
-            else {
+            } else {
                 self?.dismissView()
             }
         }
