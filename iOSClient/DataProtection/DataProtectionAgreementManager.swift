@@ -13,7 +13,6 @@ import Firebase
 
 class DataProtectionAgreementManager {
     private(set) static var shared = DataProtectionAgreementManager()
-    private var dismissBlock: (() -> Void)?
 
     private var rootViewController: UIViewController
 
@@ -28,11 +27,13 @@ class DataProtectionAgreementManager {
     func dismissView() {
         guard Thread.current.isMainThread else {
             return DispatchQueue.main.async { [weak self] in
-                self?.rootViewController.dismiss(animated: false)
+                self?.dismissView()
             }
         }
 
-        rootViewController.dismiss(animated: false)
+        rootViewController.dismiss(animated: false) { [weak self] in
+            self?.setupAnalyticsCollection()
+        }
     }
 
     private func showPrivacyAgreementScreen(over viewController: UIViewController) {
