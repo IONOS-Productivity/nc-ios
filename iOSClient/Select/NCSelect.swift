@@ -81,7 +81,6 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
         super.viewDidLoad()
 
         navigationController?.setNavigationBarAppearance()
-        navigationController?.navigationBar.prefersLargeTitles = true
 
         view.backgroundColor = NCBrandColor.shared.appBackgroundColor
         collectionView.backgroundColor = .systemBackground

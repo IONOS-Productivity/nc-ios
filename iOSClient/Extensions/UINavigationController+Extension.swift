@@ -33,7 +33,7 @@ extension UINavigationController {
 
     func setNavigationBarAppearance(backround: UIColor = NCBrandColor.shared.appBackgroundColor) {
         navigationBar.tintColor = NCBrandColor.shared.iconImageColor
-        
+
         let standardAppearance = UINavigationBarAppearance()
         standardAppearance.configureWithOpaqueBackground()
         standardAppearance.backgroundColor = backround
