@@ -9,6 +9,7 @@ extension NCFiles {
         let deltaY = currentOffsetY - lastOffsetY
         let deltaTime = currentTime - lastScrollTime
         let velocity = deltaTime > 0 ? deltaY / CGFloat(deltaTime) : 0
+
         lastOffsetY = currentOffsetY
         lastScrollTime = currentTime
     }

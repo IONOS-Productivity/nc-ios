@@ -123,8 +123,8 @@ struct NCUploadAssetsView: View {
                                                 Text(renameError)
                                             }
                                     }
-                                    .onChange(of: renameFileName) { newValue in
-                                        if let error = FileNameValidator.checkFileName(newValue, account: model.controller?.account) {
+                                    .onChange(of: renameFileName) { _, newValue in
+                                        if let error = FileNameValidator.checkFileName(newValue, account: model.controller?.account, capabilities: model.capabilities) {
                                             renameError = error.errorDescription
                                         } else {
                                             renameError = ""
@@ -137,9 +137,8 @@ struct NCUploadAssetsView: View {
 					.applyGlobalFormSectionStyle()
 
                     Section {
-                        ///
-                        /// Auto upload requires creating folders and subfolders which are difficult to manage offline
-                        /// 
+                        // Auto upload requires creating folders and subfolders which are difficult to manage offline
+                        // 
                         if NCNetworking.shared.isOnline {
                             Toggle(isOn: $model.useAutoUploadFolder, label: {
                                 Text(NSLocalizedString("_use_folder_auto_upload_", comment: ""))
@@ -169,8 +168,7 @@ struct NCUploadAssetsView: View {
                                             .frame(maxWidth: .infinity, alignment: .trailing)
                                     }
                                 } icon: {
-                                    Image("folder")
-                                        .renderingMode(.template)
+                                    Image(uiImage: NCImageCache.shared.getFolder(account: model.session.account))
                                         .resizable()
                                         .scaledToFit()
                                         .foregroundColor(Color(.Share.commonIconTint))
@@ -225,7 +223,7 @@ struct NCUploadAssetsView: View {
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .sheet(isPresented: $showSelect) {
-            SelectView(serverUrl: $model.serverUrl, session: model.session)
+            SelectView(serverUrl: $model.serverUrl, includeDirectoryE2EEncryption: true, session: model.session)
         }
         .sheet(isPresented: $showUploadConflict) {
             UploadConflictView(delegate: model, serverUrl: model.serverUrl, metadatasUploadInConflict: model.metadatasUploadInConflict, metadatasNOConflict: model.metadatasNOConflict)

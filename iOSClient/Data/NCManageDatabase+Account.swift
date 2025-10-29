@@ -61,7 +61,23 @@ class tableAccount: Object {
     }
 
     func tableAccountToCodable() -> tableAccountCodable {
-        return tableAccountCodable(account: self.account, active: self.active, alias: self.alias, autoUploadCreateSubfolder: self.autoUploadCreateSubfolder, autoUploadSubfolderGranularity: self.autoUploadSubfolderGranularity, autoUploadDirectory: self.autoUploadDirectory, autoUploadFileName: self.autoUploadFileName, autoUploadStart: self.autoUploadStart, autoUploadImage: self.autoUploadImage, autoUploadVideo: self.autoUploadVideo, autoUploadWWAnPhoto: self.autoUploadWWAnPhoto, autoUploadWWAnVideo: self.autoUploadWWAnVideo, user: self.user, userId: self.userId, urlBase: self.urlBase)
+        return tableAccountCodable(account: self.account,
+                                   active: self.active,
+                                   alias: self.alias,
+                                   autoUploadCreateSubfolder: self.autoUploadCreateSubfolder,
+                                   autoUploadSubfolderGranularity: self.autoUploadSubfolderGranularity,
+                                   autoUploadDirectory: self.autoUploadDirectory,
+                                   autoUploadFileName: self.autoUploadFileName,
+                                   autoUploadStart: self.autoUploadStart,
+                                   autoUploadImage: self.autoUploadImage,
+                                   autoUploadVideo: self.autoUploadVideo,
+                                   autoUploadWWAnPhoto: self.autoUploadWWAnPhoto,
+                                   autoUploadWWAnVideo: self.autoUploadWWAnVideo,
+                                   autoUploadOnlyNew: self.autoUploadOnlyNew,
+                                   autoUploadOnlyNewSinceDate: self.autoUploadOnlyNewSinceDate,
+                                   user: self.user,
+                                   userId: self.userId,
+                                   urlBase: self.urlBase)
     }
 
     convenience init(codableObject: tableAccountCodable) {
@@ -100,6 +116,8 @@ struct tableAccountCodable: Codable {
     var autoUploadVideo: Bool
     var autoUploadWWAnPhoto: Bool
     var autoUploadWWAnVideo: Bool
+    var autoUploadOnlyNew: Bool
+    var autoUploadOnlyNewSinceDate: Date
 
     var user: String
     var userId: String
@@ -110,32 +128,51 @@ extension NCManageDatabase {
 
     // MARK: - Automatic backup/restore accounts
 
-    func backupTableAccountToFile() {
-        let dirGroup = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: NCBrandOptions.shared.capabilitiesGroup)
-        guard let fileURL = dirGroup?.appendingPathComponent(NCGlobal.shared.appDatabaseNextcloud + "/" + tableAccountBackup) else {
+    /// Asynchronously backs up all `tableAccount` entries with non-empty passwords to a JSON file inside the app group container.
+    /// If Realm initialization or access crashes, the error is logged and the operation is aborted safely.
+    func backupTableAccountToFileAsync() async {
+        guard let groupDirectory = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: NCBrandOptions.shared.capabilitiesGroup) else {
+            nkLog(error: "App group directory not found")
             return
         }
 
-        do {
-            let realm = try Realm()
-            var codableObjects: [tableAccountCodable] = []
-            let encoder = JSONEncoder()
+        let backupDirectory = groupDirectory.appendingPathComponent(NCGlobal.shared.appDatabaseNextcloud)
+        let fileURL = backupDirectory.appendingPathComponent(tableAccountBackup)
 
-            encoder.outputFormatting = .prettyPrinted
+        await withCheckedContinuation { continuation in
+            realmQueue.async {
+                autoreleasepool {
+                    do {
+                        try FileManager.default.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
 
-            for tblAccount in realm.objects(tableAccount.self) {
-                if !NCKeychain().getPassword(account: tblAccount.account).isEmpty {
-                    let codableObject = tblAccount.tableAccountToCodable()
-                    codableObjects.append(codableObject)
+                        let realm = try Realm()
+
+                        var codableObjects: [tableAccountCodable] = []
+
+                        for tblAccount in realm.objects(tableAccount.self) {
+                            let account = tblAccount.account
+                            if account.isEmpty { continue }
+
+                            let password = NCPreferences().getPassword(account: account)
+                            if !password.isEmpty {
+                                codableObjects.append(tblAccount.tableAccountToCodable())
+                            }
+                        }
+
+                        if !codableObjects.isEmpty {
+                            let encoder = JSONEncoder()
+                            encoder.outputFormatting = .prettyPrinted
+                            let jsonData = try encoder.encode(codableObjects)
+                            try jsonData.write(to: fileURL)
+                        }
+
+                    } catch {
+                        nkLog(error: "Failed to backup tableAccount: \(error)")
+                    }
+
+                    continuation.resume()
                 }
             }
-
-            if !codableObjects.isEmpty {
-                let jsonData = try encoder.encode(codableObjects)
-                try jsonData.write(to: fileURL)
-            }
-        } catch {
-            print("Error: \(error)")
         }
     }
 
@@ -145,10 +182,9 @@ extension NCManageDatabase {
             return
         }
 
-        NextcloudKit.shared.nkCommonInstance.writeLog("DATABASE: Trying to restore account from backup...")
+        nkLog(debug: "Trying to restore account from backup...")
 
         if !FileManager.default.fileExists(atPath: fileURL.path) {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] DATABASE: Account restore backup not found at: \(fileURL.path)")
             return
         }
 
@@ -160,29 +196,29 @@ extension NCManageDatabase {
 
             try realm.write {
                 for codableObject in codableObjects {
-                    if !NCKeychain().getPassword(account: codableObject.account).isEmpty {
+                    if !NCPreferences().getPassword(account: codableObject.account).isEmpty {
                         let tableAccount = tableAccount(codableObject: codableObject)
-                        realm.add(tableAccount)
+                        realm.add(tableAccount, update: .all)
                     }
                 }
             }
 
-            NextcloudKit.shared.nkCommonInstance.writeLog("DATABASE: Account restored")
+            nkLog(debug: "Account restored successfully")
         } catch {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] DATABASE: Account restore error: \(error)")
+            nkLog(error: "Account restore error: \(error)")
         }
     }
 
     // MARK: - Realm write
 
-    func addAccount(_ account: String, urlBase: String, user: String, userId: String, password: String) {
-        performRealmWrite { realm in
+    func addAccountAsync(_ account: String, urlBase: String, user: String, userId: String, password: String) async {
+        await performRealmWriteAsync { realm in
             if let existing = realm.object(ofType: tableAccount.self, forPrimaryKey: account) {
                 realm.delete(existing)
             }
 
             // Save password in Keychain
-            NCKeychain().setPassword(account: account, password: password)
+            NCPreferences().setPassword(account: account, password: password)
 
             let newAccount = tableAccount()
 
@@ -195,22 +231,32 @@ extension NCManageDatabase {
         }
     }
 
-    func updateAccountProperty<T>(_ keyPath: ReferenceWritableKeyPath<tableAccount, T>, value: T, account: String) {
-        guard let activeAccount = getTableAccount(account: account) else { return }
-        activeAccount[keyPath: keyPath] = value
-        updateAccount(activeAccount)
-    }
+    /// Asynchronously updates a specific property of a `tableAccount` object identified by account name.
+    /// - Parameters:
+    ///   - keyPath: A writable key path to the property to modify.
+    ///   - value: The new value to assign to the property.
+    ///   - account: The account identifier.
+    func updateAccountPropertyAsync<T>(_ keyPath: ReferenceWritableKeyPath<tableAccount, T>, value: T, account: String) async {
+        await performRealmWriteAsync { realm in
+            guard let original = realm.objects(tableAccount.self)
+                .filter("account == %@", account)
+                .first else {
+                return
+            }
 
-    func updateAccount(_ account: tableAccount) {
-        performRealmWrite { realm in
-            realm.add(account, update: .all)
+            // Clone and update
+            let detached = tableAccount(value: original)
+            detached[keyPath: keyPath] = value
+
+            // Persist update
+            realm.add(detached, update: .all)
         }
     }
 
-    func setAccountAlias(_ account: String, alias: String) {
+    func setAccountAliasAsync(_ account: String, alias: String) async {
         let alias = alias.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        performRealmWrite { realm in
+        await performRealmWriteAsync { realm in
             if let result = realm.objects(tableAccount.self).filter("account == %@", account).first {
                 result.alias = alias
             }
@@ -218,10 +264,10 @@ extension NCManageDatabase {
     }
 
     @discardableResult
-    func setAccountActive(_ account: String) -> tableAccount? {
+    func setAccountActiveAsync(_ account: String) async -> tableAccount? {
         var tblAccount: tableAccount?
 
-        performRealmWrite { realm in
+        await performRealmWriteAsync { realm in
             let results = realm.objects(tableAccount.self)
             for result in results {
                 if result.account == account {
@@ -235,34 +281,16 @@ extension NCManageDatabase {
         return tblAccount
     }
 
-    func setAccountAutoUploadProperty(_ property: String, state: Bool) {
-        performRealmWrite { realm in
-            if let result = realm.objects(tableAccount.self).filter("active == true").first {
-                if (tableAccount().objectSchema.properties.contains { $0.name == property }) {
-                    result[property] = state
-                }
-            }
-        }
-    }
-
-    func setAccountAutoUploadGranularity(_ property: String, state: Int) {
-        performRealmWrite { realm in
-            if let result = realm.objects(tableAccount.self).filter("active == true").first {
-                result.autoUploadSubfolderGranularity = state
-            }
-        }
-    }
-
-    func setAccountAutoUploadFileName(_ fileName: String) {
-        performRealmWrite { realm in
+    func setAccountAutoUploadFileNameAsync(_ fileName: String) async {
+        await performRealmWriteAsync { realm in
             if let result = realm.objects(tableAccount.self).filter("active == true").first {
                 result.autoUploadFileName = fileName
             }
         }
     }
 
-    func setAccountAutoUploadDirectory(_ serverUrl: String, session: NCSession.Session) {
-        performRealmWrite { realm in
+    func setAccountAutoUploadDirectoryAsync(_ serverUrl: String, session: NCSession.Session) async {
+        await performRealmWriteAsync { realm in
             if let result = realm.objects(tableAccount.self)
                 .filter("active == true")
                 .first {
@@ -271,18 +299,13 @@ extension NCManageDatabase {
         }
     }
 
-    func setAutoUploadOnlyNewSinceDate(account: String, date: Date) {
-        performRealmWrite { realm in
-            if let result = realm.objects(tableAccount.self)
-                .filter("acccount == %@", account)
-                .first {
-                result.autoUploadOnlyNewSinceDate = date
-            }
-        }
-    }
-
-    func setAccountUserProfile(account: String, userProfile: NKUserProfile) {
-        performRealmWrite { realm in
+    /// Asynchronously sets the user profile properties for a specific account in the Realm database.
+    /// - Parameters:
+    ///   - account: The account identifier.
+    ///   - userProfile: A `NKUserProfile` instance containing updated user profile data.
+    ///   - async: Whether the Realm write should be executed asynchronously (default is true).
+    func setAccountUserProfileAsync(account: String, userProfile: NKUserProfile) async {
+        await performRealmWriteAsync { realm in
             if let result = realm.objects(tableAccount.self)
                 .filter("account == %@", account)
                 .first {
@@ -313,20 +336,27 @@ extension NCManageDatabase {
         }
     }
 
-    func setAccountMediaPath(_ path: String, account: String) {
-        performRealmWrite { realm in
+    func setAccountMediaPathAsync(_ path: String, account: String) async {
+        await performRealmWriteAsync { realm in
             if let result = realm.objects(tableAccount.self).filter("account == %@", account).first {
                 result.mediaPath = path
             }
         }
     }
 
-    func setAccountUserStatus(userStatusClearAt: Date?, userStatusIcon: String?, userStatusMessage: String?, userStatusMessageId: String?, userStatusMessageIsPredefined: Bool, userStatusStatus: String?, userStatusStatusIsUserDefined: Bool, account: String) {
-        performRealmWrite { realm in
+    func setAccountUserStatusAsync(userStatusClearAt: Date?,
+                                   userStatusIcon: String?,
+                                   userStatusMessage: String?,
+                                   userStatusMessageId: String?,
+                                   userStatusMessageIsPredefined: Bool,
+                                   userStatusStatus: String?,
+                                   userStatusStatusIsUserDefined: Bool,
+                                   account: String) async {
+        await performRealmWriteAsync { realm in
             if let result = realm.objects(tableAccount.self)
                 .filter("account == %@", account)
                 .first {
-                result.userStatusClearAt = userStatusClearAt as? NSDate
+                result.userStatusClearAt = userStatusClearAt as NSDate?
                 result.userStatusIcon = userStatusIcon
                 result.userStatusMessage = userStatusMessage
                 result.userStatusMessageId = userStatusMessageId
@@ -336,11 +366,22 @@ extension NCManageDatabase {
             }
         }
     }
-
     // MARK: - Realm Read
 
     func getTableAccount(predicate: NSPredicate) -> tableAccount? {
         performRealmRead { realm in
+            realm.objects(tableAccount.self)
+                .filter(predicate)
+                .first
+                .map { tableAccount(value: $0) }
+        }
+    }
+
+    /// Asynchronously retrieves the first `tableAccount` matching the given predicate.
+    /// - Parameter predicate: The NSPredicate used to filter the `tableAccount` objects.
+    /// - Returns: A copy of the first matching `tableAccount`, or `nil` if none is found.
+    func getTableAccountAsync(predicate: NSPredicate) async -> tableAccount? {
+        await performRealmReadAsync { realm in
             realm.objects(tableAccount.self)
                 .filter(predicate)
                 .first
@@ -358,11 +399,36 @@ extension NCManageDatabase {
         } ?? []
     }
 
+    func getAllTableAccountAsync() async -> [tableAccount] {
+        await performRealmReadAsync { realm in
+            let sorted = [
+                SortDescriptor(keyPath: "active", ascending: false),
+                SortDescriptor(keyPath: "user", ascending: true)
+            ]
+            let results = realm.objects(tableAccount.self)
+                               .sorted(by: sorted)
+            return results.map { tableAccount(value: $0) } // detached copy
+        } ?? []
+    }
+
     func getAllAccountOrderAlias() -> [tableAccount] {
         performRealmRead { realm in
             let sorted = [SortDescriptor(keyPath: "active", ascending: false),
                           SortDescriptor(keyPath: "alias", ascending: true),
                           SortDescriptor(keyPath: "user", ascending: true)]
+            let results = realm.objects(tableAccount.self).sorted(by: sorted)
+            return results.map { tableAccount(value: $0) }
+        } ?? []
+    }
+
+    /// Reads all accounts ordered by active descending, alias ascending, and user ascending.
+    func getAllAccountOrderAliasAsync() async -> [tableAccount] {
+        await performRealmReadAsync { realm in
+            let sorted = [
+                SortDescriptor(keyPath: "active", ascending: false),
+                SortDescriptor(keyPath: "alias", ascending: true),
+                SortDescriptor(keyPath: "user", ascending: true)
+            ]
             let results = realm.objects(tableAccount.self).sorted(by: sorted)
             return results.map { tableAccount(value: $0) }
         } ?? []
@@ -380,8 +446,19 @@ extension NCManageDatabase {
         } ?? NCBrandOptions.shared.folderDefaultAutoUpload
     }
 
-    func getAccountAutoUploadDirectory(session: NCSession.Session) -> String {
-        return getAccountAutoUploadDirectory(account: session.account, urlBase: session.urlBase, userId: session.userId)
+    func getAccountAutoUploadFileNameAsync(account: String) async -> String {
+        let result: String? = await performRealmReadAsync { realm in
+            guard let record = realm.objects(tableAccount.self)
+                .filter("account == %@", account)
+                .first
+            else {
+                return nil
+            }
+
+            return record.autoUploadFileName.isEmpty ? nil : record.autoUploadFileName
+        }
+
+        return result ?? NCBrandOptions.shared.folderDefaultAutoUpload
     }
 
     func getAccountAutoUploadDirectory(account: String, urlBase: String, userId: String) -> String {
@@ -397,19 +474,54 @@ extension NCManageDatabase {
         } ?? homeServer
     }
 
+    func getAccountAutoUploadDirectoryAsync(account: String, urlBase: String, userId: String) async -> String {
+        let homeServer = utilityFileSystem.getHomeServer(urlBase: urlBase, userId: userId)
+
+        let directory: String? = await performRealmReadAsync { realm in
+            realm.objects(tableAccount.self)
+                .filter("account == %@", account)
+                .first?
+                .autoUploadDirectory
+        }
+
+        return directory.flatMap { dir in
+            (dir.isEmpty || dir.contains("/webdav")) ? homeServer : dir
+        } ?? homeServer
+    }
+
     func getAccountAutoUploadServerUrlBase(session: NCSession.Session) -> String {
         return getAccountAutoUploadServerUrlBase(account: session.account, urlBase: session.urlBase, userId: session.userId)
+    }
+
+    func getAccountAutoUploadServerUrlBaseAsync(session: NCSession.Session) async -> String {
+        return await getAccountAutoUploadServerUrlBaseAsync(account: session.account, urlBase: session.urlBase, userId: session.userId)
     }
 
     func getAccountAutoUploadServerUrlBase(account: String, urlBase: String, userId: String) -> String {
         let cameraFileName = self.getAccountAutoUploadFileName(account: account)
         let cameraDirectory = self.getAccountAutoUploadDirectory(account: account, urlBase: urlBase, userId: userId)
-        let folderPhotos = utilityFileSystem.stringAppendServerUrl(cameraDirectory, addFileName: cameraFileName)
+        let folderPhotos = utilityFileSystem.createServerUrl(serverUrl: cameraDirectory, fileName: cameraFileName)
+        return folderPhotos
+    }
+
+    func getAccountAutoUploadServerUrlBaseAsync(account: String, urlBase: String, userId: String) async -> String {
+        let cameraFileName = await self.getAccountAutoUploadFileNameAsync(account: account)
+        let cameraDirectory = await self.getAccountAutoUploadDirectoryAsync(account: account, urlBase: urlBase, userId: userId)
+        let folderPhotos = utilityFileSystem.createServerUrl(serverUrl: cameraDirectory, fileName: cameraFileName)
         return folderPhotos
     }
 
     func getAccountAutoUploadSubfolderGranularity() -> Int {
         performRealmRead { realm in
+            realm.objects(tableAccount.self)
+                .filter("active == true")
+                .first?
+                .autoUploadSubfolderGranularity
+        } ?? NCGlobal.shared.subfolderGranularityMonthly
+    }
+
+    func getAccountAutoUploadSubfolderGranularityAsync() async -> Int {
+        await performRealmReadAsync { realm in
             realm.objects(tableAccount.self)
                 .filter("active == true")
                 .first?
@@ -435,8 +547,26 @@ extension NCManageDatabase {
         }
     }
 
+    func getActiveTableAccountAsync() async -> tableAccount? {
+        await performRealmReadAsync { realm in
+            realm.objects(tableAccount.self)
+                .filter("active == true")
+                .first
+                .map { tableAccount(value: $0) }
+        }
+    }
+
     func getTableAccount(account: String) -> tableAccount? {
         performRealmRead { realm in
+            realm.objects(tableAccount.self)
+                .filter("account == %@", account)
+                .first
+                .map { tableAccount(value: $0) }
+        }
+    }
+
+    func getTableAccountAsync(account: String) async -> tableAccount? {
+        await performRealmReadAsync { realm in
             realm.objects(tableAccount.self)
                 .filter("account == %@", account)
                 .first
@@ -449,6 +579,14 @@ extension NCManageDatabase {
             let results = realm.objects(tableAccount.self)
                 .sorted(byKeyPath: "account", ascending: true)
             return results.map { $0.account }
+        }
+    }
+
+    func getAccountsAsync() async -> [String]? {
+        await performRealmReadAsync { realm in
+            realm.objects(tableAccount.self)
+                .sorted(byKeyPath: "account", ascending: true)
+                .map { $0.account }
         }
     }
 

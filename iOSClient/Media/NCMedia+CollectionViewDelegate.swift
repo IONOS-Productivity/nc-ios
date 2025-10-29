@@ -1,25 +1,6 @@
-//
-//  NCMedia+CollectionViewDelegate.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 16/07/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import NextcloudKit
@@ -27,24 +8,28 @@ import RealmSwift
 
 extension NCMedia: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let metadata = dataSource.getMetadata(indexPath: indexPath),
-              let cell = collectionView.cellForItem(at: indexPath) as? NCMediaCell else { return }
+        Task {
+            guard let metadata = dataSource.getMetadata(indexPath: indexPath),
+                  let cell = collectionView.cellForItem(at: indexPath) as? NCMediaCell else { return }
 
-        if isEditMode {
-            if let index = fileSelect.firstIndex(of: metadata.ocId) {
-                fileSelect.remove(at: index)
-                cell.selected(false)
-            } else {
-                fileSelect.append(metadata.ocId)
-                cell.selected(true)
+            if isEditMode {
+                if let index = fileSelect.firstIndex(of: metadata.ocId) {
+                    fileSelect.remove(at: index)
+                    cell.selected(false)
+                } else {
+                    fileSelect.append(metadata.ocId)
+                    cell.selected(true)
+                }
+            	fileActionsHeader?.setSelectionState(selectionState: selectionState)
+            	tabBarSelect.update(fileSelect: fileSelect)
+            } else if let metadata = await self.database.getMetadataFromOcIdAsync(metadata.ocId) {
+                let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: global.previewExt1024, userId: metadata.userId, urlBase: metadata.urlBase)
+                let ocIds = dataSource.metadatas.map { $0.ocId }
+
+                if let vc = await NCViewer().getViewerController(metadata: metadata, ocIds: ocIds, siblingMedia: [metadata], image: image, delegate: self) {
+                    self.navigationController?.pushViewController(vc, animated: true)
+                }
             }
-            fileActionsHeader?.setSelectionState(selectionState: selectionState)
-            tabBarSelect.update(fileSelect: fileSelect)
-        } else if let metadata = database.getMetadataFromOcId(metadata.ocId) {
-            let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: global.previewExt1024)
-            let ocIds = dataSource.metadatas.map { $0.ocId }
-
-            NCViewer().view(viewController: self, metadata: metadata, ocIds: ocIds, image: image)
         }
     }
 
@@ -55,12 +40,13 @@ extension NCMedia: UICollectionViewDelegate {
             return nil
         }
         let identifier = indexPath as NSCopying
-        let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: global.previewExt1024)
+        let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: global.previewExt1024, userId: metadata.userId, urlBase: metadata.urlBase)
 
         return UIContextMenuConfiguration(identifier: identifier, previewProvider: {
-            return NCViewerProviderContextMenu(metadata: metadata, image: image)
+            return NCViewerProviderContextMenu(metadata: metadata, image: image, sceneIdentifier: self.sceneIdentifier)
         }, actionProvider: { _ in
-            return NCContextMenu().viewMenu(ocId: metadata.ocId, viewController: self, image: image)
+            let contextMenu = NCContextMenu(metadata: metadata.detachedCopy(), viewController: self, sceneIdentifier: self.sceneIdentifier, image: image)
+            return contextMenu.viewMenu()
         })
     }
 

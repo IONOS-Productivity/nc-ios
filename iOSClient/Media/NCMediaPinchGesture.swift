@@ -1,25 +1,6 @@
-//
-//  MediaZoom.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 13/09/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
 import UIKit
@@ -48,10 +29,10 @@ extension NCMedia {
 
                 } completion: { _ in
 
-                    if let layoutForView = self.database.getLayoutForView(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "") {
-                        layoutForView.columnPhoto = self.numberOfColumns
-                        self.database.setLayoutForView(layoutForView: layoutForView)
+                    self.database.updatePhotoLayoutForView(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "") { layout in
+                        layout.columnPhoto = self.numberOfColumns
                     }
+
                 }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
@@ -61,7 +42,9 @@ extension NCMedia {
 
         switch gestureRecognizer.state {
         case .began:
-            networkRemoveAll(nil)
+            Task {
+                await self.networkRemoveAll()
+            }
             lastScale = gestureRecognizer.scale
             lastNumberOfColumns = numberOfColumns
         case .changed:
@@ -85,7 +68,6 @@ extension NCMedia {
             UIView.animate(withDuration: 0.30) {
                 self.currentScale = 1.0
                 self.collectionView.transform = .identity
-//                self.setTitleDate()
             }
         default:
             break

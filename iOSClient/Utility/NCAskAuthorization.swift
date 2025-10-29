@@ -26,79 +26,81 @@ import AVFAudio
 import Photos
 
 class NCAskAuthorization: NSObject {
-
     private(set) var isRequesting = false
 
-    func askAuthorizationAudioRecord(viewController: UIViewController?, completion: @escaping (_ hasPermission: Bool) -> Void) {
-
-        switch AVAudioSession.sharedInstance().recordPermission {
-        case AVAudioSession.RecordPermission.granted:
-            completion(true)
-        case AVAudioSession.RecordPermission.denied:
-            let alert = UIAlertController(title: NSLocalizedString("_error_", comment: ""), message: NSLocalizedString("_err_permission_microphone_", comment: ""), preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: NSLocalizedString("_open_settings_", comment: ""), style: .default, handler: { _ in
+    func askAuthorizationAudioRecord(controller: UIViewController?, completion: @escaping (_ hasPermission: Bool) -> Void) {
+        DispatchQueue.main.async {
+            switch AVAudioApplication.shared.recordPermission {
+            case .granted:
+                completion(true)
+            case .denied:
+                let alert = UIAlertController(title: NSLocalizedString("_error_", comment: ""), message: NSLocalizedString("_err_permission_microphone_", comment: ""), preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: NSLocalizedString("_open_settings_", comment: ""), style: .default, handler: { _ in
 #if !EXTENSION
-                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
 #endif
-                completion(false)
-            }))
-            alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel, handler: { _ in
-                completion(false)
-            }))
-            DispatchQueue.main.async {
-                viewController?.present(alert, animated: true, completion: nil)
-            }
-        case AVAudioSession.RecordPermission.undetermined:
-            AVAudioSession.sharedInstance().requestRecordPermission { allowed in
-                DispatchQueue.main.async {
-                    if allowed {
+                    completion(false)
+                }))
+                alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel, handler: { _ in
+                    completion(false)
+                }))
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    controller?.present(alert, animated: true, completion: nil)
+                }
+
+            case .undetermined:
+                AVAudioApplication.requestRecordPermission { granted in
+                    if granted {
                         completion(true)
                     } else {
                         completion(false)
                     }
                 }
+            default:
+                completion(false)
             }
-        default:
-            completion(false)
         }
     }
 
-    @objc func askAuthorizationPhotoLibrary(controller: UIViewController?, completion: @escaping (_ hasPermission: Bool) -> Void) {
+    func askAuthorizationPhotoLibrary(controller: UIViewController?, completion: @escaping (_ hasPermission: Bool) -> Void) {
+        DispatchQueue.main.async {
+            switch PHPhotoLibrary.authorizationStatus() {
+            case PHAuthorizationStatus.authorized:
+                completion(true)
+            case PHAuthorizationStatus.denied, PHAuthorizationStatus.limited, PHAuthorizationStatus.restricted:
+                let alert = UIAlertController(title: NSLocalizedString("_error_", comment: ""), message: NSLocalizedString("_err_permission_photolibrary_", comment: ""), preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: NSLocalizedString("_open_settings_", comment: ""), style: .default, handler: { _ in
+#if !EXTENSION
+                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+#endif
+                    completion(false)
+                }))
+                alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel, handler: { _ in
+                    completion(false)
+                }))
 
-        switch PHPhotoLibrary.authorizationStatus() {
-        case PHAuthorizationStatus.authorized:
-            completion(true)
-        case PHAuthorizationStatus.denied, PHAuthorizationStatus.limited, PHAuthorizationStatus.restricted:
-            let alert = UIAlertController(title: NSLocalizedString("_error_", comment: ""), message: NSLocalizedString("_err_permission_photolibrary_", comment: ""), preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: NSLocalizedString("_open_settings_", comment: ""), style: .default, handler: { _ in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    controller?.present(alert, animated: true, completion: nil)
+                }
+
+            case PHAuthorizationStatus.notDetermined:
+                self.isRequesting = true
+                PHPhotoLibrary.requestAuthorization { allowed in
+                    self.isRequesting = false
 #if !EXTENSION
-                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                    // DispatchQueue.main.async { NCPasscode.shared.hidePrivacyProtectionWindow() }
 #endif
-                completion(false)
-            }))
-            alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel, handler: { _ in
-                completion(false)
-            }))
-            DispatchQueue.main.async {
-                controller?.present(alert, animated: true, completion: nil)
-            }
-        case PHAuthorizationStatus.notDetermined:
-            isRequesting = true
-            PHPhotoLibrary.requestAuthorization { allowed in
-                self.isRequesting = false
-#if !EXTENSION
-                // DispatchQueue.main.async { NCPasscode.shared.hidePrivacyProtectionWindow() }
-#endif
-                DispatchQueue.main.async {
+
                     if allowed == PHAuthorizationStatus.authorized {
                         completion(true)
                     } else {
                         completion(false)
                     }
                 }
+            default:
+                completion(false)
             }
-        default:
-            completion(false)
         }
     }
 

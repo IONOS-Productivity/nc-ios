@@ -112,21 +112,20 @@ class NCDeepLinkHandler {
     }
 
     private func navigateToCreateNew(controller: NCMainTabBarController) {
-        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
         controller.selectedIndex = ControllerConstants.filesIndex
         DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
             let serverUrl = controller.currentServerUrl()
             let session = NCSession.shared.getSession(controller: controller)
             let fileFolderPath = NCUtilityFileSystem().getFileNamePath("", serverUrl: serverUrl, session: session)
             let fileFolderName = (serverUrl as NSString).lastPathComponent
+            let capabilities = NCNetworking.shared.capabilities[controller.account] ?? NKCapabilities.Capabilities()
 
-            if !FileNameValidator.checkFolderPath(fileFolderPath, account: controller.account) {
+            if !FileNameValidator.checkFolderPath(fileFolderPath, account: controller.account, capabilities: capabilities) {
                 controller.present(UIAlertController.warning(message: "\(String(format: NSLocalizedString("_file_name_validator_error_reserved_name_", comment: ""), fileFolderName)) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
 
                 return
             }
-
-            appDelegate.toggleMenu(controller: controller, sender: nil)
+            // appDelegate.toggleMenu(controller: controller, sender: nil)
         }
     }
 

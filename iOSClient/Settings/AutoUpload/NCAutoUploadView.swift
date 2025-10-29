@@ -1,27 +1,8 @@
-//
-//  NCAutoUploadView.swift
-//  Nextcloud
-//
-//  Created by Aditya Tyagi on 06/03/24.
-//  Created by Marino Faggiana on 30/05/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Aditya Tyagi <adityagi02@yahoo.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2024 Aditya Tyagi
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import SwiftUI
 import UIKit
@@ -51,11 +32,14 @@ struct NCAutoUploadView: View {
         .onDisappear {
             model.onViewDisappear()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            model.checkPermission()
+        }
         .alert(model.error, isPresented: $model.showErrorAlert) {
             Button(NSLocalizedString("_ok_", comment: ""), role: .cancel) { }
         }
         .sheet(isPresented: $showUploadFolder) {
-            SelectView(serverUrl: $model.serverUrl, session: model.session)
+            SelectView(serverUrl: $model.serverUrl, includeDirectoryE2EEncryption: false, session: model.session)
                 .onDisappear {
                     model.setAutoUploadDirectory(serverUrl: model.serverUrl)
                 }
@@ -129,12 +113,13 @@ struct NCAutoUploadView: View {
                         })
                     }
 
-					Toggle(NSLocalizedString("_back_up_new_photos_only_", comment: ""), isOn: $model.autoUploadOnlyNew)
-						.tint(Color(NCBrandColor.shared.switchColor))
-						.onChange(of: model.autoUploadOnlyNew) { newValue in
-							model.handleAutoUploadOnlyNew(newValue: newValue)
-						}
-						.accessibilityIdentifier("NewPhotosToggle")
+                    Toggle(NSLocalizedString("_back_up_new_photos_only_", comment: ""), isOn: $model.autoUploadOnlyNew)
+                        .tint(Color(NCBrandColor.shared.switchColor))
+                        .opacity(model.autoUploadStart ? 0.15 : 1)
+                        .onChange(of: model.autoUploadOnlyNew) { _, newValue in
+                            model.handleAutoUploadOnlyNew(newValue: newValue)
+                        }
+                        .accessibilityIdentifier("NewPhotosToggle")
                 }, footer: {
 					if model.autoUploadOnlyNew == true, let date = model.autoUploadOnlyNewSinceDate {
 						Text(String(format: NSLocalizedString("_new_photos_starting_", comment: ""), NCUtility().longDate(date)))
@@ -142,11 +127,12 @@ struct NCAutoUploadView: View {
                 })
 				.applyGlobalFormSectionStyle()
 
-                /// Auto Upload Photo
+                // Auto Upload Photo
                 Section(content: {
                     Toggle(NSLocalizedString("_autoupload_photos_", comment: ""), isOn: $model.autoUploadImage)
                         .tint(Color(NCBrandColor.shared.switchColor))
-                        .onChange(of: model.autoUploadImage) { newValue in
+                        .opacity(model.autoUploadStart ? 0.15 : 1)
+                        .onChange(of: model.autoUploadImage) { _, newValue in
                             if !newValue { model.autoUploadVideo = true }
                             model.handleAutoUploadImageChange(newValue: newValue)
                         }
@@ -154,18 +140,20 @@ struct NCAutoUploadView: View {
                     if model.autoUploadImage {
                         Toggle(NSLocalizedString("_wifi_only_", comment: ""), isOn: $model.autoUploadWWAnPhoto)
                             .tint(Color(NCBrandColor.shared.switchColor))
-                            .onChange(of: model.autoUploadWWAnPhoto) { newValue in
+                            .opacity(model.autoUploadStart ? 0.15 : 1)
+                            .onChange(of: model.autoUploadWWAnPhoto) { _, newValue in
                                 model.handleAutoUploadWWAnPhotoChange(newValue: newValue)
                             }
                     }
                 })
 				.applyGlobalFormSectionStyle()
 
-                /// Auto Upload Video
+                // Auto Upload Video
                 Section(content: {
                     Toggle(NSLocalizedString("_autoupload_videos_", comment: ""), isOn: $model.autoUploadVideo)
                         .tint(Color(NCBrandColor.shared.switchColor))
-                        .onChange(of: model.autoUploadVideo) { newValue in
+                        .opacity(model.autoUploadStart ? 0.15 : 1)
+                        .onChange(of: model.autoUploadVideo) { _, newValue in
                             if !newValue { model.autoUploadImage = true }
                             model.handleAutoUploadVideoChange(newValue: newValue)
                         }
@@ -173,18 +161,20 @@ struct NCAutoUploadView: View {
                     if model.autoUploadVideo {
                         Toggle(NSLocalizedString("_wifi_only_", comment: ""), isOn: $model.autoUploadWWAnVideo)
                             .tint(Color(NCBrandColor.shared.switchColor))
-                            .onChange(of: model.autoUploadWWAnVideo) { newValue in
+                            .opacity(model.autoUploadStart ? 0.15 : 1)
+                            .onChange(of: model.autoUploadWWAnVideo) { _, newValue in
                                 model.handleAutoUploadWWAnVideoChange(newValue: newValue)
                             }
                     }
                 })
 				.applyGlobalFormSectionStyle()
 
-                /// Auto Upload create subfolder
+                // Auto Upload create subfolder
                 Section(content: {
                     Toggle(NSLocalizedString("_autoupload_create_subfolder_", comment: ""), isOn: $model.autoUploadCreateSubfolder)
                         .tint(Color(NCBrandColor.shared.switchColor))
-                        .onChange(of: model.autoUploadCreateSubfolder) { newValue in
+                        .opacity(model.autoUploadStart ? 0.15 : 1)
+                        .onChange(of: model.autoUploadCreateSubfolder) { _, newValue in
                             model.handleAutoUploadCreateSubfolderChange(newValue: newValue)
                         }
 
@@ -194,7 +184,8 @@ struct NCAutoUploadView: View {
                             Text(NSLocalizedString("_monthly_", comment: "")).tag(Granularity.monthly)
                             Text(NSLocalizedString("_yearly_", comment: "")).tag(Granularity.yearly)
                         }
-                        .onChange(of: model.autoUploadSubfolderGranularity) { newValue in
+                        .opacity(model.autoUploadStart ? 0.15 : 1)
+                        .onChange(of: model.autoUploadSubfolderGranularity) { _, newValue in
                             model.handleAutoUploadSubfolderGranularityChange(newValue: newValue)
                         }
                     }
@@ -206,16 +197,8 @@ struct NCAutoUploadView: View {
             }
             .disabled(model.autoUploadStart)
 
-            /// Auto Upload Full
+            // Auto Upload Full
             Section(content: {
-#if DEBUG
-				Button("[DEBUG] Clear all") {
-					NCManageDatabase.shared.clearTable(tableAutoUploadTransfer.self, account: model.session.account)
-					NCManageDatabase.shared.clearTable(tableMetadata.self, account: model.session.account)
-
-                }.buttonStyle(.borderedProminent)
-					.foregroundStyle(Color(NCBrandColor.shared.customer))
-#endif
                 Toggle(isOn: model.autoUploadOnlyNew || model.autoUploadStart ? $model.autoUploadStart : $showUploadAllPhotosWarning) {
                     Text(model.autoUploadStart ? "_stop_autoupload_" : "_start_autoupload_")
                         .padding(.horizontal, 20)

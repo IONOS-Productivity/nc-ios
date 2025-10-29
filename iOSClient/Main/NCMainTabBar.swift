@@ -27,7 +27,7 @@ import NextcloudKit
 
 class NCMainTabBar: UITabBar {
 
-	private let heightForDevicesWithRectCornersDisplay: CGFloat = 64.0
+    private let heightForDevicesWithRectCornersDisplay: CGFloat = 64.0
 
     private var fillColor: UIColor!
     private var shapeLayer: CALayer?
@@ -38,21 +38,21 @@ class NCMainTabBar: UITabBar {
 	private var centerButtonColor: UIColor {
         UIColor(resource: .Tabbar.fabButton)
 	}
-    
-	override open func sizeThatFits(_ size: CGSize) -> CGSize {
-		guard !UIDevice.current.hasComplexSaveArea else {
-			return super.sizeThatFits(size)
-		}
-		
-		var sizeThatFits = super.sizeThatFits(size)
-		sizeThatFits.height = heightForDevicesWithRectCornersDisplay
-		return sizeThatFits
-	}
-	
+
+    override open func sizeThatFits(_ size: CGSize) -> CGSize {
+        guard !UIDevice.current.hasComplexSaveArea else {
+            return super.sizeThatFits(size)
+        }
+
+        var sizeThatFits = super.sizeThatFits(size)
+        sizeThatFits.height = heightForDevicesWithRectCornersDisplay
+        return sizeThatFits
+    }
+
     private var customBackgroundColor: UIColor? {
         UIColor(named: "Tabbar/Background")
     }
-	
+
     public var menuRect: CGRect {
         let tabBarItemWidth = Int(self.frame.size.width) / (self.items?.count ?? 0)
         let rect = CGRect(x: 0, y: -5, width: tabBarItemWidth, height: Int(self.frame.size.height))
@@ -64,8 +64,6 @@ class NCMainTabBar: UITabBar {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
 
-        NotificationCenter.default.addObserver(self, selector: #selector(updateBadgeNumber(_:)), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterUpdateBadgeNumber), object: nil)
-
         changeTheming()
     }
 
@@ -74,21 +72,18 @@ class NCMainTabBar: UITabBar {
         layer.shadowRadius = 2.0
         layer.shadowOpacity = 0.5
         tintColor = UIColor(resource: .Tabbar.activeItem)
-        if let centerButton = self.viewWithTag(99) {
-            centerButton.backgroundColor = centerButtonColor
+    }
+
+    override var backgroundColor: UIColor? {
+        get {
+            return self.fillColor
+        }
+        set {
+            fillColor = newValue
+            self.setNeedsDisplay()
         }
     }
 
-	override var backgroundColor: UIColor? {
-		get {
-			return self.fillColor
-		}
-		set {
-			fillColor = newValue
-			self.setNeedsDisplay()
-		}
-	}
-	
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         let button = self.viewWithTag(99)
         if self.bounds.contains(point) || (button != nil && button!.frame.contains(point)) {
@@ -116,17 +111,17 @@ class NCMainTabBar: UITabBar {
         self.addSubview(backgroundView)
     }
 
-	private func setupSizeClasses() {
-		if #available(iOS 17.0, *) {
-			traitOverrides.horizontalSizeClass = .compact
-		}
-	}
+    private func setupSizeClasses() {
+        if #available(iOS 17.0, *) {
+            traitOverrides.horizontalSizeClass = .compact
+        }
+    }
 
-	override var traitCollection: UITraitCollection {
-		guard UIDevice.current.userInterfaceIdiom == .pad else { return super.traitCollection }
-		return UITraitCollection(traitsFrom: [super.traitCollection, UITraitCollection(horizontalSizeClass: .compact)])
-	}
-	
+    override var traitCollection: UITraitCollection {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return super.traitCollection }
+        return UITraitCollection(traitsFrom: [super.traitCollection, UITraitCollection(horizontalSizeClass: .compact)])
+    }
+
     private func createPath() -> CGPath {
 
         let height: CGFloat = 28
@@ -155,7 +150,7 @@ class NCMainTabBar: UITabBar {
             item.image = UIImage(named: "home")
             item.selectedImage = item.image
         }
-        
+
         // Media
         if let item = items?[1] {
             item.title = NSLocalizedString("_media_", comment: "")
@@ -177,7 +172,7 @@ class NCMainTabBar: UITabBar {
             item.image = UIImage(named: "shares")
             item.selectedImage = item.image
         }
-        
+
         // Favorite
         if let item = items?[4] {
             item.title = NSLocalizedString("_favorites_", comment: "")
@@ -196,7 +191,7 @@ class NCMainTabBar: UITabBar {
 
         centerButton.setTitle("", for: .normal)
         centerButton.setImage(imagePlus, for: .normal)
-        centerButton.backgroundColor = color
+        centerButton.backgroundColor = NCBrandColor.shared.customer
         centerButton.tintColor = UIColor.white
         centerButton.tag = 99
         centerButton.accessibilityLabel = NSLocalizedString("_accessibility_add_upload_", comment: "")
@@ -218,55 +213,22 @@ class NCMainTabBar: UITabBar {
 
                 let fileFolderPath = NCUtilityFileSystem().getFileNamePath("", serverUrl: serverUrl, session: NCSession.shared.getSession(controller: controller))
                 let fileFolderName = (serverUrl as NSString).lastPathComponent
+                Task {
+                    if let capabilities = await NCManageDatabase.shared.getCapabilities(account: controller.account) {
 
-                if !FileNameValidator.checkFolderPath(fileFolderPath, account: controller.account) {
-                    controller.present(UIAlertController.warning(message: "\(String(format: NSLocalizedString("_file_name_validator_error_reserved_name_", comment: ""), fileFolderName)) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
+                        if !FileNameValidator.checkFolderPath(fileFolderPath, account: controller.account, capabilities: capabilities) {
+                            controller.present(UIAlertController.warning(message: "\(String(format: NSLocalizedString("_file_name_validator_error_reserved_name_", comment: ""), fileFolderName)) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
 
-                    return
+                            return
+                        }
+
+                        self.appDelegate.toggleMenu(controller: controller, sender: nil)
+                    }
                 }
-
-				self.appDelegate.toggleMenu(controller: controller, sender: nil)
             }
         }
 
         self.addSubview(centerButton)
-    }
-
-    @objc func updateBadgeNumber(_ notification: NSNotification) {
-        guard let userInfo = notification.userInfo as NSDictionary?,
-              let counterDownload = userInfo["counterDownload"] as? Int,
-              let counterUpload = userInfo["counterUpload"] as? Int
-            else { return }
-
-        self.updateBadgeNumberUI(counterDownload: counterDownload, counterUpload: counterUpload)
-    }
-
-    func updateBadgeNumberUI(counterDownload: Int, counterUpload: Int) {
-        UIApplication.shared.applicationIconBadgeNumber = counterDownload + counterUpload
-
-        if let item = self.items?[0] {
-            if counterDownload == 0, counterUpload == 0 {
-                item.badgeValue = nil
-            } else if counterDownload > 0, counterUpload == 0 {
-                let badgeValue = String("↓ \(counterDownload)")
-                item.badgeValue = badgeValue
-            } else if counterDownload == 0, counterUpload > 0 {
-                let badgeValue = String("↑ \(counterUpload)")
-                item.badgeValue = badgeValue
-            } else {
-                let badgeValueDownload = String("↓ \(counterDownload)")
-                let badgeValueUpload = String("↑ \(counterUpload)")
-                item.badgeValue = badgeValueDownload + " " + badgeValueUpload
-            }
-        }
-    }
-
-    func getCenterButton() -> UIView? {
-        if let centerButton = self.viewWithTag(99) {
-            return centerButton
-        } else {
-            return nil
-        }
     }
 
     func getHeight() -> CGFloat {

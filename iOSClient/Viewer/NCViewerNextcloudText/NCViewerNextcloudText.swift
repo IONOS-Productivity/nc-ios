@@ -22,6 +22,7 @@
 //
 
 import UIKit
+import NextcloudKit
 @preconcurrency import WebKit
 
 class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMessageHandler, WKUIDelegate {
@@ -32,6 +33,11 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
     var metadata: tableMetadata = tableMetadata()
     var imageIcon: UIImage?
     let utility = NCUtility()
+    var items: [UIBarButtonItem] = []
+
+    var sceneIdentifier: String {
+        self.mainTabBarController?.sceneIdentifier ?? ""
+    }
 
     // MARK: - View Life Cycle
 
@@ -43,17 +49,32 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
         super.viewDidLoad()
 
         if !metadata.ocId.hasPrefix("TEMP") {
-            navigationItem.rightBarButtonItem = UIBarButtonItem(image: NCImageCache.shared.getImageButtonMore(), style: .plain, target: self, action: #selector(self.openMenuMore))
+            let moreButton = UIBarButtonItem(
+                image: NCImageCache.shared.getImageButtonMore(),
+                primaryAction: nil,
+                menu: UIMenu(title: "", children: [
+                    UIDeferredMenuElement.uncached { [self] completion in
+                        if let menu = NCViewerContextMenu.makeContextMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: self.metadata, webView: true, sender: self) {
+                            completion(menu.children)
+                        }
+                    }
+                ]))
+
+            items.append(moreButton)
         }
-        navigationController?.navigationBar.prefersLargeTitles = false
-        navigationItem.title = metadata.fileNameView
+
+        navigationItem.rightBarButtonItems = items
+        navigationItem.leftBarButtonItems = nil
+        if editor == "nextcloud text" {
+            navigationItem.hidesBackButton = true
+        }
 
         let config = WKWebViewConfiguration()
         config.websiteDataStore = WKWebsiteDataStore.nonPersistent()
         let contentController = config.userContentController
         contentController.add(self, name: "DirectEditingMobileInterface")
         // FIXME: ONLYOFFICE Due to the WK Shared Workers issue the editors cannot be opened on the devices with iOS 16.1.
-        if editor == NCGlobal.shared.editorOnlyoffice {
+        if editor == "onlyoffice" {
             let dropSharedWorkersScript = WKUserScript(source: "delete window.SharedWorker;", injectionTime: WKUserScriptInjectionTime.atDocumentStart, forMainFrameOnly: false)
             config.userContentController.addUserScript(dropSharedWorkersScript)
         }
@@ -70,9 +91,9 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
         bottomConstraint = webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 70)
         bottomConstraint?.isActive = true
 
-        if editor == NCGlobal.shared.editorOnlyoffice {
+        if editor == "onlyoffice" {
             webView.customUserAgent = utility.getCustomUserAgentOnlyOffice()
-        } else if editor == NCGlobal.shared.editorText {
+        } else if editor == "nextcloud text" {
             webView.customUserAgent = utility.getCustomUserAgentNCText()
         } // else: use default
 
@@ -93,8 +114,7 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        NotificationCenter.default.addObserver(self, selector: #selector(favoriteFile(_:)), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterFavoriteFile), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(viewUnload), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil)
+        tabBarController?.tabBar.isHidden = true
 
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow), name: UIResponder.keyboardDidShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
@@ -103,16 +123,23 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        Task {
+            await NCNetworking.shared.transferDispatcher.addDelegate(self)
+        }
+
         NCActivityIndicator.shared.start(backgroundView: view)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        webView.configuration.userContentController.removeScriptMessageHandler(forName: "DirectEditingMobileInterface")
+        tabBarController?.tabBar.isHidden = false
 
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterFavoriteFile), object: nil)
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil)
+        Task {
+            await NCNetworking.shared.transferDispatcher.removeDelegate(self)
+        }
+
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "DirectEditingMobileInterface")
 
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidShowNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
@@ -123,16 +150,6 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
     }
 
     // MARK: - NotificationCenter
-
-    @objc func favoriteFile(_ notification: NSNotification) {
-        guard let userInfo = notification.userInfo as NSDictionary?,
-              let ocId = userInfo["ocId"] as? String,
-              ocId == self.metadata.ocId,
-              let metadata = NCManageDatabase.shared.getMetadataFromOcId(ocId)
-        else { return }
-
-        self.metadata = metadata
-    }
 
     @objc func keyboardDidShow(notification: Notification) {
         guard let info = notification.userInfo else { return }
@@ -146,24 +163,16 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
         bottomConstraint?.constant = 0
     }
 
-    // MARK: - Action
-
-    @objc private func openMenuMore(_ sender: Any?) {
-        if imageIcon == nil { imageIcon = NCUtility().loadImage(named: "doc.text", colors: [NCBrandColor.shared.iconImageColor]) }
-        NCViewer().toggleMenu(controller: (self.tabBarController as? NCMainTabBarController), metadata: metadata, webView: true, imageIcon: imageIcon, sender: nil)
-    }
-
     // MARK: -
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         if message.name == "DirectEditingMobileInterface" {
-
             if message.body as? String == "close" {
                 viewUnload()
             }
 
             if message.body as? String == "share" {
-                NCActionCenter.shared.openShare(viewController: self, metadata: metadata, page: .sharing)
+                NCDownloadAction.shared.openShare(viewController: self, metadata: metadata, page: .sharing)
             }
 
             if message.body as? String == "loading" {
@@ -207,7 +216,7 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
     public func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         if navigationAction.targetFrame == nil {
             if let url = navigationAction.request.url, UIApplication.shared.canOpenURL(url) {
-               UIApplication.shared.open(url)
+                UIApplication.shared.open(url)
             }
         }
         return nil
@@ -218,8 +227,28 @@ extension NCViewerNextcloudText: UINavigationControllerDelegate {
     override func didMove(toParent parent: UIViewController?) {
         super.didMove(toParent: parent)
 
-        if parent == nil {
-            NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterGetServerData, userInfo: ["serverUrl": self.metadata.serverUrl])
+        Task {
+            if parent == nil {
+                await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
+                    delegate.transferRequestData(serverUrl: self.metadata.serverUrl)
+                }
+            }
+        }
+    }
+}
+
+extension NCViewerNextcloudText: NCTransferDelegate {
+    func transferChange(status: String, metadata: tableMetadata, error: NKError) {
+        DispatchQueue.main.async {
+            switch status {
+            // FAVORITE
+            case NCGlobal.shared.networkingStatusFavorite:
+                if self.metadata.ocId == metadata.ocId {
+                    self.metadata = metadata
+                }
+            default:
+                break
+            }
         }
     }
 }

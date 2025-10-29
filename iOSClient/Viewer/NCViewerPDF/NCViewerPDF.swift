@@ -31,7 +31,6 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
 
     var metadata: tableMetadata?
     var url: URL?
-    var titleView: String?
     var imageIcon: UIImage?
 
     private let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
@@ -60,6 +59,10 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
 
     private var tipView: EasyTipView?
 
+    var sceneIdentifier: String {
+        self.mainTabBarController?.sceneIdentifier ?? ""
+    }
+
     // MARK: - View Life Cycle
 
     required init?(coder aDecoder: NSCoder) {
@@ -71,17 +74,27 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
         if let url = self.url {
             pdfDocument = PDFDocument(url: url)
         } else if let metadata = self.metadata {
-            filePath = NCUtilityFileSystem().getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView)
+            filePath = NCUtilityFileSystem().getDirectoryProviderStorageOcId(metadata.ocId,
+                                                                             fileName: metadata.fileNameView,
+                                                                             userId: metadata.userId,
+                                                                             urlBase: metadata.urlBase)
             pdfDocument = PDFDocument(url: URL(fileURLWithPath: filePath))
-            if NCNetworking.shared.isOnline {
-                navigationItem.rightBarButtonItem = UIBarButtonItem(image: NCImageCache.shared.getImageButtonMore(), style: .plain, target: self, action: #selector(openMenuMore(_:)))
-            }
+            
+            navigationItem.rightBarButtonItem = UIBarButtonItem(
+                image: NCImageCache.shared.getImageButtonMore(),
+                primaryAction: nil,
+                menu: UIMenu(title: "", children: [
+                    UIDeferredMenuElement.uncached { [self] completion in
+                        guard let metadata = self.metadata else { return }
+
+                        if let menu = NCViewerContextMenu.makeContextMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: metadata, webView: false, sender: self) {
+                            completion(menu.children)
+                        }
+                    }
+                ]))
         }
         defaultBackgroundColor = NCBrandColor.shared.appBackgroundColor
         view.backgroundColor = defaultBackgroundColor
-
-        navigationController?.navigationBar.prefersLargeTitles = false
-        navigationItem.title = titleView
 
         // PDF CONTAINER
 
@@ -120,10 +133,6 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
 
         // NOTIFIFICATION
 
-        NotificationCenter.default.addObserver(self, selector: #selector(favoriteFile(_:)), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterFavoriteFile), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(deleteFile(_:)), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterDeleteFile), object: nil)
-
-        NotificationCenter.default.addObserver(self, selector: #selector(viewUnload), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(searchText), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterMenuSearchTextPDF), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(goToPage), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterMenuGotToPageInPDF), object: nil)
 
@@ -131,11 +140,6 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
     }
 
     deinit {
-
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterFavoriteFile), object: nil)
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterDeleteFile), object: nil)
-
-        NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterMenuSearchTextPDF), object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterMenuGotToPageInPDF), object: nil)
 
@@ -144,6 +148,8 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+        tabBarController?.tabBar.isHidden = true
 
         // PDF THUMBNAIL
 
@@ -249,13 +255,26 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        NCNetworking.shared.transferDelegate = self
+        Task {
+            await NCNetworking.shared.transferDispatcher.addDelegate(self)
+        }
 
         showTip()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+
+        tabBarController?.tabBar.isHidden = false
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+
+        Task {
+            await NCNetworking.shared.transferDispatcher.removeDelegate(self)
+        }
+
         dismissTip()
     }
 
@@ -271,40 +290,13 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
         })
     }
 
-    @objc func viewUnload() {
-        navigationController?.popViewController(animated: true)
-    }
-
     @objc func viewDismiss() {
-        self.dismiss(animated: true)
+        DispatchQueue.main.async {
+            self.dismiss(animated: true)
+        }
     }
 
     // MARK: - NotificationCenter
-
-    @objc func favoriteFile(_ notification: NSNotification) {
-        guard let userInfo = notification.userInfo as NSDictionary?,
-              let ocId = userInfo["ocId"] as? String,
-              ocId == self.metadata?.ocId,
-              let metadata = NCManageDatabase.shared.getMetadataFromOcId(ocId)
-        else { return }
-
-        self.metadata = metadata
-    }
-
-    @objc func deleteFile(_ notification: NSNotification) {
-        guard let userInfo = notification.userInfo as NSDictionary?,
-              let error = userInfo["error"] as? NKError else { return }
-
-        if error != .success {
-            NCContentPresenter().showError(error: error)
-        }
-
-        if let ocId = userInfo["ocId"] as? [String],
-           let ocId = ocId.first,
-           metadata?.ocId == ocId {
-            viewUnload()
-        }
-    }
 
     @objc func searchText() {
         if let viewerPDFSearch = UIStoryboard(name: "NCViewerPDF", bundle: nil).instantiateViewController(withIdentifier: "NCViewerPDFSearch") as? NCViewerPDFSearch {
@@ -334,17 +326,6 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
         }))
 
         self.present(alertController, animated: true)
-    }
-
-    // MARK: - Action
-
-    @objc private func openMenuMore(_ sender: Any?) {
-        guard let metadata = self.metadata else { return }
-        if imageIcon == nil {
-            imageIcon = UIImage(named: "file_pdf")
-        }
-
-        NCViewer().toggleMenu(controller: (self.tabBarController as? NCMainTabBarController), metadata: metadata, webView: false, imageIcon: imageIcon, sender: sender)
     }
 
     // MARK: - Gesture Recognizer
@@ -521,9 +502,9 @@ extension NCViewerPDF: EasyTipViewDelegate {
                 preferences.animating.showDuration = 1.5
                 preferences.animating.dismissDuration = 1.5
 
-                if self.tipView == nil {
+                if self.tipView == nil, let viewContainer = self.pdfContainer {
                     self.tipView = EasyTipView(text: NSLocalizedString("_tip_pdf_thumbnails_", comment: ""), preferences: preferences, delegate: self)
-                    self.tipView?.show(forView: self.pdfThumbnailScrollView, withinSuperview: self.pdfContainer)
+                    self.tipView?.show(forView: self.pdfThumbnailScrollView, withinSuperview: viewContainer)
                 }
             }
         }
@@ -545,25 +526,46 @@ extension NCViewerPDF: EasyTipViewDelegate {
 }
 
 extension NCViewerPDF: NCTransferDelegate {
-    func transferProgressDidUpdate(progress: Float, totalBytes: Int64, totalBytesExpected: Int64, fileName: String, serverUrl: String) { }
+    func transferChange(status: String, metadatasError: [tableMetadata: NKError]) {
+        switch status {
+        // DELETE
+        case NCGlobal.shared.networkingStatusDelete:
+            let shouldUnloadView = metadatasError.contains { key, error in
+                key.ocId == self.metadata?.ocId && error == .success
+            }
+            if shouldUnloadView {
+                DispatchQueue.main.async {
+                    self.navigationController?.popViewController(animated: true)
+                }
+            }
+        default:
+            break
+        }
+    }
 
-    func tranferChange(status: String, metadata: tableMetadata, error: NKError) {
+    func transferChange(status: String, metadata: tableMetadata, error: NKError) {
         guard self.metadata?.serverUrl == metadata.serverUrl,
-              self.metadata?.fileName == metadata.fileName
+              self.metadata?.fileNameView == metadata.fileNameView
         else {
             return
         }
 
         DispatchQueue.main.async {
             switch status {
-            case NCGlobal.shared.notificationCenterUploadStartFile:
+            // UPLOAD
+            case NCGlobal.shared.networkingStatusUploading:
                 NCActivityIndicator.shared.start()
-            case NCGlobal.shared.notificationCenterUploadedFile:
+            case NCGlobal.shared.networkingStatusUploaded:
                 NCActivityIndicator.shared.stop()
                 if error == .success {
                     self.pdfDocument = PDFDocument(url: URL(fileURLWithPath: self.filePath))
                     self.pdfView.document = self.pdfDocument
                     self.pdfView.layoutDocumentView()
+                }
+            // FAVORITE
+            case NCGlobal.shared.networkingStatusFavorite:
+                if self.metadata?.ocId == metadata.ocId {
+                    self.metadata = metadata
                 }
             default:
                 break

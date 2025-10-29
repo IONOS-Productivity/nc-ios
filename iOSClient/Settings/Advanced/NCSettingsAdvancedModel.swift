@@ -1,27 +1,8 @@
-//
-//  NCSettingsAdvancedViewModel.swift
-//  Nextcloud
-//
-//  Created by Aditya Tyagi on 08/03/24.
-//  Created by Marino Faggiana on 30/05/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Aditya Tyagi <adityagi02@yahoo.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2024 Aditya Tyagi
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
 import UIKit
@@ -30,32 +11,32 @@ import Combine
 import SwiftUI
 
 class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
-    /// Keychain access
-    var keychain = NCKeychain()
-    /// State variable for indicating if the user is in Admin group
+    // Keychain access
+    var keychain = NCPreferences()
+    // State variable for indicating if the user is in Admin group
     @Published var isAdminGroup: Bool = false
-    /// State variable for indicating the most compatible format.
+    // State variable for indicating the most compatible format.
     @Published var mostCompatible: Bool = false
-    /// State variable for enabling live photo uploads.
+    // State variable for enabling live photo uploads.
     @Published var livePhoto: Bool = false
-    /// State variable for indicating whether to remove photos from the camera roll after upload.
+    // State variable for indicating whether to remove photos from the camera roll after upload.
     @Published var removeFromCameraRoll: Bool = false
-    /// State variable for app integration.
+    // State variable for app integration.
     @Published var appIntegration: Bool = false
-    /// State variable for enabling the crash reporter.
+    // State variable for enabling the crash reporter.
     @Published var crashReporter: Bool = false
-    /// State variable for indicating whether the log file has been cleared.
+    // State variable for indicating whether the log file has been cleared.
     @Published var logFileCleared: Bool = false
     // Properties for log level and cache deletion
-    /// State variable for storing the selected log level.
-    @Published var selectedLogLevel: LogLevel = .standard
-    /// State variable for storing the selected cache deletion interval.
+    // State variable for storing the selected log level.
+    @Published var selectedLogLevel: NKLogLevel = .normal
+    // State variable for storing the selected cache deletion interval.
     @Published var selectedInterval: CacheDeletionInterval = .never
-    /// State variable for storing the footer title, usually used for cache deletion.
+    // State variable for storing the footer title, usually used for cache deletion.
     @Published var footerTitle: String = ""
-    /// Root View Controller
+    // Root View Controller
     @Published var controller: NCMainTabBarController?
-    /// Get session
+    // Get session
     var session: NCSession.Session {
         NCSession.shared.getSession(controller: controller)
     }
@@ -70,16 +51,17 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     func onViewAppear() {
         let groups = NCManageDatabase.shared.getAccountGroups(account: session.account)
         isAdminGroup = groups.contains(NCGlobal.shared.groupAdmin)
+
         mostCompatible = keychain.formatCompatibility
         livePhoto = keychain.livePhoto
         removeFromCameraRoll = keychain.removePhotoCameraRoll
         appIntegration = keychain.disableFilesApp
         crashReporter = keychain.disableCrashservice
-        selectedLogLevel = LogLevel(rawValue: keychain.logLevel) ?? .standard
+        selectedLogLevel = keychain.log
         selectedInterval = CacheDeletionInterval(rawValue: keychain.cleanUpDay) ?? .never
 
-        DispatchQueue.global().async {
-            self.calculateSize()
+        Task {
+            await self.calculateSize()
         }
     }
 
@@ -113,8 +95,8 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
 
     /// Updates the value of `selectedLogLevel` in the keychain and sets it for NextcloudKit.
     func updateSelectedLogLevel() {
-        keychain.logLevel = selectedLogLevel.rawValue
-        NextcloudKit.shared.nkCommonInstance.levelLog = selectedLogLevel.rawValue
+        keychain.log = selectedLogLevel
+        NKLogFileManager.shared.logLevel = selectedLogLevel
     }
 
     /// Updates the value of `selectedInterval` in the keychain.
@@ -124,13 +106,16 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
 
     /// Clears cache
     func clearCache() {
-        NCActivityIndicator.shared.startActivity(backgroundView: self.controller?.view, style: .large, blurEffect: true)
-        // Cancel all networking tasks
-        NCNetworking.shared.cancelAllTask()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            URLCache.shared.removeAllCachedResponses()
+        Task { @MainActor in
+            NCActivityIndicator.shared.startActivity(backgroundView: self.controller?.view, style: .large, blurEffect: true)
 
-            NCManageDatabase.shared.clearDatabase()
+            // Cancel all networking tasks
+            NCNetworking.shared.cancelAllTask()
+
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+
+            NCNetworking.shared.removeServerErrorAccount(self.session.account)
+            NCManageDatabase.shared.clearDBCache()
 
             let ufs = NCUtilityFileSystem()
             ufs.removeGroupDirectoryProviderStorage()
@@ -139,23 +124,28 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
             ufs.removeTemporaryDirectory()
             ufs.createDirectoryStandard()
 
-            NCActivityIndicator.shared.stop()
-            self.calculateSize()
+            await NCService().startRequestServicesServer(account: self.session.account, controller: self.controller)
 
-            NCService().startRequestServicesServer(account: self.session.account, controller: self.controller)
+            await self.calculateSize()
 
             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterClearCache)
+
+            NCActivityIndicator.shared.stop()
         }
     }
 
     /// Asynchronously calculates the size of cache directory and updates the footer title.
-    func calculateSize() {
-        let ufs = NCUtilityFileSystem()
-        let directory = ufs.directoryProviderStorage
-        let totalSize = ufs.getDirectorySize(directory: directory)
-        DispatchQueue.main.async {
-            self.footerTitle = "\(NSLocalizedString("_clear_cache_footer_", comment: "")). (\(NSLocalizedString("_used_space_", comment: "")) \(ufs.transformedSize(totalSize)))"
+    @MainActor
+    func calculateSize() async {
+        // Run the heavy calculation off the main thread
+        let totalSize = await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                let size = NCUtilityFileSystem().getAppSize()
+                continuation.resume(returning: size)
+            }
         }
+
+        self.footerTitle = "\(NSLocalizedString("_clear_cache_footer_", comment: "")). (\(NSLocalizedString("_used_space_", comment: "")) \(NCUtilityFileSystem().transformedSize(totalSize)))"
     }
 
     /// Removes all accounts & exits the Nextcloud application if specified.
@@ -179,51 +169,17 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
 
     /// Presents the log file viewer.
     func viewLogFile() {
-        // Instantiate NCViewerQuickLook with the log file URL, editing disabled, and no metadata
-        let viewerQuickLook = NCViewerQuickLook(with: NSURL(fileURLWithPath: NextcloudKit.shared.nkCommonInstance.filenamePathLog) as URL, isEditingEnabled: false, metadata: nil)
-        // Present the NCViewerQuickLook view controller
-		let topController = controller?.presentedViewController ?? controller
-		topController?.present(viewerQuickLook, animated: true, completion: nil)
-    }
+        // Path of the current (active) log file
+        let currentLogURL = NKLogFileManager.shared.currentLogFileURL()
 
-    /// Clears the log file.
-    func clearLogFile() {
-        // Clear the log file using NextcloudKit
-        NextcloudKit.shared.nkCommonInstance.clearFileLog()
-        // Fetch the log level from the keychain
-        let logLevel = keychain.logLevel
-        // Get the app's version and copyright information
-        let versionNextcloudiOS = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, NCUtility().getVersionApp(withBuild: true))
-        // Construct the log message
-        let logMessage = "[INFO] Clear log with level \(logLevel) \(versionNextcloudiOS)"
-        // Write the log entry about the log clearance
-        NextcloudKit.shared.nkCommonInstance.writeLog(logMessage)
-        // Set the alert state to show that log file has been cleared
-        self.logFileCleared = true
-    }
-}
+        // Create NCViewerQuickLook with the current log file
+        let viewerQuickLook = NCViewerQuickLook(
+            with: currentLogURL,
+            isEditingEnabled: false,
+            metadata: nil
+        )
 
-/// An enum that represents the level of the log
-enum LogLevel: Int, CaseIterable, Identifiable, Equatable {
-    /// Represents that logging is disabled
-    case disabled = 0
-    /// Represents standard logging level
-    case standard = 1
-    /// Represents maximum logging level
-    case maximum = 2
-    var id: Int { self.rawValue }
-}
-
-extension LogLevel {
-    var displayText: String {
-        switch self {
-        case .disabled:
-            return NSLocalizedString("_disabled_", comment: "")
-        case .standard:
-            return NSLocalizedString("_standard_", comment: "")
-        case .maximum:
-            return NSLocalizedString("_maximum_", comment: "")
-        }
+        controller?.currentViewController()?.present(viewerQuickLook, animated: true, completion: nil)
     }
 }
 

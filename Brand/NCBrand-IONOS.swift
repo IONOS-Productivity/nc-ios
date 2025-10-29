@@ -70,7 +70,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	override var sourceCode: String {
 		get {
 			if super.sourceCode == "https://github.com/nextcloud/ios" {
-				return custom_brand
+				return custom_sourceCode
 			}
 			return super.sourceCode
 		}

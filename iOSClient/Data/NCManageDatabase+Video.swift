@@ -29,7 +29,7 @@ extension NCManageDatabase {
 
     // MARK: - Realm write
 
-    func addVideo(metadata: tableMetadata, position: Float? = nil, width: Int? = nil, height: Int? = nil, length: Int? = nil, currentAudioTrackIndex: Int? = nil, currentVideoSubTitleIndex: Int? = nil) {
+    func addVideoOrAudio(metadata: tableMetadata, position: Float? = nil, width: Int? = nil, height: Int? = nil, length: Int? = nil, currentAudioTrackIndex: Int? = nil, currentVideoSubTitleIndex: Int? = nil) {
         if metadata.isLivePhoto { return }
 
         performRealmWrite { realm in
@@ -81,10 +81,10 @@ extension NCManageDatabase {
         }
     }
 
-    func deleteVideo(metadata: tableMetadata) {
-        performRealmWrite { realm in
+    func deleteVideoOrAudioAsync(_ ocId: String) async {
+        await performRealmWriteAsync { realm in
             if let result = realm.objects(tableVideo.self)
-                .filter("account == %@ AND ocId == %@", metadata.account, metadata.ocId)
+                .filter("ocId == %@", ocId)
                 .first {
                 realm.delete(result)
             }
@@ -93,7 +93,7 @@ extension NCManageDatabase {
 
     // MARK: - Realm read
 
-    func getVideo(metadata: tableMetadata?) -> tableVideo? {
+    func getVideoOrAudio(metadata: tableMetadata?) -> tableVideo? {
         guard let metadata else { return nil }
 
         return performRealmRead { realm in

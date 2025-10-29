@@ -1,23 +1,18 @@
-//
-//  FileNameValidator+Extensions.swift
-//  Nextcloud
-//
-//  Created by Milen Pivchev on 26.08.24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Milen Pivchev
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import NextcloudKit
 
 extension FileNameValidator {
-    static func checkFileName(_ filename: String, account: String?) -> NKError? {
-        let capabilities = NCCapabilities.shared.getCapabilities(account: account)
-        let fileNameValidator = FileNameValidator(forbiddenFileNames: capabilities.capabilityForbiddenFileNames, forbiddenFileNameBasenames: capabilities.capabilityForbiddenFileNameBasenames, forbiddenFileNameCharacters: capabilities.capabilityForbiddenFileNameCharacters, forbiddenFileNameExtensions: capabilities.capabilityForbiddenFileNameExtensions)
+    static func checkFileName(_ filename: String, account: String?, capabilities: NKCapabilities.Capabilities) -> NKError? {
+        let fileNameValidator = FileNameValidator(forbiddenFileNames: capabilities.forbiddenFileNames, forbiddenFileNameBasenames: capabilities.forbiddenFileNameBasenames, forbiddenFileNameCharacters: capabilities.forbiddenFileNameCharacters, forbiddenFileNameExtensions: capabilities.forbiddenFileNameExtensions)
         return fileNameValidator.checkFileName(filename)
     }
 
-    static func checkFolderPath(_ folderPath: String, account: String?) -> Bool {
-        let capabilities = NCCapabilities.shared.getCapabilities(account: account)
-        let fileNameValidator = FileNameValidator(forbiddenFileNames: capabilities.capabilityForbiddenFileNames, forbiddenFileNameBasenames: capabilities.capabilityForbiddenFileNameBasenames, forbiddenFileNameCharacters: capabilities.capabilityForbiddenFileNameCharacters, forbiddenFileNameExtensions: capabilities.capabilityForbiddenFileNameExtensions)
+    static func checkFolderPath(_ folderPath: String, account: String?, capabilities: NKCapabilities.Capabilities) -> Bool {
+        let fileNameValidator = FileNameValidator(forbiddenFileNames: capabilities.forbiddenFileNames, forbiddenFileNameBasenames: capabilities.forbiddenFileNameBasenames, forbiddenFileNameCharacters: capabilities.forbiddenFileNameCharacters, forbiddenFileNameExtensions: capabilities.forbiddenFileNameExtensions)
         return fileNameValidator.checkFolderPath(folderPath)
     }
 }

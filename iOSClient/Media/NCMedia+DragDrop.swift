@@ -1,25 +1,6 @@
-//
-//  NCMedia+DragDrop.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 21/04/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import UniformTypeIdentifiers
@@ -81,8 +62,10 @@ extension NCMedia: UICollectionViewDropDelegate {
         guard let sourceMetadatas = DragDropHover.shared.sourceMetadatas else { return }
 
         if let tableAccount = database.getTableAccount(predicate: NSPredicate(format: "account == %@", session.account)) {
-            let serverUrl = NCUtilityFileSystem().getHomeServer(session: session) + tableAccount.mediaPath
-            NCDragDrop().copyFile(metadatas: sourceMetadatas, serverUrl: serverUrl)
+            let destination = NCUtilityFileSystem().getHomeServer(session: session) + tableAccount.mediaPath
+            Task {
+                await NCDragDrop().copyFile(metadatas: sourceMetadatas, destination: destination)
+            }
         }
     }
 
@@ -90,8 +73,10 @@ extension NCMedia: UICollectionViewDropDelegate {
         guard let sourceMetadatas = DragDropHover.shared.sourceMetadatas else { return }
 
         if let tableAccount = database.getTableAccount(predicate: NSPredicate(format: "account == %@", session.account)) {
-            let serverUrl = NCUtilityFileSystem().getHomeServer(session: session) + tableAccount.mediaPath
-            NCDragDrop().moveFile(metadatas: sourceMetadatas, serverUrl: serverUrl)
+            let destination = NCUtilityFileSystem().getHomeServer(session: session) + tableAccount.mediaPath
+            Task {
+                await NCDragDrop().moveFile(metadatas: sourceMetadatas, destination: destination)
+            }
         }
     }
 }

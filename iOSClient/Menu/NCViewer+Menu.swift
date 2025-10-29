@@ -29,7 +29,10 @@ import NextcloudKit
 extension NCViewer {
     func toggleMenu(controller: NCMainTabBarController?, metadata: tableMetadata, webView: Bool, imageIcon: UIImage?, indexPath: IndexPath = IndexPath(), sender: Any?) {
         guard let metadata = self.database.getMetadataFromOcId(metadata.ocId),
-              let controller else { return }
+              let controller,
+              let capabilities = NCNetworking.shared.capabilities[metadata.account] else {
+            return
+        }
         var actions = [NCMenuAction]()
         let localFile = self.database.getTableLocalFile(predicate: NSPredicate(format: "ocId == %@", metadata.ocId))
         let isOffline = localFile?.offline == true
@@ -37,14 +40,15 @@ extension NCViewer {
         //
         // DETAIL
         //
-        if !NCCapabilities.shared.disableSharesView(account: metadata.account) {
+        if !(!capabilities.fileSharingApiEnabled && !capabilities.filesComments && capabilities.activity.isEmpty) {
             actions.append(
                 NCMenuAction(
                     title: NSLocalizedString("_details_", comment: ""),
                     icon: NCImagesRepository.menuIconDetails,
-					sender: sender, action: { _ in
-						NCActionCenter.shared.openShare(viewController: controller, metadata: metadata, page: .activity)
-					}
+                    sender: sender,
+                    action: { _ in
+                        NCDownloadAction.shared.openShare(viewController: controller, metadata: metadata, page: .activity)
+                    }
                 )
             )
         }
@@ -57,9 +61,10 @@ extension NCViewer {
                 NCMenuAction(
                     title: NSLocalizedString("_view_in_folder_", comment: ""),
                     icon: NCImagesRepository.menuIconViewInFolder,
-					sender: sender, action: { _ in
-						NCActionCenter.shared.openFileViewInFolder(serverUrl: metadata.serverUrl, fileNameBlink: metadata.fileName, fileNameOpen: nil, sceneIdentifier: controller.sceneIdentifier!)
-					}
+                    sender: sender,
+                    action: { _ in
+                        NCDownloadAction.shared.openFileViewInFolder(serverUrl: metadata.serverUrl, fileNameBlink: metadata.fileName, fileNameOpen: nil, sceneIdentifier: controller.sceneIdentifier)
+                    }
                 )
             )
         }
@@ -124,25 +129,27 @@ extension NCViewer {
                 NCMenuAction(
                     title: NSLocalizedString("_save_as_scan_", comment: ""),
                     icon: NCImagesRepository.menuIconSaveAsScan,
-					sender: sender, action: { _ in
-						if self.utilityFileSystem.fileProviderStorageExists(metadata) {
-							NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDownloadedFile,
-																		object: nil,
-																		userInfo: ["ocId": metadata.ocId,
-																				   "ocIdTransfer": metadata.ocIdTransfer,
-																				   "session": metadata.session,
-																				   "selector": NCGlobal.shared.selectorSaveAsScan,
-																				   "error": NKError(),
-																				   "account": metadata.account],
-																		second: 0.5)
-						} else {
-							guard let metadata = self.database.setMetadatasSessionInWaitDownload(metadatas: [metadata],
-																								 session: NCNetworking.shared.sessionDownload,
-																								 selector: NCGlobal.shared.selectorSaveAsScan,
-																								 sceneIdentifier: controller.sceneIdentifier) else { return }
-							NCNetworking.shared.download(metadata: metadata, withNotificationProgressTask: true)
-						}
-					}
+                    sender: sender,
+                    action: { _ in
+                        Task {
+                            if self.utilityFileSystem.fileProviderStorageExists(metadata) {
+                                await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
+                                    let metadata = metadata.detachedCopy()
+                                    metadata.sessionSelector = NCGlobal.shared.selectorSaveAsScan
+                                    delegate.transferChange(status: NCGlobal.shared.networkingStatusDownloaded,
+                                                            metadata: metadata,
+                                                            error: .success)
+                                }
+                            } else {
+                                if let metadata = await self.database.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,
+                                                                                                            session: NCNetworking.shared.sessionDownload,
+                                                                                                            selector: NCGlobal.shared.selectorSaveAsScan,
+                                                                                                            sceneIdentifier: controller.sceneIdentifier) {
+                                    await NCNetworking.shared.downloadFile(metadata: metadata)
+                                }
+                            }
+                        }
+                    }
                 )
             )
         }
@@ -165,13 +172,17 @@ extension NCViewer {
                 NCMenuAction(
                     title: title,
                     icon: NCImagesRepository.menuIconDownloadFullResolutionImage,
-					sender: sender, action: { _ in
-						guard let metadata = self.database.setMetadatasSessionInWaitDownload(metadatas: [metadata],
-																							 session: NCNetworking.shared.sessionDownload,
-																							 selector: "",
-																							 sceneIdentifier: controller.sceneIdentifier) else { return }
-						NCNetworking.shared.download(metadata: metadata, withNotificationProgressTask: true)
-					}
+                    sender: sender,
+                    action: { _ in
+                        Task {
+                            if let metadata = await self.database.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,
+                                                                                                        session: NCNetworking.shared.sessionDownload,
+                                                                                                        selector: "",
+                                                                                                        sceneIdentifier: controller.sceneIdentifier) {
+                                await NCNetworking.shared.downloadFile(metadata: metadata)
+                            }
+                        }
+                    }
                 )
             )
         }
@@ -209,25 +220,27 @@ extension NCViewer {
                 NCMenuAction(
                     title: NSLocalizedString("_modify_", comment: ""),
                     icon: NCImagesRepository.menuIconModifyWithQuickLook,
-					sender: sender, action: { _ in
-						if self.utilityFileSystem.fileProviderStorageExists(metadata) {
-							NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDownloadedFile,
-																		object: nil,
-																		userInfo: ["ocId": metadata.ocId,
-																				   "ocIdTransfer": metadata.ocIdTransfer,
-																				   "session": metadata.session,
-																				   "selector": NCGlobal.shared.selectorLoadFileQuickLook,
-																				   "error": NKError(),
-																				   "account": metadata.account],
-																		second: 0.5)
-						} else {
-							guard let metadata = self.database.setMetadatasSessionInWaitDownload(metadatas: [metadata],
-																								 session: NCNetworking.shared.sessionDownload,
-																								 selector: NCGlobal.shared.selectorLoadFileQuickLook,
-																								 sceneIdentifier: controller.sceneIdentifier) else { return }
-							NCNetworking.shared.download(metadata: metadata, withNotificationProgressTask: true)
-						}
-					}
+                    sender: sender,
+                    action: { _ in
+                        Task {
+                            if self.utilityFileSystem.fileProviderStorageExists(metadata) {
+                                await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
+                                    let metadata = metadata.detachedCopy()
+                                    metadata.sessionSelector = NCGlobal.shared.selectorLoadFileQuickLook
+                                    delegate.transferChange(status: NCGlobal.shared.networkingStatusDownloaded,
+                                                            metadata: metadata,
+                                                            error: .success)
+                                }
+                            } else {
+                                if let metadata = await self.database.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,
+                                                                                                            session: NCNetworking.shared.sessionDownload,
+                                                                                                            selector: NCGlobal.shared.selectorLoadFileQuickLook,
+                                                                                                            sceneIdentifier: controller.sceneIdentifier) {
+                                    await NCNetworking.shared.downloadFile(metadata: metadata)
+                                }
+                            }
+                        }
+                    }
                 )
             )
         }
@@ -236,7 +249,7 @@ extension NCViewer {
         // DELETE
         //
         if !webView, metadata.isDeletable {
-            actions.append(.deleteAction(selectedMetadatas: [metadata], metadataFolder: nil, controller: controller, sender: sender))
+            actions.append(.deleteOrUnshareAction(selectedMetadatas: [metadata], metadataFolder: nil, controller: controller, sender: sender))
         }
 
         controller.presentMenu(with: actions, sender: sender)

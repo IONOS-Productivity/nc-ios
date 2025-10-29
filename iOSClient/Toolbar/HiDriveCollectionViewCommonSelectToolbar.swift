@@ -24,6 +24,7 @@
 
 import Foundation
 import SwiftUI
+import NextcloudKit
 
 class HiDriveCollectionViewCommonSelectToolbar: ObservableObject {
     enum TabButton {
@@ -124,6 +125,7 @@ class HiDriveCollectionViewCommonSelectToolbar: ObservableObject {
     }
 
     func update(fileSelect: [String], metadatas: [tableMetadata]? = nil, userId: String? = nil) {
+        let capabilities = NCNetworking.shared.capabilities[controller?.account ?? ""] ?? NKCapabilities.Capabilities()
         if let metadatas {
             isAnyOffline = false
             canSetAsOffline = true
@@ -161,7 +163,7 @@ class HiDriveCollectionViewCommonSelectToolbar: ObservableObject {
                     isAnyOffline = localFile.offline
                 } // else: file is not offline, continue
             }
-            enableLock = !isAnyDirectory && canUnlock && !NCCapabilities.shared.getCapabilities(account: controller?.account).capabilityFilesLockVersion.isEmpty
+            enableLock = !isAnyDirectory && canUnlock && !capabilities.filesLockVersion.isEmpty
         }
         isSelectedEmpty = fileSelect.isEmpty
     }

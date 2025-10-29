@@ -1,25 +1,7 @@
-//
-//  NCShareExtension+Files.swift
-//  Share
-//
-//  Created by Henrik Storch on 29.12.21.
-//  Copyright © 2021 Henrik Storch. All rights reserved.
-//
-//  Author Henrik Storch <henrik.storch@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2021 Marino Faggiana
+// SPDX-FileCopyrightText: 2021 Henrik Storch
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
 import UIKit
@@ -27,46 +9,44 @@ import UniformTypeIdentifiers
 import NextcloudKit
 
 extension NCShareExtension {
-    @objc func reloadDatasource(withLoadFolder: Bool) {
-        let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: keyLayout, serverUrl: serverUrl) ?? NCDBLayoutForView()
-        let predicate = NSPredicate(format: "account == %@ AND serverUrl == %@ AND directory == true", session.account, serverUrl)
-        let metadatas = self.database.getResultsMetadatasPredicate(predicate, layoutForView: layoutForView, account: session.account)
-
-        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, account: session.account)
-
-        if withLoadFolder {
-            loadFolder()
-        } else {
-            self.refreshControl.endRefreshing()
-        }
-        collectionView.reloadData()
+    func reloadData() async {
+        let session = NCShareExtensionData.shared.getSession()
+        let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: keyLayout, serverUrl: serverUrl)
+        let predicate = NSPredicate(format: "account == %@ AND serverUrl == %@ AND fileName != %@ AND directory == true", session.account, serverUrl, NextcloudKit.shared.nkCommonInstance.rootFileName)
+        let metadatas = await NCManageDatabase.shared.getMetadatasAsync(predicate: predicate,
+                                                                        withLayout: layoutForView,
+                                                                        withAccount: session.account)
+        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas,
+                                                     layoutForView: layoutForView,
+                                                     account: session.account)
+        self.collectionView.reloadData()
     }
 
     @objc func didCreateFolder(_ notification: NSNotification) {
-        guard let userInfo = notification.userInfo as NSDictionary?,
-              let ocId = userInfo["ocId"] as? String,
-              let metadata = self.database.getMetadataFromOcId(ocId)
-        else { return }
+        Task {
+            guard let userInfo = notification.userInfo as NSDictionary?,
+                  let ocId = userInfo["ocId"] as? String,
+                  let metadata = await NCManageDatabase.shared.getMetadataFromOcIdAsync(ocId)
+            else { return }
 
-        self.serverUrl += "/" + metadata.fileName
-        self.reloadDatasource(withLoadFolder: true)
-        self.setNavigationBar(navigationTitle: metadata.fileNameView)
+            self.serverUrl += "/" + metadata.fileName
+            await self.loadFolder()
+            self.setNavigationBar(navigationTitle: metadata.fileNameView)
+        }
     }
 
-    func loadFolder() {
-        NCNetworking.shared.readFolder(serverUrl: serverUrl,
-                                       account: session.account,
-                                       queue: .main) { task in
+    func loadFolder() async {
+        let session = NCShareExtensionData.shared.getSession()
+        let resultsReadFolder = await NCNetworking.shared.readFolderAsync(serverUrl: serverUrl, account: session.account) { task in
             self.dataSourceTask = task
             self.collectionView.reloadData()
-        } completion: { _, metadataFolder, _, error in
-            DispatchQueue.main.async {
-                if error != .success {
-                    self.showAlert(description: error.errorDescription)
-                }
-                self.metadataFolder = metadataFolder
-                self.reloadDatasource(withLoadFolder: false)
-            }
+        }
+
+        if resultsReadFolder.error == .success {
+            self.metadataFolder = resultsReadFolder.metadataFolder
+            await self.reloadData()
+        } else {
+            self.showAlert(description: resultsReadFolder.error.errorDescription)
         }
     }
 }
@@ -102,7 +82,7 @@ class NCFilesExtensionHandler {
                     originalName = url.lastPathComponent
 
                     if fileNames.contains(originalName) {
-                        let incrementalNumber = NCKeychain().incrementalNumber
+                        let incrementalNumber = NCPreferences().incrementalNumber
                         originalName = "\(url.deletingPathExtension().lastPathComponent) \(incrementalNumber).\(url.pathExtension)"
                     }
                 }

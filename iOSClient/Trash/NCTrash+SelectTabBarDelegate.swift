@@ -55,23 +55,39 @@ extension NCTrash: HiDriveCollectionViewCommonSelectToolbarDelegate {
     }
 
     func recover() {
-        selectOcId.forEach(restoreItem)
+        let ids = selectOcId.map { $0 }
         setEditMode(false)
+
+        Task {
+            for id in ids {
+                await restoreItem(with: id)
+            }
+        }
     }
 
     func delete() {
-        selectOcId.forEach(deleteItem)
+        let ids = selectOcId.map { $0 }
         setEditMode(false)
+
+        Task {
+            if ids.count > 0, ids.count == datasource?.count {
+                await emptyTrash()
+            } else {
+                await self.deleteItems(with: ids)
+            }
+        }
     }
 
     func setEditMode(_ editMode: Bool) {
-        isEditMode = editMode
-        selectOcId.removeAll()
+        Task {
+        	isEditMode = editMode
+        	selectOcId.removeAll()
 
-        updateSelectionToolbar()
+        	updateSelectionToolbar()
 
-        navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
-        navigationItem.hidesBackButton = editMode
-        collectionView.reloadData()
+        	navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
+        	navigationItem.hidesBackButton = editMode
+        	collectionView.reloadData()
+        }
     }
 }

@@ -1,27 +1,9 @@
-//
-//  NCSettingsAdvancedView.swift
-//  Nextcloud
-//
-//  Created by Aditya Tyagi on 08/03/24.
-//  Created by Marino Faggiana on 30/05/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Aditya Tyagi <adityagi02@yahoo.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 STRATO GmbH
+// SPDX-FileCopyrightText: 2024 Aditya Tyagi
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import SwiftUI
 import NextcloudKit
 
@@ -136,29 +118,12 @@ struct NCSettingsAdvancedView: View {
 					.tint(Color(UIColor.label))
 					/// Set Log Level()
 					Picker(NSLocalizedString("_set_log_level_", comment: ""), selection: $model.selectedLogLevel) {
-						ForEach(LogLevel.allCases) { level in
+						ForEach(NKLogLevel.allCases) { level in
 							Text(level.displayText).tag(level)
 						}
 					}
-					.onChange(of: model.selectedLogLevel) { _ in
+					.onChange(of: model.selectedLogLevel) {
 						model.updateSelectedLogLevel()
-					}
-					/// Clear Log File
-					Button(action: {
-						model.clearLogFile()
-					}, label: {
-						HStack {
-							Image(systemName: "xmark")
-								.resizable()
-								.scaledToFit()
-								.frame(width: 25, height: 15)
-								.foregroundColor(Color(NCBrandColor.shared.iconImageColor))
-							Text(NSLocalizedString("_clear_log_", comment: ""))
-						}
-					})
-					.tint(Color(UIColor.label))
-					.alert(NSLocalizedString("_log_file_clear_alert_", comment: ""), isPresented: $model.logFileCleared) {
-						Button(NSLocalizedString("OK", comment: ""), role: .cancel) { }
 					}
 				}, header: {
 					Text(NSLocalizedString("_diagnostics_", comment: ""))

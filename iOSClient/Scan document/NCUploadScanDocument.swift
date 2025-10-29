@@ -59,26 +59,19 @@ class NCUploadScanDocument: ObservableObject {
         self.quality = quality
         self.removeAllFiles = removeAllFiles
 
-        metadata = self.database.createMetadata(fileName: fileName,
-                                                fileNameView: fileName,
-                                                ocId: UUID().uuidString,
-                                                serverUrl: serverUrl,
-                                                url: "",
-                                                contentType: "",
-                                                session: session,
-                                                sceneIdentifier: controller?.sceneIdentifier)
+        self.database.createMetadata(fileName: fileName, ocId: UUID().uuidString, serverUrl: serverUrl, session: session, sceneIdentifier: controller?.sceneIdentifier) { metadata in
+            metadata.session = NCNetworking.shared.sessionUploadBackground
+            metadata.sessionSelector = NCGlobal.shared.selectorUploadFile
+            metadata.status = NCGlobal.shared.metadataStatusWaitUpload
+            metadata.sessionDate = Date()
 
-        metadata.session = NCNetworking.shared.sessionUploadBackground
-        metadata.sessionSelector = NCGlobal.shared.selectorUploadFile
-        metadata.status = NCGlobal.shared.metadataStatusWaitUpload
-        metadata.sessionDate = Date()
-
-        if self.database.getMetadataConflict(account: session.account, serverUrl: serverUrl, fileNameView: fileName, nativeFormat: metadata.nativeFormat) != nil {
-            completion(true, false)
-        } else {
-            createPDF(metadata: metadata) { error in
-                if !error {
-                    completion(false, false)
+            if self.database.getMetadataConflict(account: self.session.account, serverUrl: self.serverUrl, fileNameView: fileName, nativeFormat: metadata.nativeFormat) != nil {
+                completion(true, false)
+            } else {
+                self.createPDF(metadata: metadata) { error in
+                    if !error {
+                        completion(false, false)
+                    }
                 }
             }
         }
@@ -86,7 +79,7 @@ class NCUploadScanDocument: ObservableObject {
 
     func createPDF(metadata: tableMetadata, completion: @escaping (_ error: Bool) -> Void) {
         DispatchQueue.global(qos: .userInteractive).async {
-            let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView)
+            let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileName: metadata.fileNameView, userId: metadata.userId, urlBase: metadata.urlBase)
             let pdfData = NSMutableData()
 
             if self.password.isEmpty {
@@ -112,7 +105,9 @@ class NCUploadScanDocument: ObservableObject {
             do {
                 try pdfData.write(to: URL(fileURLWithPath: fileNamePath), options: .atomic)
                 metadata.size = self.utilityFileSystem.getFileSize(filePath: fileNamePath)
-                NCNetworkingProcess.shared.createProcessUploads(metadatas: [metadata])
+
+                self.database.addMetadata(metadata)
+
                 if self.removeAllFiles {
                     let path = self.utilityFileSystem.directoryScan
                     let filePaths = try FileManager.default.contentsOfDirectory(atPath: path)
@@ -176,36 +171,26 @@ class NCUploadScanDocument: ObservableObject {
             break
         }
 
-        var newHeight = Float(image.size.height)
-        var newWidth = Float(image.size.width)
-        var imgRatio: Float = newWidth / newHeight
-        let baseRatio: Float = baseWidth / baseHeight
+        // Resize image proportionally to fit within A4
+        let originalSize = image.size
+        let widthRatio = CGFloat(baseWidth) / originalSize.width
+        let heightRatio = CGFloat(baseHeight) / originalSize.height
+        let scaleRatio = min(widthRatio, heightRatio, 1.0)
+        let targetSize = CGSize(width: originalSize.width * scaleRatio, height: originalSize.height * scaleRatio)
 
-        if newHeight > baseHeight || newWidth > baseWidth {
-            if imgRatio < baseRatio {
-                imgRatio = baseHeight / newHeight
-                newWidth = imgRatio * newWidth
-                newHeight = baseHeight
-            } else if imgRatio > baseRatio {
-                imgRatio = baseWidth / newWidth
-                newHeight = imgRatio * newHeight
-                newWidth = baseWidth
-            } else {
-                newHeight = baseHeight
-                newWidth = baseWidth
-            }
+        // Render the resized image
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let resizedImage = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
         }
 
-        let rect = CGRect(x: 0.0, y: 0.0, width: CGFloat(newWidth), height: CGFloat(newHeight))
-        UIGraphicsBeginImageContextWithOptions(rect.size, false, 0)
-        image.draw(in: rect)
-        let img = UIGraphicsGetImageFromCurrentImageContext()
-        let imageData = img?.jpegData(compressionQuality: CGFloat(compressionQuality))
-        UIGraphicsEndImageContext()
-        if let imageData = imageData, let image = UIImage(data: imageData) {
+        // Compress to JPEG and re-decode to UIImage
+        guard let data = resizedImage.jpegData(compressionQuality: compressionQuality),
+                let finalImage = UIImage(data: data) else {
             return image
         }
-        return image
+
+        return finalImage
     }
 
     private func bestFittingFont(for text: String, in bounds: CGRect, fontDescriptor: UIFontDescriptor, fontColor: UIColor) -> [NSAttributedString.Key: Any] {
@@ -245,42 +230,44 @@ class NCUploadScanDocument: ObservableObject {
     }
 
     private func drawImage(image: UIImage, quality: Double, isTextRecognition: Bool, fontColor: UIColor) {
-        let image = changeCompressionImage(image, quality: quality)
-        let bounds = CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height)
+        autoreleasepool {
+            let image = changeCompressionImage(image, quality: quality)
+            let bounds = CGRect(x: 0, y: 0, width: image.size.width, height: image.size.height)
 
-        if isTextRecognition {
+            if isTextRecognition {
 
-            UIGraphicsBeginPDFPageWithInfo(bounds, nil)
-            image.draw(in: bounds)
+                UIGraphicsBeginPDFPageWithInfo(bounds, nil)
+                image.draw(in: bounds)
 
-            let requestHandler = VNImageRequestHandler(cgImage: image.cgImage!, options: [:])
+                let requestHandler = VNImageRequestHandler(cgImage: image.cgImage!, options: [:])
 
-            let request = VNRecognizeTextRequest { request, _ in
-                guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
-                for observation in observations {
-                    guard let textLine = observation.topCandidates(1).first else { continue }
+                let request = VNRecognizeTextRequest { request, _ in
+                    guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
+                    for observation in observations {
+                        guard let textLine = observation.topCandidates(1).first else { continue }
 
-                    var t: CGAffineTransform = CGAffineTransform.identity
-                    t = t.scaledBy(x: image.size.width, y: -image.size.height)
-                    t = t.translatedBy(x: 0, y: -1)
-                    let rect = observation.boundingBox.applying(t)
-                    let text = textLine.string
+                        var t: CGAffineTransform = CGAffineTransform.identity
+                        t = t.scaledBy(x: image.size.width, y: -image.size.height)
+                        t = t.translatedBy(x: 0, y: -1)
+                        let rect = observation.boundingBox.applying(t)
+                        let text = textLine.string
 
-                    let font = UIFont.systemFont(ofSize: rect.size.height, weight: .regular)
-                    let attributes = self.bestFittingFont(for: text, in: rect, fontDescriptor: font.fontDescriptor, fontColor: fontColor)
+                        let font = UIFont.systemFont(ofSize: rect.size.height, weight: .regular)
+                        let attributes = self.bestFittingFont(for: text, in: rect, fontDescriptor: font.fontDescriptor, fontColor: fontColor)
 
-                    text.draw(with: rect, options: .usesLineFragmentOrigin, attributes: attributes, context: nil)
+                        text.draw(with: rect, options: .usesLineFragmentOrigin, attributes: attributes, context: nil)
+                    }
                 }
+
+                request.recognitionLevel = .accurate
+                request.usesLanguageCorrection = true
+                try? requestHandler.perform([request])
+
+            } else {
+
+                UIGraphicsBeginPDFPageWithInfo(bounds, nil)
+                image.draw(in: bounds)
             }
-
-            request.recognitionLevel = .accurate
-            request.usesLanguageCorrection = true
-            try? requestHandler.perform([request])
-
-        } else {
-
-            UIGraphicsBeginPDFPageWithInfo(bounds, nil)
-            image.draw(in: bounds)
         }
     }
 }
@@ -316,15 +303,19 @@ struct UploadScanDocumentView: View {
     @State var footer = ""
     @State var password: String = ""
     @State var isSecuredPassword: Bool = true
-    @State var isTextRecognition: Bool = NCKeychain().textRecognitionStatus
-    @State var quality = NCKeychain().qualityScanDocument
-    @State var removeAllFiles: Bool = NCKeychain().deleteAllScanImages
+    @State var isTextRecognition: Bool = NCPreferences().textRecognitionStatus
+    @State var quality = NCPreferences().qualityScanDocument
+    @State var removeAllFiles: Bool = NCPreferences().deleteAllScanImages
     @State var isPresentedSelect = false
     @State var isPresentedUploadConflict = false
 
     @ObservedObject var model: NCUploadScanDocument
 
     var metadatasConflict: [tableMetadata] = []
+
+    var capabilities: NKCapabilities.Capabilities {
+        NCNetworking.shared.capabilities[model.session.account] ?? NKCapabilities.Capabilities()
+    }
 
     init(model: NCUploadScanDocument) {
         self.model = model
@@ -366,18 +357,16 @@ struct UploadScanDocumentView: View {
                             isPresentedSelect = true
                         }
                         .complexModifier { view in
-                            if #available(iOS 16, *) {
-                                view.alignmentGuide(.listRowSeparatorLeading) { _ in
-                                    return 0
-                                }
+                            view.alignmentGuide(.listRowSeparatorLeading) { _ in
+                                return 0
                             }
                         }
                         HStack {
                             Text(NSLocalizedString("_filename_", comment: ""))
                             TextField(NSLocalizedString("_enter_filename_", comment: ""), text: $fileName)
                                 .multilineTextAlignment(.trailing)
-                                .onChange(of: fileName) { _ in
-                                    if let fileNameError = FileNameValidator.checkFileName(fileName, account: self.model.controller?.account) {
+                                .onChange(of: fileName) {
+                                    if let fileNameError = FileNameValidator.checkFileName(fileName, account: self.model.controller?.account, capabilities: capabilities) {
                                         footer = fileNameError.errorDescription
                                     } else {
                                         footer = ""
@@ -406,8 +395,8 @@ struct UploadScanDocumentView: View {
                         HStack {
                             Toggle(NSLocalizedString("_text_recognition_", comment: ""), isOn: $isTextRecognition)
                                 .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.switchColor)))
-                                .onChange(of: isTextRecognition) { newValue in
-                                    NCKeychain().textRecognitionStatus = newValue
+                                .onChange(of: isTextRecognition) { _, newValue in
+                                    NCPreferences().textRecognitionStatus = newValue
                                 }
                         }
                     }
@@ -422,8 +411,8 @@ struct UploadScanDocumentView: View {
                         VStack(spacing: 20) {
                             Toggle(NSLocalizedString("_delete_all_scanned_images_", comment: ""), isOn: $removeAllFiles)
                                 .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.getElement(account: model.session.account))))
-                                .onChange(of: removeAllFiles) { newValue in
-                                    NCKeychain().deleteAllScanImages = newValue
+                                .onChange(of: removeAllFiles) { _, newValue in
+                                    NCPreferences().deleteAllScanImages = newValue
                                 }
                             Button(NSLocalizedString("_save_", comment: "")) {
                                 let fileName = model.fileName(fileName)
@@ -451,7 +440,7 @@ struct UploadScanDocumentView: View {
                         VStack {
                             Slider(value: $quality, in: 0...4, step: 1, onEditingChanged: { touch in
                                 if !touch {
-                                    NCKeychain().qualityScanDocument = quality
+                                    NCPreferences().qualityScanDocument = quality
                                 }
                             })
                             .accentColor(Color(NCBrandColor.shared.getElement(account: model.session.account)))

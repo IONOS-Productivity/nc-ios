@@ -54,8 +54,8 @@
                                         <constraint firstItem="6vv-IO-HJM" firstAttribute="leading" secondItem="RV0-3K-eSN" secondAttribute="trailing" constant="12" id="8tD-ZW-Y88"/>
                                         <constraint firstItem="RV0-3K-eSN" firstAttribute="leading" secondItem="tmT-MO-Dwy" secondAttribute="leading" constant="16" id="QQt-st-4hA"/>
                                         <constraint firstItem="RV0-3K-eSN" firstAttribute="centerY" secondItem="tmT-MO-Dwy" secondAttribute="centerY" id="R6O-om-tEz"/>
-                                        <constraint firstItem="6vv-IO-HJM" firstAttribute="top" secondItem="tmT-MO-Dwy" secondAttribute="topMargin" constant="6" id="d50-c3-Ofv"/>
-                                        <constraint firstAttribute="bottomMargin" secondItem="6vv-IO-HJM" secondAttribute="bottom" constant="6" id="zte-5x-B8K"/>
+                                        <constraint firstItem="6vv-IO-HJM" firstAttribute="top" secondItem="tmT-MO-Dwy" secondAttribute="topMargin" constant="5" id="d50-c3-Ofv"/>
+                                        <constraint firstAttribute="bottomMargin" secondItem="6vv-IO-HJM" secondAttribute="bottom" constant="5" id="zte-5x-B8K"/>
                                     </constraints>
                                 </tableViewCellContentView>
                             </tableViewCell>

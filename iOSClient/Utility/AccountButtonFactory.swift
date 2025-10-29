@@ -56,13 +56,15 @@ class AccountButtonFactory {
 }
 
 extension AccountButtonFactory: NCAccountSettingsModelDelegate {
-    func accountSettingsDidDismiss(tableAccount: tableAccount?, controller: NCMainTabBarController?) {
+    func accountSettingsDidDismiss(tblAccount tableAccount: tableAccount?, controller: NCMainTabBarController?) {
         let session = NCSession.shared.getSession(controller: controller)
         let currentAccount = session.account
         if database.getAllTableAccount().isEmpty {
             appDelegate.openLogin(selector: NCGlobal.shared.introLogin)
         } else if let account = tableAccount?.account, account != currentAccount {
-            NCAccount().changeAccount(account, userProfile: nil, controller: controller) { }
+            Task {
+                await NCAccount().changeAccount(account, userProfile: nil, controller: controller)
+            }
         }
     }
 }

@@ -1,25 +1,6 @@
-//
-//  NCManageE2EEModel.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 30/05/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import SwiftUI
@@ -38,8 +19,8 @@ class NCManageE2EE: NSObject, ObservableObject, ViewOnAppearHandling, NCEndToEnd
     var session: NCSession.Session {
         NCSession.shared.getSession(controller: controller)
     }
-    var capabilities: NCCapabilities.Capabilities {
-        NCCapabilities.shared.getCapabilities(account: session.account)
+    var capabilities: NKCapabilities.Capabilities {
+        NCNetworking.shared.capabilities[session.account] ?? NKCapabilities.Capabilities()
     }
 
     init(controller: NCMainTabBarController?) {
@@ -51,8 +32,8 @@ class NCManageE2EE: NSObject, ObservableObject, ViewOnAppearHandling, NCEndToEnd
 
     /// Triggered when the view appears.
     func onViewAppear() {
-        if capabilities.capabilityE2EEEnabled && NCGlobal.shared.e2eeVersions.contains(capabilities.capabilityE2EEApiVersion) {
-            isEndToEndEnabled = NCKeychain().isEndToEndEnabled(account: session.account)
+        if capabilities.e2EEEnabled && NCGlobal.shared.e2eeVersions.contains(capabilities.e2EEApiVersion) {
+            isEndToEndEnabled = NCPreferences().isEndToEndEnabled(account: session.account)
             if isEndToEndEnabled {
                 statusOfService = NSLocalizedString("_status_e2ee_configured_", comment: "")
             } else {
@@ -78,13 +59,19 @@ class NCManageE2EE: NSObject, ObservableObject, ViewOnAppearHandling, NCEndToEnd
     // MARK: - Passcode
 
     @objc func requestPasscodeType(_ passcodeType: String) {
+        #if DEBUG
+        self.passcodeType = passcodeType
+        correctPasscode()
+        return
+        #endif
+
         let laContext = LAContext()
         var error: NSError?
         let passcodeViewController = TOPasscodeViewController(passcodeType: .sixDigits, allowCancel: true)
 
         passcodeViewController.delegate = self
         passcodeViewController.keypadButtonShowLettering = false
-        if NCKeychain().touchFaceID, laContext.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+        if NCPreferences().touchFaceID, laContext.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
             if error == nil {
                 if laContext.biometryType == .faceID {
                     passcodeViewController.biometryType = .faceID
@@ -106,7 +93,7 @@ class NCManageE2EE: NSObject, ObservableObject, ViewOnAppearHandling, NCEndToEnd
         case "startE2E":
             endToEndInitialize.initEndToEndEncryption(controller: controller, metadata: nil)
         case "readPassphrase":
-            if let e2ePassphrase = NCKeychain().getEndToEndPassphrase(account: session.account) {
+            if let e2ePassphrase = NCPreferences().getEndToEndPassphrase(account: session.account) {
                 print("[INFO]Passphrase: " + e2ePassphrase)
                 let message = "\n" + NSLocalizedString("_e2e_settings_the_passphrase_is_", comment: "") + "\n\n\n" + e2ePassphrase
                 let alertController = UIAlertController(title: NSLocalizedString("_info_", comment: ""), message: message, preferredStyle: .alert)
@@ -119,8 +106,8 @@ class NCManageE2EE: NSObject, ObservableObject, ViewOnAppearHandling, NCEndToEnd
         case "removeLocallyEncryption":
             let alertController = UIAlertController(title: NSLocalizedString("_e2e_settings_remove_", comment: ""), message: NSLocalizedString("_e2e_settings_remove_message_", comment: ""), preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_remove_", comment: ""), style: .default, handler: { _ in
-                NCKeychain().clearAllKeysEndToEnd(account: self.session.account)
-                self.isEndToEndEnabled = NCKeychain().isEndToEndEnabled(account: self.session.account)
+                NCPreferences().clearAllKeysEndToEnd(account: self.session.account)
+                self.isEndToEndEnabled = NCPreferences().isEndToEndEnabled(account: self.session.account)
             }))
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .default, handler: { _ in }))
             controller?.present(alertController, animated: true)
@@ -130,7 +117,7 @@ class NCManageE2EE: NSObject, ObservableObject, ViewOnAppearHandling, NCEndToEnd
     }
 
     func passcodeViewController(_ passcodeViewController: TOPasscodeViewController, isCorrectCode code: String) -> Bool {
-        if code == NCKeychain().passcode {
+        if code == NCPreferences().passcode {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.correctPasscode()
             }

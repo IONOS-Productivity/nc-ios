@@ -77,8 +77,11 @@ func getDashboardItems(displaySize: CGSize, withButton: Bool) -> Int {
 }
 
 func convertDataToImage(data: Data?, size: CGSize, fileNameToWrite: String?) -> UIImage? {
-    guard let data = data else { return nil }
+    guard let data = data else {
+        return nil
+    }
     var imageData: UIImage?
+    let utilityFileSystem = NCUtilityFileSystem()
 
     if let image = UIImage(data: data), let image = image.resizeImage(size: size) {
         imageData = image
@@ -90,7 +93,7 @@ func convertDataToImage(data: Data?, size: CGSize, fileNameToWrite: String?) -> 
     }
     if let fileName = fileNameToWrite, let image = imageData {
         do {
-            let fileNamePath: String = NCUtilityFileSystem().directoryUserData + "/" + fileName + ".png"
+            let fileNamePath: String = utilityFileSystem.createServerUrl(serverUrl: utilityFileSystem.directoryUserData, fileName: fileName + ".png")
             try image.pngData()?.write(to: URL(fileURLWithPath: fileNamePath), options: .atomic)
         } catch { }
     }
@@ -103,6 +106,13 @@ func getDashboardDataEntry(configuration: DashboardIntent?, isPreview: Bool, dis
     let dashboardItems = getDashboardItems(displaySize: displaySize, withButton: false)
     let datasPlaceholder = Array(dashboardDatasTest[0...dashboardItems - 1])
     var activeTableAccount: tableAccount?
+    let versionApp = NCUtility().getVersionMaintenance()
+
+    if let groupDefaults = UserDefaults(suiteName: NCBrandOptions.shared.capabilitiesGroup),
+          let lastVersion = groupDefaults.string(forKey: NCGlobal.shared.udLastVersion),
+          lastVersion != versionApp {
+        return completion(DashboardDataEntry(date: Date(), datas: datasPlaceholder, dashboard: nil, buttons: nil, isPlaceholder: true, isEmpty: false, titleImage: UIImage(named: "widget")!, title: "Dashboard", footerImage: "checkmark.icloud", footerText: NSLocalizedString("_version_mismatch_error_", comment: ""), account: ""))
+    }
 
     if isPreview {
         return completion(DashboardDataEntry(date: Date(), datas: datasPlaceholder, dashboard: nil, buttons: nil, isPlaceholder: true, isEmpty: false, titleImage: UIImage(named: "widget")!, title: "Dashboard", footerImage: "Cloud_Checkmark", footerText: NCBrandOptions.shared.brand + " dashboard", account: ""))
@@ -115,21 +125,16 @@ func getDashboardDataEntry(configuration: DashboardIntent?, isPreview: Bool, dis
         activeTableAccount = NCManageDatabase.shared.getTableAccount(predicate: NSPredicate(format: "account == %@", accountIdentifier))
     }
 
-    guard let activeTableAccount,
-          let capabilities = NCManageDatabase.shared.setCapabilities(account: activeTableAccount.account) else {
-        return completion(DashboardDataEntry(date: Date(), datas: datasPlaceholder, dashboard: nil, buttons: nil, isPlaceholder: true, isEmpty: false, titleImage: UIImage(named: "widget")!, title: "Dashboard", footerImage: "Cloud_Xmark", footerText: NSLocalizedString("_no_active_account_", comment: ""), account: ""))
+    guard let activeTableAccount else {
+        return completion(DashboardDataEntry(date: Date(), datas: datasPlaceholder, dashboard: nil, buttons: nil, isPlaceholder: true, isEmpty: false, titleImage: UIImage(named: "widget")!, title: "Dashboard", footerImage: "xmark.icloud", footerText: NSLocalizedString("_no_active_account_", comment: ""), account: ""))
     }
 
     // Default widget
     let result = NCManageDatabase.shared.getDashboardWidgetApplications(account: activeTableAccount.account).first
     let id: String = configuration?.applications?.identifier ?? (result?.id ?? "recommendations")
 
-    guard capabilities.capabilityServerVersionMajor >= NCGlobal.shared.nextcloudVersion25 else {
-        return completion(DashboardDataEntry(date: Date(), datas: datasPlaceholder, dashboard: nil, buttons: nil, isPlaceholder: true, isEmpty: false, titleImage: UIImage(named: "widget")!, title: "Dashboard", footerImage: "Cloud_Xmark", footerText: NSLocalizedString("_widget_available_nc25_", comment: ""), account: activeTableAccount.account))
-    }
-
     // NETWORKING
-    let password = NCKeychain().getPassword(account: activeTableAccount.account)
+    let password = NCPreferences().getPassword(account: activeTableAccount.account)
 
     NextcloudKit.shared.setup(groupIdentifier: NCBrandOptions.shared.capabilitiesGroup, delegate: NCNetworking.shared)
     NextcloudKit.shared.appendSession(account: activeTableAccount.account,
@@ -138,19 +143,17 @@ func getDashboardDataEntry(configuration: DashboardIntent?, isPreview: Bool, dis
                                       userId: activeTableAccount.userId,
                                       password: password,
                                       userAgent: userAgent,
-                                      nextcloudVersion: capabilities.capabilityServerVersionMajor,
                                       httpMaximumConnectionsPerHost: NCBrandOptions.shared.httpMaximumConnectionsPerHost,
                                       httpMaximumConnectionsPerHostInDownload: NCBrandOptions.shared.httpMaximumConnectionsPerHostInDownload,
                                       httpMaximumConnectionsPerHostInUpload: NCBrandOptions.shared.httpMaximumConnectionsPerHostInUpload,
                                       groupIdentifier: NCBrandOptions.shared.capabilitiesGroup)
 
     // LOG
-    let levelLog = NCKeychain().logLevel
-    let versionNextcloudiOS = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, utility.getVersionApp())
+    let versionNextcloudiOS = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, utility.getVersionBuild())
 
-    NextcloudKit.shared.nkCommonInstance.levelLog = levelLog
-    NextcloudKit.shared.nkCommonInstance.pathLog = utilityFileSystem.directoryGroup
-    NextcloudKit.shared.nkCommonInstance.writeLog("[INFO] Start \(NCBrandOptions.shared.brand) dashboard widget session with level \(levelLog) " + versionNextcloudiOS)
+    NextcloudKit.configureLogger(logLevel: (NCBrandOptions.shared.disable_log ? .disabled : NCPreferences().log))
+
+    nkLog(debug: "Start \(NCBrandOptions.shared.brand) dashboard widget session " + versionNextcloudiOS)
 
     let (tableDashboard, tableButton) = NCManageDatabase.shared.getDashboardWidget(account: activeTableAccount.account, id: id)
     let existsButton = (tableButton?.isEmpty ?? true) ? false : true
@@ -158,7 +161,7 @@ func getDashboardDataEntry(configuration: DashboardIntent?, isPreview: Bool, dis
 
     var imagetmp = UIImage(named: "widget")!
     if let fileName = tableDashboard?.iconClass {
-        let fileNamePath: String = utilityFileSystem.directoryUserData + "/" + fileName + ".png"
+        let fileNamePath: String = utilityFileSystem.createServerUrl(serverUrl: utilityFileSystem.directoryUserData, fileName: fileName + ".png")
         if let image = UIImage(contentsOfFile: fileNamePath) {
             imagetmp = image.withTintColor(NCBrandColor.shared.iconImageColor, renderingMode: .alwaysOriginal)
         }
@@ -219,11 +222,11 @@ func getDashboardDataEntry(configuration: DashboardIntent?, isPreview: Bool, dis
                                     imageColor = UIColor(hex: colorString)
                                     icon = utility.loadImage(named: "circle.fill")
                                 } else if let fileName = iconFileName {
-                                    let fileNamePath: String = utilityFileSystem.directoryUserData + "/" + fileName + ".png"
+                                    let fileNamePath: String = utilityFileSystem.createServerUrl(serverUrl: utilityFileSystem.directoryUserData, fileName: fileName + ".png")
                                     if FileManager().fileExists(atPath: fileNamePath), let image = UIImage(contentsOfFile: fileNamePath) {
                                         icon = image
                                     } else {
-                                        let (_, _, error) = await NCNetworking.shared.downloadPreview(url: url, account: activeTableAccount.account)
+                                        let (_, _, error) = await NextcloudKit.shared.downloadPreviewAsync(url: url, account: activeTableAccount.account)
                                         if error == .success,
                                            let data = responseData?.data,
                                            let image = convertDataToImage(data: data, size: NCGlobal.shared.size256, fileNameToWrite: fileName) {
@@ -257,4 +260,5 @@ func getDashboardDataEntry(configuration: DashboardIntent?, isPreview: Bool, dis
             }
         }
     }
+
 }

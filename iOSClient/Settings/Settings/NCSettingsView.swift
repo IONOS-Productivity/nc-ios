@@ -1,50 +1,34 @@
-//
-//  NCSettingsView.swift
-//  Nextcloud
-//
-//  Created by Aditya Tyagi on 03/03/24.
-//  Created by Marino Faggiana on 30/05/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Aditya Tyagi <adityagi02@yahoo.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2024 Aditya Tyagi
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import SwiftUI
 import NextcloudKit
 
 /// Settings view for Nextcloud
 struct NCSettingsView: View {
-    /// State to control the visibility of the acknowledgements view
+    // State to control the visibility of the acknowledgements view
     @State private var showAcknowledgements = false
-    /// State to control the visibility of the passcode view
+    // State to control the visibility of the passcode view
     @State private var showPasscode = false
-    /// State to contorl the visibility of the change passcode view
+    // State to contorl the visibility of the change passcode view
     @State private var showChangePasscode = false
-    /// State to control the visibility of the Policy view
+    // State to control the visibility of the Policy view
     @State private var showBrowser = false
-    /// State to control the visibility of the Source Code  view
+    // State to control the visibility of the Source Code  view
     @State private var showSourceCode = false
-    /// Object of ViewModel of this view
+    // Object of ViewModel of this view
     @ObservedObject var model: NCSettingsModel
 
+    var capabilities: NKCapabilities.Capabilities {
+        NCNetworking.shared.capabilities[model.controller?.account ?? ""] ?? NKCapabilities.Capabilities()
+    }
+
     var body: some View {
-        let capabilities = NCCapabilities.shared.getCapabilities(account: model.controller?.account)
         Form {
-            /// `Auto Upload` Section
+            // `Auto Upload` Section
             Section(content: {
                 NavigationLink(destination: LazyView {
                     NCAutoUploadView(model: NCAutoUploadModel(controller: model.controller), albumModel: AlbumModel(controller: model.controller))
@@ -122,7 +106,7 @@ struct NCSettingsView: View {
 
                 }).applyGlobalFormSectionStyle()
             }
-            /// `Advanced` Section
+            // `Advanced` Section
             Section {
                 NavigationLink(destination: LazyView {
                     NCSettingsAdvancedView(model: NCSettingsAdvancedModel(controller: model.controller), showExitAlert: false, showCacheAlert: false)
@@ -169,7 +153,7 @@ struct NCSettingsView: View {
                 .sheet(isPresented: $showAcknowledgements) {
                     NCBrowserWebView(urlBase: URL(string: NCBrandOptions.shared.acknowloedgements)!, browserTitle: NSLocalizedString("_acknowledgements_", comment: ""))
                 }
-                /// Terms & Privacy Conditions
+                // Terms & Privacy Conditions
                 Button(action: {
                     showBrowser.toggle()
                 }, label: {

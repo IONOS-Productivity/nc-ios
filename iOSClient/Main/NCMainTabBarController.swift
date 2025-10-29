@@ -1,26 +1,7 @@
-//
-//  NCMainTabBarController.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 02/04/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import SwiftUI
@@ -33,16 +14,20 @@ struct NavigationCollectionViewCommon {
 }
 
 class NCMainTabBarController: UITabBarController {
-    var account = ""
+    var sceneIdentifier: String = UUID().uuidString
+    var account: String = "" {
+        didSet {
+            // NCImageCache.shared.controller = self
+        }
+    }
     var availableNotifications: Bool = false
     var documentPickerViewController: NCDocumentPickerViewController?
     let navigationCollectionViewCommon = ThreadSafeArray<NavigationCollectionViewCommon>()
     private var previousIndex: Int?
     private var checkUserDelaultErrorInProgress: Bool = false
-    private var timer: Timer?
-    private var unauthorizedAccountInProgress: Bool = false
-    private var unavailableAccountInProgress: Bool = false
-    
+    private var timerTask: Task<Void, Never>?
+    private let global = NCGlobal.shared
+
     private(set) var burgerMenuController: BurgerMenuAttachController?
 
     var window: UIWindow? {
@@ -55,19 +40,13 @@ class NCMainTabBarController: UITabBarController {
 		if #available(iOS 17.0, *) {
 			traitOverrides.horizontalSizeClass = .compact
 		}
-		
-        tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
 
+        NCNetworking.shared.controller = self
+        NCImageCache.shared.controller = self
 
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeTheming), object: nil, queue: .main) { [weak self] notification in
-            if let userInfo = notification.userInfo as? NSDictionary,
-               let account = userInfo["account"] as? String,
-               self?.account == account {
-                self?.tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
-            }
-        }
+        NCDownloadAction.shared.setup(sceneIdentifier: sceneIdentifier)
 
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterCheckUserDelaultErrorDone), object: nil, queue: nil) { notification in
+        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterCheckUserDelaultErrorDone), object: nil, queue: nil) { notification in
             if let userInfo = notification.userInfo,
                let account = userInfo["account"] as? String,
                let controller = userInfo["controller"] as? NCMainTabBarController,
@@ -78,35 +57,27 @@ class NCMainTabBarController: UITabBarController {
         }
 
         NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
-            self.timer?.invalidate()
-            self.timer = nil
+            self.timerTask?.cancel()
         }
 
-        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                if !isAppInBackground {
-                    self.timerCheckServerError()
-                }
-            }
-        }
-        
 		setupTabBarView()
         burgerMenuController = BurgerMenuAttachController(with: self)
     }
-    
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         DataProtectionAgreementManager.shared.showAgreement(viewController: self)
-        
+
         previousIndex = selectedIndex
-        if NCBrandOptions.shared.enforce_passcode_lock && NCKeychain().passcode.isEmptyOrNil {
+
+        if NCBrandOptions.shared.enforce_passcode_lock && NCPreferences().passcode.isEmptyOrNil {
             let vc = UIHostingController(rootView: SetupPasscodeView(isLockActive: .constant(false)))
             vc.isModalInPresentation = true
 
             present(vc, animated: true)
         }
     }
-	
+
 	private func setupTabBarView() {
 		if UIDevice.current.userInterfaceIdiom == .pad {
 			tabBar.itemPositioning = .centered
@@ -116,21 +87,13 @@ class NCMainTabBarController: UITabBarController {
 			}
 		}
 	}
-    
+
     func showBurgerMenu() {
         burgerMenuController?.showMenu()
     }
-    
+
     func presentedNavigationController() -> UINavigationController? {
         return presentedViewController as? UINavigationController
-    }
-
-    private func timerCheckServerError() {
-        self.timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false, block: { _ in
-            NCNetworking.shared.checkServerError(account: self.account, controller: self) {
-                self.timerCheckServerError()
-            }
-        })
     }
 
     func currentViewController() -> UIViewController? {

@@ -54,6 +54,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
     }
     private var sections: [Section] = []
 
+    @MainActor
     private var session: NCSession.Session {
         NCSession.shared.getSession(controller: tabBarController)
     }
@@ -92,12 +93,12 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
     // MARK: -
 
     func loadItems() {
-        guard let tableAccount = self.database.getTableAccount(predicate: NSPredicate(format: "account == %@", session.account)) else {
+        guard let tableAccount = self.database.getTableAccount(predicate: NSPredicate(format: "account == %@", session.account)),
+              let capabilities = NCNetworking.shared.capabilities[tableAccount.account] else {
             return
         }
         var item = NKExternalSite()
         var quota: String = ""
-        let capabilities = NCCapabilities.shared.getCapabilities(account: tableAccount.account)
 
         // Clear
         functionMenu.removeAll()
@@ -128,7 +129,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         }
         */
 
-        if capabilities.capabilityAssistantEnabled, NCBrandOptions.shared.disable_show_more_nextcloud_apps_in_settings {
+        if capabilities.assistantEnabled, NCBrandOptions.shared.disable_show_more_nextcloud_apps_in_settings {
             // ITEM : Assistant
             item = NKExternalSite()
             item.name = "_assistant_"
@@ -139,7 +140,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         }
 
         // ITEM : Shares
-        if capabilities.capabilityFileSharingApiEnabled {
+        if capabilities.fileSharingApiEnabled {
             item = NKExternalSite()
             item.name = "_list_shares_"
             item.icon = "person.badge.plus"
@@ -157,7 +158,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         functionMenu.append(item)
 
         // ITEM : Groupfolders
-        if capabilities.capabilityGroupfoldersEnabled {
+        if capabilities.groupfoldersEnabled {
             item = NKExternalSite()
             item.name = "_group_folders_"
             item.icon = "person.2"
@@ -222,7 +223,8 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         labelQuota.text = String.localizedStringWithFormat(NSLocalizedString("_quota_using_", comment: ""), quotaUsed, quota)
 
         // ITEM : External
-        if NCBrandOptions.shared.disable_more_external_site == false {
+        if NCBrandOptions.shared.disable_more_external_site == false,
+           capabilities.externalSites {
             if let externalSites = self.database.getAllExternalSites(account: session.account) {
                 for externalSite in externalSites {
                     if !externalSite.name.isEmpty, !externalSite.url.isEmpty, let urlEncoded = externalSite.url.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
@@ -404,6 +406,7 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         } else if item.url == "openSettings" {
             let settingsView = NCSettingsView(model: NCSettingsModel(controller: self.controller))
             let settingsController = UIHostingController(rootView: settingsView)
+            settingsController.title = NSLocalizedString("_settings_", comment: "")
             navigationController?.pushViewController(settingsController, animated: true)
         } else {
             applicationHandle.didSelectItem(item, viewController: self)

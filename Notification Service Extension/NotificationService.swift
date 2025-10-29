@@ -21,6 +21,7 @@
 
 import UIKit
 import UserNotifications
+import NextcloudKit
 
 class NotificationService: UNNotificationServiceExtension {
     var contentHandler: ((UNNotificationContent) -> Void)?
@@ -32,16 +33,23 @@ class NotificationService: UNNotificationServiceExtension {
         self.request = request
         bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
 
+        NextcloudKit.configureLogger(logLevel: .verbose)
+
         if let bestAttemptContent = bestAttemptContent {
             bestAttemptContent.title = ""
             bestAttemptContent.body = "HiDrive Next notification"
             do {
                 if let message = bestAttemptContent.userInfo["subject"] as? String {
                     for tableAccount in NCManageDatabase.shared.getAllTableAccount() {
-                        guard let privateKey = NCKeychain().getPushNotificationPrivateKey(account: tableAccount.account) else {
+                        guard let privateKey = NCPreferences().getPushNotificationPrivateKey(account: tableAccount.account) else {
                             bestAttemptContent.body = "Error retrieving private key for \(tableAccount.account)"
                             continue
                         }
+
+                        let prefixData = Data(privateKey.prefix(8))
+                        let prefixBase64 = prefixData.base64EncodedString()
+                        nkLog(debug: "🔑 Loaded private key for \(tableAccount.account): prefix(Base64)=\(prefixBase64)")
+
                         guard let decryptedMessage = NCPushNotificationEncryption.shared().decryptPushNotification(message, withDevicePrivateKey: privateKey) else {
                             bestAttemptContent.body = "Error decryption for \(tableAccount.account)"
                             continue
@@ -66,7 +74,7 @@ class NotificationService: UNNotificationServiceExtension {
                     }
                 }
             } catch let error as NSError {
-                print("Failed : \(error.localizedDescription)")
+                nkLog(error: "Failed : \(error.localizedDescription)")
             }
 
             contentHandler(bestAttemptContent)

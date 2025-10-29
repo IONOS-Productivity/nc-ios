@@ -1,25 +1,6 @@
-//
-//  NCCollectionViewCommon+CollectionViewDataSource.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 02/07/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
 import UIKit
@@ -27,40 +8,51 @@ import NextcloudKit
 import RealmSwift
 
 extension NCCollectionViewCommon: UICollectionViewDataSource {
-	
+
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return self.dataSource.numberOfSections()
     }
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         // get auto upload folder
-        self.autoUploadFileName = self.database.getAccountAutoUploadFileName(account: self.session.account)
-        self.autoUploadDirectory = self.database.getAccountAutoUploadDirectory(session: self.session)
+        self.autoUploadFileName = self.database.getAccountAutoUploadFileName(account: session.account)
+        self.autoUploadDirectory = self.database.getAccountAutoUploadDirectory(account: session.account, urlBase: session.urlBase, userId: session.userId)
         // get layout for view
-        self.layoutForView = self.database.getLayoutForView(account: self.session.account, key: self.layoutKey, serverUrl: self.serverUrl)
-
+        self.layoutForView = self.database.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
+        // is a Directory E2EE
+        if isSearchingMode {
+            self.isDirectoryE2EE = false
+        } else {
+            self.isDirectoryE2EE = NCUtilityFileSystem().isDirectoryE2EE(serverUrl: serverUrl, urlBase: session.urlBase, userId: session.userId, account: session.account)
+        }
         return self.dataSource.numberOfItemsInSection(section)
     }
 
     func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         if !collectionView.indexPathsForVisibleItems.contains(indexPath) {
-            guard let metadata = self.dataSource.getMetadata(indexPath: indexPath) else { return }
-            for case let operation as NCCollectionViewDownloadThumbnail in NCNetworking.shared.downloadThumbnailQueue.operations where operation.metadata.ocId == metadata.ocId {
-                        operation.cancel()
+            guard let metadata = self.dataSource.getMetadata(indexPath: indexPath) else {
+                return
+            }
+
+            for case let operation as NCCollectionViewDownloadThumbnail in self.networking.downloadThumbnailQueue.operations where operation.metadata.ocId == metadata.ocId {
+                operation.cancel()
             }
         }
     }
 
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        guard let metadata = dataSource.getMetadata(indexPath: indexPath) else { return }
-        let existsImagePreview = utilityFileSystem.fileProviderStorageImageExists(metadata.ocId, etag: metadata.etag)
-        let ext = global.getSizeExtension(column: self.numberOfColumns)
+        guard let metadata = self.dataSource.getMetadata(indexPath: indexPath) else {
+            return
+        }
+        let existsImagePreview = self.utilityFileSystem.fileProviderStorageImageExists(metadata.ocId, etag: metadata.etag, userId: metadata.userId, urlBase: metadata.urlBase)
+        let ext = self.global.getSizeExtension(column: self.numberOfColumns)
 
         if metadata.hasPreview,
            !existsImagePreview,
-           NCNetworking.shared.downloadThumbnailQueue.operations.filter({ ($0 as? NCMediaDownloadThumbnail)?.metadata.ocId == metadata.ocId }).isEmpty {
-            NCNetworking.shared.downloadThumbnailQueue.addOperation(NCCollectionViewDownloadThumbnail(metadata: metadata, collectionView: collectionView, ext: ext))
+           self.networking.downloadThumbnailQueue.operations.filter({ ($0 as? NCMediaDownloadThumbnail)?.metadata.ocId == metadata.ocId }).isEmpty {
+            self.networking.downloadThumbnailQueue.addOperation(NCCollectionViewDownloadThumbnail(metadata: metadata, collectionView: collectionView, ext: ext))
         }
+
     }
 
     private func photoCell(cell: NCPhotoCell, indexPath: IndexPath, metadata: tableMetadata, ext: String) -> NCPhotoCell {
@@ -71,8 +63,8 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         cell.hideButtonMore(true)
         cell.hideImageStatus(true)
 
-        /// Image
-        ///
+        // Image
+        //
         if let image = NCImageCache.shared.getImageCache(ocId: metadata.ocId, etag: metadata.etag, ext: ext) {
 
             cell.filePreviewImageView?.image = image
@@ -81,11 +73,11 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         } else {
 
             if isPinchGestureActive || ext == global.previewExt512 || ext == global.previewExt1024 {
-                cell.filePreviewImageView?.image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: ext)
+                cell.filePreviewImageView?.image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: ext, userId: metadata.userId, urlBase: metadata.urlBase)
             }
 
             DispatchQueue.global(qos: .userInteractive).async {
-                let image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: ext)
+                let image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: ext, userId: metadata.userId, urlBase: metadata.urlBase)
                 if let image {
                     self.imageCache.addImageCache(ocId: metadata.ocId, etag: metadata.etag, image: image, ext: ext, cost: indexPath.row)
                     DispatchQueue.main.async {
@@ -105,8 +97,8 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
         }
 
-        /// Status
-        ///
+        // Status
+        //
         cell.fileStatusImage?.image = nil
         if metadata.isLivePhoto {
             cell.fileStatusImage?.image = utility.loadImage(named: "livephoto", colors: isLayoutPhoto ? [.white] : [NCBrandColor.shared.iconImageColor2])
@@ -114,7 +106,8 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell.fileStatusImage?.image = utility.loadImage(named: "play.circle", colors: NCBrandColor.shared.iconImageMultiColors)
         }
 
-        /// Edit mode
+        // Edit mode
+        //
         if fileSelect.contains(metadata.ocId) {
             cell.selected(true, isEditMode: isEditMode)
         } else {
@@ -134,23 +127,23 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 		case sharedOnMe
 		case sharedInternally
 		case sharedByLink
-		
+
 		static func state(by metadata: tableMetadata, isShare: Bool) -> ItemShareState {
 			if isShare {
 				return .sharedOnMe
 			}
-			
+
 			if metadata.shareType.isEmpty {
 				return .notShared
 			}
-			
+
 			if metadata.shareType.contains(3) {
 				return .sharedByLink
 			}
-			
+
 			return .sharedInternally
 		}
-		
+
 		var iconImage: UIImage {
 			let imageCache = NCImageCache.shared
 			switch self {
@@ -160,7 +153,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 			case .sharedByLink: 	return imageCache.getIconSharedByLink()
 			}
 		}
-		
+
 		var folderImage: UIImage {
 			let imageCache = NCImageCache.shared
 			switch self {
@@ -174,24 +167,24 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         var cell: NCCellProtocol & UICollectionViewCell
-        let permissions = NCPermissions()
         var isShare = false
         var isMounted = false
         var a11yValues: [String] = []
         let metadata = self.dataSource.getMetadata(indexPath: indexPath) ?? tableMetadata()
-        let existsImagePreview = utilityFileSystem.fileProviderStorageImageExists(metadata.ocId, etag: metadata.etag)
+        let existsImagePreview = utilityFileSystem.fileProviderStorageImageExists(metadata.ocId, etag: metadata.etag, userId: metadata.userId, urlBase: metadata.urlBase)
         let ext = global.getSizeExtension(column: self.numberOfColumns)
 
         defer {
-            if !metadata.isSharable() || NCCapabilities.shared.disableSharesView(account: metadata.account) {
+            let capabilities = NCNetworking.shared.capabilities[session.account] ?? NKCapabilities.Capabilities()
+            if !metadata.isSharable() || (!capabilities.fileSharingApiEnabled && !capabilities.filesComments && capabilities.activity.isEmpty) {
                 cell.hideButtonShare(true)
             }
         }
 
         // E2EE create preview
-        if self.isDirectoryEncrypted,
+        if self.isDirectoryE2EE,
            metadata.isImageOrVideo,
-           !utilityFileSystem.fileProviderStorageImageExists(metadata.ocId, etag: metadata.etag) {
+           !utilityFileSystem.fileProviderStorageImageExists(metadata.ocId, etag: metadata.etag, userId: metadata.userId, urlBase: metadata.urlBase) {
             utility.createImageFileFrom(metadata: metadata)
         }
 
@@ -219,7 +212,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell = listCell
         }
 
-        /// CONTENT MODE
+        // CONTENT MODE
         cell.fileAvatarImageView?.contentMode = .center
         cell.filePreviewImageView?.layer.borderWidth = 0
 
@@ -229,11 +222,13 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell.filePreviewImageView?.contentMode = .scaleAspectFit
         }
 
-        guard let metadata = self.dataSource.getMetadata(indexPath: indexPath) else { return cell }
+        guard let metadata = self.dataSource.getMetadata(indexPath: indexPath) else {
+            return cell
+        }
 
         if metadataFolder != nil {
-            isShare = metadata.permissions.contains(permissions.permissionShared) && !metadataFolder!.permissions.contains(permissions.permissionShared)
-            isMounted = metadata.permissions.contains(permissions.permissionMounted) && !metadataFolder!.permissions.contains(permissions.permissionMounted)
+            isShare = metadata.permissions.contains(NCMetadataPermissions.permissionShared) && !metadataFolder!.permissions.contains(NCMetadataPermissions.permissionShared)
+            isMounted = metadata.permissions.contains(NCMetadataPermissions.permissionMounted) && !metadataFolder!.permissions.contains(NCMetadataPermissions.permissionMounted)
         }
 
         cell.fileAccount = metadata.account
@@ -242,8 +237,6 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         cell.fileUser = metadata.ownerId
 
         if isSearchingMode {
-            cell.fileTitleLabel?.text = metadata.fileName
-            cell.fileTitleLabel?.lineBreakMode = .byTruncatingTail
             if metadata.name == global.appName {
                 cell.fileInfoLabel?.text = NSLocalizedString("_in_", comment: "") + " " + utilityFileSystem.getPath(path: metadata.path, user: metadata.user)
             } else {
@@ -255,10 +248,18 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell.fileInfoLabel?.text = metadata.sessionError
         } else {
             cell.fileSubinfoLabel?.isHidden = false
-            cell.fileTitleLabel?.text = metadata.fileNameView
-            cell.fileTitleLabel?.lineBreakMode = .byTruncatingMiddle
+
             cell.writeInfoDateSize(date: metadata.date, size: metadata.size)
         }
+
+//        if cell is NCListCell && cell.fileTitleLabel is BidiFilenameLabel {
+//            (cell.fileTitleLabel as? BidiFilenameLabel)?.fullFilename = metadata.fileNameView
+//            (cell.fileTitleLabel as? BidiFilenameLabel)?.isFolder = metadata.directory
+//            (cell.fileTitleLabel as? BidiFilenameLabel)?.numberOfLines = 1
+//
+//        } else {
+            cell.fileTitleLabel?.text = metadata.fileNameView
+//        }
 
         // Accessibility [shared] if metadata.ownerId != appDelegate.userId, appDelegate.account == metadata.account {
         if metadata.ownerId != metadata.userId {
@@ -267,7 +268,8 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
 		let canHaveShareIcon = isShare || !metadata.shareType.isEmpty
         if metadata.directory {
-            let tableDirectory = database.getTableDirectory(ocId: metadata.ocId)
+            let tblDirectory = database.getTableDirectory(ocId: metadata.ocId)
+
             if metadata.e2eEncrypted {
                 cell.filePreviewImageView?.image = imageCache.getFolderEncrypted(account: metadata.account)
 			} else if canHaveShareIcon {
@@ -283,14 +285,15 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
 
             // Local image: offline
-            if let tableDirectory, tableDirectory.offline {
+            if let tblDirectory, tblDirectory.offline {
                 cell.fileLocalImage?.image = imageCache.getImageOfflineFlag()
             }
 
             // color folder
-            cell.filePreviewImageView?.image = cell.filePreviewImageView?.image?.colorizeFolder(metadata: metadata, tableDirectory: tableDirectory)
+            cell.filePreviewImageView?.image = cell.filePreviewImageView?.image?.colorizeFolder(metadata: metadata, tblDirectory: tblDirectory)
 
         } else {
+            let tableLocalFile = database.getTableLocalFile(predicate: NSPredicate(format: "ocId == %@", metadata.ocId))
 
             if metadata.hasPreviewBorder {
                 cell.filePreviewImageView?.layer.borderWidth = 0.2
@@ -300,7 +303,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             if metadata.name == global.appName {
                 if let image = NCImageCache.shared.getImageCache(ocId: metadata.ocId, etag: metadata.etag, ext: ext) {
                     cell.filePreviewImageView?.image = image
-                } else if let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: ext) {
+                } else if let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: ext, userId: metadata.userId, urlBase: metadata.urlBase) {
                     cell.filePreviewImageView?.image = image
                 }
 
@@ -312,7 +315,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
                     }
                 }
             } else {
-                /// APP NAME - UNIFIED SEARCH
+                // APP NAME - UNIFIED SEARCH
                 switch metadata.iconName {
                 case let str where str.contains("contacts"):
                     cell.filePreviewImageView?.image = utility.loadImage(named: "person.crop.rectangle.stack", colors: [NCBrandColor.shared.iconImageColor])
@@ -335,8 +338,6 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
                 }
             }
 
-            let tableLocalFile = database.getResultsTableLocalFile(predicate: NSPredicate(format: "ocId == %@", metadata.ocId))?.first
-            // image local
             if let tableLocalFile, tableLocalFile.offline {
                 a11yValues.append(NSLocalizedString("_offline_", comment: ""))
                 cell.fileLocalImage?.image = imageCache.getImageOfflineFlag()
@@ -345,13 +346,12 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
         }
 
-		
         // image Favorite
 		cell.fileFavoriteImage?.image = metadata.favorite ? imageCache.getImageFavorite() : nil
         if metadata.favorite {
             a11yValues.append(NSLocalizedString("_favorite_short_", comment: ""))
         }
-		
+
         // Share image
 		cell.fileSharedImage?.image = ItemShareState.state(by: metadata, isShare: isShare).iconImage
 
@@ -366,42 +366,40 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 		// Status
 		cell.fileStatusImage?.image = nil
 
-		if metadata.isLivePhoto {
-			cell.fileStatusImage?.image = utility.loadImage(named: "livephoto", colors: isLayoutPhoto ? [.white] : [NCBrandColor.shared.iconImageColor2])
-			a11yValues.append(NSLocalizedString("_upload_mov_livephoto_", comment: ""))
-		} else if metadata.isVideo {
-			cell.fileStatusImage?.image = utility.loadImage(named: "play.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-		}
-		switch metadata.status {
-		case NCGlobal.shared.metadataStatusWaitCreateFolder:
-			cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
-			cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_create_folder_", comment: "")
-		case NCGlobal.shared.metadataStatusWaitFavorite:
-			cell.fileStatusImage?.image = utility.loadImage(named: "star.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-			cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_favorite_", comment: "")
-		case NCGlobal.shared.metadataStatusWaitCopy:
-			cell.fileStatusImage?.image = utility.loadImage(named: "c.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-			cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_copy_", comment: "")
-		case NCGlobal.shared.metadataStatusWaitMove:
-			cell.fileStatusImage?.image = utility.loadImage(named: "m.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-			cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_move_", comment: "")
-		case NCGlobal.shared.metadataStatusWaitRename:
-			cell.fileStatusImage?.image = utility.loadImage(named: "a.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-			cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_rename_", comment: "")
-		case NCGlobal.shared.metadataStatusWaitDownload:
-			cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
-		case NCGlobal.shared.metadataStatusDownloading:
-			if #available(iOS 17.0, *) {
-				cell.fileStatusImage?.image = utility.loadImage(named: "arrowshape.down.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-			}
-		case NCGlobal.shared.metadataStatusDownloadError, NCGlobal.shared.metadataStatusUploadError:
-			cell.fileStatusImage?.image = utility.loadImage(named: "exclamationmark.circle", colors: NCBrandColor.shared.iconImageMultiColors)
-		default:
-			break
-		}
+        if metadata.isLivePhoto {
+            cell.fileStatusImage?.image = utility.loadImage(named: "livephoto", colors: isLayoutPhoto ? [.white] : [NCBrandColor.shared.iconImageColor2])
+            a11yValues.append(NSLocalizedString("_upload_mov_livephoto_", comment: ""))
+        } else if metadata.isVideo {
+            cell.fileStatusImage?.image = utility.loadImage(named: "play.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+        }
+        switch metadata.status {
+        case global.metadataStatusWaitCreateFolder:
+            cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_create_folder_", comment: "")
+        case global.metadataStatusWaitFavorite:
+            cell.fileStatusImage?.image = utility.loadImage(named: "star.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_favorite_", comment: "")
+        case global.metadataStatusWaitCopy:
+            cell.fileStatusImage?.image = utility.loadImage(named: "c.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_copy_", comment: "")
+        case global.metadataStatusWaitMove:
+            cell.fileStatusImage?.image = utility.loadImage(named: "m.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_move_", comment: "")
+        case global.metadataStatusWaitRename:
+            cell.fileStatusImage?.image = utility.loadImage(named: "a.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+            cell.fileInfoLabel?.text = NSLocalizedString("_status_wait_rename_", comment: "")
+        case global.metadataStatusWaitDownload:
+            cell.fileStatusImage?.image = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: NCBrandColor.shared.iconImageMultiColors)
+        case global.metadataStatusDownloading:
+            cell.fileStatusImage?.image = utility.loadImage(named: "arrowshape.down.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+        case global.metadataStatusDownloadError, global.metadataStatusUploadError:
+            cell.fileStatusImage?.image = utility.loadImage(named: "exclamationmark.circle", colors: NCBrandColor.shared.iconImageMultiColors)
+        default:
+            break
+        }
 
         // URL
-        if metadata.classFile == NKCommon.TypeClassFile.url.rawValue {
+        if metadata.classFile == NKTypeClassFile.url.rawValue {
             cell.fileLocalImage?.image = nil
             cell.hideButtonShare(true)
             cell.hideButtonMore(true)
@@ -476,11 +474,6 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell.hideButtonMore(true)
         }
 
-        cell.setIconOutlines()
-
-        cell.accessibilityLabel = metadata.fileName
-        cell.accessibilityIdentifier = "Cell/\(metadata.fileName)"
-
         return cell
     }
 
@@ -492,7 +485,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
                 let recommendations = self.database.getRecommendedFiles(account: self.session.account)
                 var sectionText = NSLocalizedString("_all_files_", comment: "")
 
-                if NCKeychain().getPersonalFilesOnly(account: session.account) {
+                if NCPreferences().getPersonalFilesOnly(account: session.account) {
                     sectionText = NSLocalizedString("_personal_files_", comment: "")
                 }
 
@@ -507,6 +500,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
                                   heightHeaderSection: heightHeaderSection,
                                   sectionText: sectionText,
                                   viewController: self,
+                                  sceneItentifier: self.sceneIdentifier,
                                   delegate: self)
 
             } else if let header = header as? NCSectionFirstHeaderEmptyData {
@@ -515,13 +509,13 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
                 if isSearchingMode {
                     emptyImage = utility.loadImage(named: "magnifyingglass", colors: [NCBrandColor.shared.getElement(account: session.account)])
-                    if self.dataSourceTask?.state == .running {
+                    if self.searchDataSourceTask?.state == .running {
                         emptyTitle = NSLocalizedString("_search_in_progress_", comment: "")
                     } else {
                         emptyTitle = NSLocalizedString("_search_no_record_found_", comment: "")
                     }
                     emptyDescription = NSLocalizedString("_search_instruction_", comment: "")
-                } else if self.dataSourceTask?.state == .running {
+                } else if self.searchDataSourceTask?.state == .running {
                     emptyImage = utility.loadImage(named: "wifi", colors: [NCBrandColor.shared.getElement(account: session.account)])
                     emptyTitle = NSLocalizedString("_request_in_progress_", comment: "")
                     emptyDescription = ""
@@ -538,6 +532,10 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
                         emptyImage = utility.loadImage(named: "arrow.triangle.2.circlepath", colors: [NCBrandColor.shared.getElement(account: session.account)])
                         emptyTitle = NSLocalizedString("_files_no_files_", comment: "")
                         emptyDescription = NSLocalizedString("_folder_offline_desc_", comment: "")
+                    } else if let metadataFolder, !metadataFolder.isCreatable {
+                        emptyImage = imageCache.getFolder(account: session.account)
+                        emptyTitle = NSLocalizedString("_files_no_files_", comment: "")
+                        emptyDescription = NSLocalizedString("_no_file_no_permission_to_create_", comment: "")
                     } else {
                         emptyImage = imageCache.getFolder(account: session.account)
                         emptyTitle = NSLocalizedString("_files_no_files_", comment: "")
@@ -595,15 +593,10 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
             footer.setTitleLabel("")
             footer.setButtonText(NSLocalizedString("_show_more_results_", comment: ""))
-            footer.separatorIsHidden(true)
             footer.buttonIsHidden(true)
             footer.hideActivityIndicatorSection()
 
             if isSearchingMode {
-                if sections > 1 && section != sections - 1 {
-                    footer.separatorIsHidden(false)
-                }
-
                 // If the number of entries(metadatas) is lower than the cursor, then there are no more entries.
                 // The blind spot in this is when the number of entries is the same as the cursor. If so, we don't have a way of knowing if there are no more entries.
                 // This is as good as it gets for determining last page without server-side flag.
@@ -616,12 +609,15 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
                 if unifiedSearchInProgress {
                     footer.showActivityIndicatorSection()
                 }
+            } else if isEditMode {
+                // let itemsSelected = self.fileSelect.count
+                // let items = self.dataSource.numberOfItemsInSection(section)
+                // footer.setTitleLabel("\(itemsSelected) \(NSLocalizedString("_of_", comment: "")) \(items) \(NSLocalizedString("_selected_", comment: ""))")
+                footer.setTitleLabel("")
             } else {
                 if sections == 1 || section == sections - 1 {
                     let info = self.dataSource.getFooterInformation()
                     footer.setTitleLabel(directories: info.directories, files: info.files, size: info.size)
-                } else {
-                    footer.separatorIsHidden(false)
                 }
             }
             return footer
@@ -645,5 +641,39 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             }
         }
         return ownerId
+    }
+
+    /// Caches preview images asynchronously for the provided metadata entries.
+    /// - Parameters:
+    ///   - metadatas: The list of metadata entries to cache.
+    ///   - priority: The task priority to use (default is `.utility`).
+    func cachingAsync(metadatas: [tableMetadata], priority: TaskPriority = .utility) {
+        Task.detached(priority: priority) {
+            for (cost, metadata) in metadatas.enumerated() {
+                // Skip if not an image or video
+                guard metadata.isImageOrVideo else { continue }
+                // Check if image is already cached
+                let alreadyCached = NCImageCache.shared.getImageCache(ocId: metadata.ocId,
+                                                                      etag: metadata.etag,
+                                                                      ext: self.global.previewExt256) != nil
+                guard !alreadyCached else {
+                    continue
+                }
+
+                // caching preview
+                //
+                if let image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: self.global.previewExt256, userId: metadata.userId, urlBase: metadata.urlBase) {
+                    NCImageCache.shared.addImageCache(ocId: metadata.ocId, etag: metadata.etag, image: image, ext: self.global.previewExt256, cost: cost)
+                }
+            }
+        }
+    }
+
+    func removeImageCache(metadatas: [tableMetadata]) {
+        DispatchQueue.global().async {
+            for metadata in metadatas {
+                NCImageCache.shared.removeImageCache(ocIdPlusEtag: metadata.ocId + metadata.etag)
+            }
+        }
     }
 }

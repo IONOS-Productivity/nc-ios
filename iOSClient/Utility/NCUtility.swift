@@ -27,26 +27,29 @@ import PDFKit
 import Accelerate
 import CoreMedia
 import Photos
-import Alamofire
 
 final class NCUtility: NSObject, Sendable {
     let utilityFileSystem = NCUtilityFileSystem()
     let global = NCGlobal.shared
 
     func isTypeFileRichDocument(_ metadata: tableMetadata) -> Bool {
-        guard metadata.fileNameView != "." else { return false }
         let fileExtension = (metadata.fileNameView as NSString).pathExtension
-        guard !fileExtension.isEmpty else { return false }
-        guard let mimeType = UTType(tag: fileExtension.uppercased(), tagClass: .filenameExtension, conformingTo: nil)?.identifier else { return false }
+        guard let capabilities = NCNetworking.shared.capabilities[metadata.account],
+              !fileExtension.isEmpty,
+              let mimeType = UTType(tag: fileExtension.uppercased(), tagClass: .filenameExtension, conformingTo: nil)?.identifier else {
+            return false
+        }
+
         /// contentype
-        if !NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityRichDocumentsMimetypes.filter({ $0.contains(metadata.contentType) || $0.contains("text/plain") }).isEmpty {
+        if !capabilities.richDocumentsMimetypes.filter({ $0.contains(metadata.contentType) || $0.contains("text/plain") }).isEmpty {
             return true
         }
+
         /// mimetype
-        if !NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityRichDocumentsMimetypes.isEmpty && mimeType.components(separatedBy: ".").count > 2 {
+        if !capabilities.richDocumentsMimetypes.isEmpty && mimeType.components(separatedBy: ".").count > 2 {
             let mimeTypeArray = mimeType.components(separatedBy: ".")
             let mimeType = mimeTypeArray[mimeTypeArray.count - 2] + "." + mimeTypeArray[mimeTypeArray.count - 1]
-            if !NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityRichDocumentsMimetypes.filter({ $0.contains(mimeType) }).isEmpty {
+            if !capabilities.richDocumentsMimetypes.filter({ $0.contains(mimeType) }).isEmpty {
                 return true
             }
         }
@@ -54,39 +57,32 @@ final class NCUtility: NSObject, Sendable {
     }
 
     func editorsDirectEditing(account: String, contentType: String) -> [String] {
-        var editor: [String] = []
-        guard let results = NCManageDatabase.shared.getDirectEditingEditors(account: account) else { return editor }
+        var names: [String] = []
+        let capabilities = NCNetworking.shared.capabilities[account]
 
-        for result: tableDirectEditingEditors in results {
-            for mimetype in result.mimetypes {
+        capabilities?.directEditingEditors.forEach { editor in
+            editor.mimetypes.forEach { mimetype in
                 if mimetype == contentType {
-                    editor.append(result.editor)
+                    names.append(editor.name)
                 }
                 // HARDCODE
                 // https://github.com/nextcloud/text/issues/913
                 if mimetype == "text/markdown" && contentType == "text/x-markdown" {
-                    editor.append(result.editor)
+                    names.append(editor.name)
                 }
                 if contentType == "text/html" {
-                    editor.append(result.editor)
+                    names.append(editor.name)
                 }
             }
-            for mimetype in result.optionalMimetypes {
-                if mimetype == contentType {
-                    editor.append(result.editor)
-                }
-            }
-        }
-        return Array(Set(editor))
-    }
 
-    func permissionsContainsString(_ metadataPermissions: String, permissions: String) -> Bool {
-        for char in permissions {
-            if metadataPermissions.contains(char) == false {
-                return false
+            editor.optionalMimetypes.forEach { mimetype in
+                if mimetype == contentType {
+                    names.append(editor.name)
+                }
             }
         }
-        return true
+
+        return Array(Set(names))
     }
 
     func getCustomUserAgentNCText() -> String {
@@ -123,15 +119,19 @@ final class NCUtility: NSObject, Sendable {
         return String(intFileId)
     }
 
-    @objc func getVersionApp(withBuild: Bool = true) -> String {
-        if let dictionary = Bundle.main.infoDictionary {
-            if let version = dictionary["CFBundleShortVersionString"], let build = dictionary["CFBundleVersion"] {
-                if withBuild {
-                    return "\(version).\(build)"
-                } else {
-                    return "\(version)"
-                }
-            }
+    func getVersionBuild() -> String {
+        if let dictionary = Bundle.main.infoDictionary,
+           let version = dictionary["CFBundleShortVersionString"],
+           let build = dictionary["CFBundleVersion"] {
+            return "\(version).\(build)"
+        }
+        return ""
+    }
+
+    func getVersionMaintenance() -> String {
+        if let dictionary = Bundle.main.infoDictionary,
+           let version = dictionary["CFBundleShortVersionString"] {
+            return "\(version)"
         }
         return ""
     }
@@ -267,14 +267,6 @@ final class NCUtility: NSObject, Sendable {
         }
 
         return (usedmegabytes, totalmegabytes)
-    }
-
-    func removeForbiddenCharacters(_ fileName: String) -> String {
-        var fileName = fileName
-        for character in global.forbiddenCharacters {
-            fileName = fileName.replacingOccurrences(of: character, with: "")
-        }
-        return fileName
     }
 
     func getHeightHeaderEmptyData(view: UIView, portraitOffset: CGFloat, landscapeOffset: CGFloat) -> CGFloat {

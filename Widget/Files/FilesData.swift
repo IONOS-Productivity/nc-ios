@@ -92,6 +92,13 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
     let filesItems = getFilesItems(displaySize: displaySize)
     let datasPlaceholder = Array(filesDatasTest[0...filesItems - 1])
     var activeTableAccount: tableAccount?
+    let versionApp = NCUtility().getVersionMaintenance()
+
+    if let groupDefaults = UserDefaults(suiteName: NCBrandOptions.shared.capabilitiesGroup),
+          let lastVersion = groupDefaults.string(forKey: NCGlobal.shared.udLastVersion),
+          lastVersion != versionApp {
+        return completion(FilesDataEntry(date: Date(), datas: datasPlaceholder, isPlaceholder: true, isEmpty: false, userId: "", url: "", account: "", tile: getTitleFilesWidget(tableAccount: nil), footerImage: "checkmark.icloud", footerText: NSLocalizedString("_version_mismatch_error_", comment: "")))
+    }
 
     if isPreview {
         return completion(FilesDataEntry(date: Date(), datas: datasPlaceholder, isPlaceholder: true, isEmpty: false, userId: "", url: "", account: "", tile: getTitleFilesWidget(tableAccount: nil), footerImage: "Cloud_Checkmark", footerText: NCBrandOptions.shared.brand + " files"))
@@ -109,7 +116,7 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
     }
 
     // NETWORKING
-    let password = NCKeychain().getPassword(account: activeTableAccount.account)
+    let password = NCPreferences().getPassword(account: activeTableAccount.account)
 
     NextcloudKit.shared.setup(groupIdentifier: NCBrandOptions.shared.capabilitiesGroup, delegate: NCNetworking.shared)
     NextcloudKit.shared.appendSession(account: activeTableAccount.account,
@@ -118,7 +125,6 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
                                       userId: activeTableAccount.userId,
                                       password: password,
                                       userAgent: userAgent,
-                                      nextcloudVersion: NCCapabilities.shared.getCapabilities(account: activeTableAccount.account).capabilityServerVersionMajor,
                                       httpMaximumConnectionsPerHost: NCBrandOptions.shared.httpMaximumConnectionsPerHost,
                                       httpMaximumConnectionsPerHostInDownload: NCBrandOptions.shared.httpMaximumConnectionsPerHostInDownload,
                                       httpMaximumConnectionsPerHostInUpload: NCBrandOptions.shared.httpMaximumConnectionsPerHostInUpload,
@@ -180,15 +186,14 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
     dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZZZZZ"
     let lessDateString = dateFormatter.string(from: Date())
     let requestBody = String(format: requestBodyRecent, "/files/" + activeTableAccount.userId, lessDateString)
-    let showHiddenFiles = NCKeychain().getShowHiddenFiles(account: activeTableAccount.account)
+    let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: activeTableAccount.account)
 
     // LOG
-    let levelLog = NCKeychain().logLevel
-    let versionNextcloudiOS = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, utility.getVersionApp())
+    let versionNextcloudiOS = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, utility.getVersionBuild())
 
-    NextcloudKit.shared.nkCommonInstance.levelLog = levelLog
-    NextcloudKit.shared.nkCommonInstance.pathLog = utilityFileSystem.directoryGroup
-    NextcloudKit.shared.nkCommonInstance.writeLog("[INFO] Start \(NCBrandOptions.shared.brand) widget session with level \(levelLog) " + versionNextcloudiOS)
+    NextcloudKit.configureLogger(logLevel: (NCBrandOptions.shared.disable_log ? .disabled : NCPreferences().log))
+
+    nkLog(debug: "Start \(NCBrandOptions.shared.brand) widget session " + versionNextcloudiOS)
 
     let options = NKRequestOptions(timeout: 30, queue: NextcloudKit.shared.nkCommonInstance.backgroundQueue)
     NextcloudKit.shared.searchBodyRequest(serverUrl: activeTableAccount.urlBase, requestBody: requestBody, showHiddenFiles: showHiddenFiles, account: activeTableAccount.account, options: options) { _, files, data, error in
@@ -201,7 +206,7 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
                 var useTypeIconFile = false
                 var image: UIImage?
 
-                if file.directory || (!file.livePhotoFile.isEmpty && file.classFile == NKCommon.TypeClassFile.video.rawValue) {
+                if file.directory || (!file.livePhotoFile.isEmpty && file.classFile == NKTypeClassFile.video.rawValue) {
                     continue
                 }
 
@@ -217,14 +222,27 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
                 guard let url = URL(string: urlString) else { continue }
 
                 // IMAGE
-                image = utility.getImage(ocId: file.ocId, etag: file.etag, ext: NCGlobal.shared.previewExt512)
+                image = utility.getImage(ocId: file.ocId,
+                                         etag: file.etag,
+                                         ext: NCGlobal.shared.previewExt512,
+                                         userId: activeTableAccount.userId,
+                                         urlBase: activeTableAccount.urlBase)
                 if image == nil, file.hasPreview {
-                    let result = await NCNetworking.shared.downloadPreview(fileId: file.fileId,
-                                                                           account: activeTableAccount.account,
-                                                                           options: options)
+                    let result = await NextcloudKit.shared.downloadPreviewAsync(fileId: file.fileId,
+                                                                                etag: file.etag,
+                                                                                account: activeTableAccount.account,
+                                                                                options: options)
                     if result.error == .success, let data = result.responseData?.data {
-                        utility.createImageFileFrom(data: data, ocId: file.ocId, etag: file.etag)
-                        image = utility.getImage(ocId: file.ocId, etag: file.etag, ext: NCGlobal.shared.previewExt256)
+                        utility.createImageFileFrom(data: data,
+                                                    ocId: file.ocId,
+                                                    etag: file.etag,
+                                                    userId: activeTableAccount.userId,
+                                                    urlBase: activeTableAccount.urlBase)
+                        image = utility.getImage(ocId: file.ocId,
+                                                 etag: file.etag,
+                                                 ext: NCGlobal.shared.previewExt256,
+                                                 userId: activeTableAccount.userId,
+                                                 urlBase: activeTableAccount.urlBase)
                     }
                 }
                 if image == nil {
@@ -236,8 +254,7 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
                     useTypeIconFile = true
                 }
 
-                let isDirectoryE2EE = utilityFileSystem.isDirectoryE2EE(file: file)
-                let metadata = NCManageDatabase.shared.convertFileToMetadata(file, isDirectoryE2EE: isDirectoryE2EE)
+                let metadata = await NCManageDatabase.shared.convertFileToMetadataAsync(file)
 
                 // DATA
 				let data = FilesData(id: metadata.ocId, image: image ?? UIImage(), title: metadata.fileNameView, subTitle: subTitle, url: url, useTypeIconFile: useTypeIconFile, color: colorByImageName(file.iconName))
@@ -258,16 +275,16 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
 	
 	@Sendable func colorByImageName(_ name: String) -> UIColor {
 		switch name {
-		case NKCommon.TypeIconFile.audio.rawValue, 
-			 NKCommon.TypeIconFile.code.rawValue,
-			 NKCommon.TypeIconFile.compress.rawValue,
-		 	 NKCommon.TypeIconFile.image.rawValue,
-			 NKCommon.TypeIconFile.movie.rawValue,
-			 NKCommon.TypeIconFile.txt.rawValue,
-			 NKCommon.TypeIconFile.url.rawValue: return NCBrandColor.shared.iconImageColor2
-		case NKCommon.TypeIconFile.document.rawValue: return NCBrandColor.shared.documentIconColor
-		case NKCommon.TypeIconFile.ppt.rawValue: return NCBrandColor.shared.presentationIconColor
-		case NKCommon.TypeIconFile.xls.rawValue: return NCBrandColor.shared.spreadsheetIconColor
+		case NKTypeIconFile.audio.rawValue,
+             NKTypeIconFile.code.rawValue,
+             NKTypeIconFile.compress.rawValue,
+             NKTypeIconFile.image.rawValue,
+             NKTypeIconFile.video.rawValue,
+             NKTypeIconFile.txt.rawValue,
+             NKTypeIconFile.url.rawValue: return NCBrandColor.shared.iconImageColor2
+		case NKTypeIconFile.document.rawValue: return NCBrandColor.shared.documentIconColor
+		case NKTypeIconFile.ppt.rawValue: return NCBrandColor.shared.presentationIconColor
+		case NKTypeIconFile.xls.rawValue: return NCBrandColor.shared.spreadsheetIconColor
 			
         default: return NCBrandColor.shared.brandElement
 		}

@@ -1,25 +1,6 @@
-//
-//  NCSectionFirstHeader.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 09/10/2018.
-//  Copyright © 2018 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2018 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import MarkdownKit
@@ -48,10 +29,12 @@ class NCSectionFirstHeader: UICollectionReusableView, UIGestureRecognizerDelegat
     private weak var delegate: NCSectionFirstHeaderDelegate?
     private let utility = NCUtility()
     private var markdownParser = MarkdownParser()
+    private let global = NCGlobal.shared
     private var richWorkspaceText: String?
     private let richWorkspaceGradient: CAGradientLayer = CAGradientLayer()
     private var recommendations: [tableRecommendedFiles] = []
     private var viewController: UIViewController?
+    private var sceneIdentifier: String = ""
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -99,12 +82,6 @@ class NCSectionFirstHeader: UICollectionReusableView, UIGestureRecognizerDelegat
         setRichWorkspaceColor()
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        setRichWorkspaceColor()
-    }
-
     func setContent(heightHeaderRichWorkspace: CGFloat,
                     richWorkspaceText: String?,
                     heightHeaderRecommendations: CGFloat,
@@ -112,6 +89,7 @@ class NCSectionFirstHeader: UICollectionReusableView, UIGestureRecognizerDelegat
                     heightHeaderSection: CGFloat,
                     sectionText: String?,
                     viewController: UIViewController?,
+                    sceneItentifier: String,
                     delegate: NCSectionFirstHeaderDelegate?) {
         viewRichWorkspaceHeightConstraint.constant = heightHeaderRichWorkspace
         viewRecommendationsHeightConstraint.constant = heightHeaderRecommendations
@@ -125,6 +103,7 @@ class NCSectionFirstHeader: UICollectionReusableView, UIGestureRecognizerDelegat
         self.recommendations = recommendations
         self.labelSection.text = sectionText
         self.viewController = viewController
+        self.sceneIdentifier = sceneItentifier
         self.delegate = delegate
 
         if heightHeaderRichWorkspace != 0, let richWorkspaceText, !richWorkspaceText.isEmpty {
@@ -150,11 +129,11 @@ class NCSectionFirstHeader: UICollectionReusableView, UIGestureRecognizerDelegat
 
     // MARK: - RichWorkspace
 
-    private func setRichWorkspaceColor() {
-        if traitCollection.userInterfaceStyle == .dark {
-            richWorkspaceGradient.colors = [UIColor(white: 0, alpha: 0).cgColor, UIColor.black.cgColor]
+    func setRichWorkspaceColor(style: UIUserInterfaceStyle? = nil) {
+        if let style {
+            richWorkspaceGradient.colors = style == .light ? [UIColor(white: 1, alpha: 0).cgColor, UIColor.white.cgColor] : [UIColor(white: 0, alpha: 0).cgColor, UIColor.black.cgColor]
         } else {
-            richWorkspaceGradient.colors = [UIColor(white: 1, alpha: 0).cgColor, UIColor.white.cgColor]
+            richWorkspaceGradient.colors = traitCollection.userInterfaceStyle == .light ? [UIColor(white: 1, alpha: 0).cgColor, UIColor.white.cgColor] : [UIColor(white: 0, alpha: 0).cgColor, UIColor.black.cgColor]
         }
     }
 
@@ -173,7 +152,7 @@ extension NCSectionFirstHeader: UICollectionViewDataSource {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as? NCRecommendationsCell else { fatalError() }
 
         if let metadata = NCManageDatabase.shared.getMetadataFromFileId(recommendedFiles.id) {
-            let imagePreview = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal.shared.previewExt512)
+            let imagePreview = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: global.previewExt512, userId: metadata.userId, urlBase: metadata.urlBase)
 
             if metadata.directory {
                 cell.image.image = self.utility.loadImage(named: metadata.iconName, useTypeIconFile: true, account: metadata.account)
@@ -185,20 +164,30 @@ extension NCSectionFirstHeader: UICollectionViewDataSource {
                 cell.image.image = self.utility.loadImage(named: metadata.iconName, useTypeIconFile: true, account: metadata.account)
                 cell.image.contentMode = .scaleAspectFit
                 if recommendedFiles.hasPreview {
-                    NextcloudKit.shared.downloadPreview(fileId: metadata.fileId, account: metadata.account) { _, _, _, _, responseData, error in
-                        if error == .success, let data = responseData?.data {
-                            self.utility.createImageFileFrom(data: data, ocId: metadata.ocId, etag: metadata.etag)
-                            if let image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal.shared.previewExt512) {
-                                for case let cell as NCRecommendationsCell in self.collectionViewRecommendations.visibleCells {
-                                    if cell.id == recommendedFiles.id {
-                                        cell.image.contentMode = .scaleAspectFill
-                                        if metadata.classFile == NKCommon.TypeClassFile.document.rawValue {
-                                            cell.setImageCorner(withBorder: true)
+                    Task {
+                        let resultsPreview = await NextcloudKit.shared.downloadPreviewAsync(fileId: metadata.fileId, etag: metadata.etag, account: metadata.account) { task in
+                            Task {
+                                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: metadata.account,
+                                                                                                            path: metadata.fileId,
+                                                                                                            name: "DownloadPreview")
+                                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+                            }
+                        }
+                        if resultsPreview.error == .success, let data = resultsPreview.responseData?.data {
+                            self.utility.createImageFileFrom(data: data, ocId: metadata.ocId, etag: metadata.etag, userId: metadata.userId, urlBase: metadata.urlBase)
+                            if let image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: self.global.previewExt512, userId: metadata.userId, urlBase: metadata.urlBase) {
+                                Task { @MainActor in
+                                    for case let cell as NCRecommendationsCell in self.collectionViewRecommendations.visibleCells {
+                                        if cell.id == recommendedFiles.id {
+                                            cell.image.contentMode = .scaleAspectFill
+                                            if metadata.classFile == NKTypeClassFile.document.rawValue {
+                                                cell.setImageCorner(withBorder: true)
+                                            }
+                                            UIView.transition(with: cell.image, duration: 0.75, options: .transitionCrossDissolve, animations: {
+                                                cell.image.image = image
+                                            }, completion: nil)
+                                            break
                                         }
-                                        UIView.transition(with: cell.image, duration: 0.75, options: .transitionCrossDissolve, animations: {
-                                            cell.image.image = image
-                                        }, completion: nil)
-                                        break
                                     }
                                 }
                             }
@@ -207,7 +196,7 @@ extension NCSectionFirstHeader: UICollectionViewDataSource {
                 }
             }
 
-            if metadata.hasPreview, metadata.classFile == NKCommon.TypeClassFile.document.rawValue, imagePreview != nil {
+            if metadata.hasPreview, metadata.classFile == NKTypeClassFile.document.rawValue, imagePreview != nil {
                 cell.setImageCorner(withBorder: true)
             } else {
                 cell.setImageCorner(withBorder: false)
@@ -239,20 +228,21 @@ extension NCSectionFirstHeader: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         let recommendedFiles = self.recommendations[indexPath.row]
         guard let metadata = NCManageDatabase.shared.getMetadataFromFileId(recommendedFiles.id),
-              metadata.classFile != NKCommon.TypeClassFile.url.rawValue,
+              metadata.classFile != NKTypeClassFile.url.rawValue,
               let viewController else {
             return nil
         }
         let identifier = indexPath as NSCopying
-        let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal().previewExt1024)
+        let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal().previewExt1024, userId: metadata.userId, urlBase: metadata.urlBase)
 
 #if EXTENSION
         return nil
 #else
         return UIContextMenuConfiguration(identifier: identifier, previewProvider: {
-            return NCViewerProviderContextMenu(metadata: metadata, image: image)
+            return NCViewerProviderContextMenu(metadata: metadata, image: image, sceneIdentifier: self.sceneIdentifier)
         }, actionProvider: { _ in
-            return NCContextMenu().viewMenu(ocId: metadata.ocId, viewController: viewController, image: image)
+            let contextMenu = NCContextMenu(metadata: metadata.detachedCopy(), viewController: viewController, sceneIdentifier: self.sceneIdentifier, image: image)
+            return contextMenu.viewMenu()
         })
 #endif
     }

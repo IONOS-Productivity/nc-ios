@@ -38,6 +38,7 @@ class NCShareUserCell: UITableViewCell, NCCellProtocol {
     private var index = IndexPath()
 
     var tableShare: tableShare?
+    var isDirectory = false
     let utility = NCUtility()
     weak var delegate: NCShareUserCellDelegate?
 
@@ -53,7 +54,7 @@ class NCShareUserCell: UITableViewCell, NCCellProtocol {
         set {}
     }
 
-    func setupCellUI(userId: String) {
+    func setupCellUI(userId: String, session: NCSession.Session, metadata: tableMetadata) {
         guard let tableShare = tableShare else {
             return
         }
@@ -61,15 +62,21 @@ class NCShareUserCell: UITableViewCell, NCCellProtocol {
             name: NSLocalizedString("_show_profile_", comment: ""),
             target: self,
             selector: #selector(tapAvatarImage(_:)))]
-        let permissions = NCPermissions()
-        labelTitle.text = tableShare.shareWithDisplayname
+        labelTitle.text = (tableShare.shareWithDisplayname.isEmpty ? tableShare.shareWith : tableShare.shareWithDisplayname)
+
+        let type = getTypeString(tableShare)
+        if !type.isEmpty {
+            labelTitle.text?.append(" (\(type))")
+        }
+
+        labelTitle.lineBreakMode = .byTruncatingMiddle
         labelTitle.textColor = NCBrandColor.shared.textColor
         isUserInteractionEnabled = true
         labelQuickStatus.isHidden = false
         imageDownArrow.isHidden = false
         buttonMenu.isHidden = false
         buttonMenu.accessibilityLabel = NSLocalizedString("_more_", comment: "")
-        imageItem.image = NCShareCommon().getImageShareType(shareType: tableShare.shareType)
+        imageItem.image = NCShareCommon.getImageShareType(shareType: tableShare.shareType)
 
         let status = utility.getUserStatus(userIcon: tableShare.userIcon, userStatus: tableShare.userStatus, userMessage: tableShare.userMessage)
         imageStatus.image = status.statusImage
@@ -87,15 +94,43 @@ class NCShareUserCell: UITableViewCell, NCCellProtocol {
         btnQuickStatus.setTitle("", for: .normal)
         btnQuickStatus.contentHorizontalAlignment = .left
 
-        if tableShare.permissions == permissions.permissionCreateShare {
-            labelQuickStatus.text = NSLocalizedString("_share_file_drop_", comment: "")
+        if NCSharePermissions.canEdit(tableShare.permissions, isDirectory: isDirectory) { // Can edit
+            labelQuickStatus.text = NSLocalizedString("_share_editing_", comment: "")
+        } else if tableShare.permissions == NCSharePermissions.permissionReadShare { // Read only
+            labelQuickStatus.text = NSLocalizedString("_share_read_only_", comment: "")
+        } else { // Custom permissions
+            labelQuickStatus.text = NSLocalizedString("_custom_permissions_", comment: "")
+        }
+
+        let fileName = NCSession.shared.getFileName(urlBase: session.urlBase, user: tableShare.shareWith)
+        let results = NCManageDatabase.shared.getImageAvatarLoaded(fileName: fileName)
+
+        imageItem.contentMode = .scaleAspectFill
+
+        if tableShare.shareType == NCShareCommon.shareTypeTeam {
+            imageItem.image = utility.loadImage(named: "custom.person.3.circle.fill", colors: [NCBrandColor.shared.iconImageColor2])
+        } else if results.image == nil {
+            imageItem.image = utility.loadUserImage(for: tableShare.shareWith, displayName: tableShare.shareWithDisplayname, urlBase: metadata.urlBase)
         } else {
-            // Read Only
-            if permissions.isAnyPermissionToEdit(tableShare.permissions) {
-                labelQuickStatus.text = NSLocalizedString("_share_editing_", comment: "")
-            } else {
-                labelQuickStatus.text = NSLocalizedString("_share_read_only_", comment: "")
-            }
+            imageItem.image = results.image
+        }
+
+        if !(results.tblAvatar?.loaded ?? false),
+           NCNetworking.shared.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
+            NCNetworking.shared.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: tableShare.shareWith, fileName: fileName, account: metadata.account, view: self))
+        }
+    }
+
+    private func getTypeString(_ tableShare: tableShareV2) -> String {
+        switch tableShare.shareType {
+        case NCShareCommon.shareTypeFederated:
+            return NSLocalizedString("_remote_", comment: "")
+        case NCShareCommon.shareTypeFederatedGroup:
+            return NSLocalizedString("_remote_group_", comment: "")
+        case NCShareCommon.shareTypeRoom:
+            return NSLocalizedString("_conversation_", comment: "")
+        default:
+            return ""
         }
     }
 
@@ -139,6 +174,7 @@ class NCSearchUserDropDownCell: DropDownCell, NCCellProtocol {
 
     private var user: String = ""
     private var index = IndexPath()
+    private let utilityFileSystem = NCUtilityFileSystem()
 
     var indexPath: IndexPath {
         get { return index }
@@ -154,8 +190,8 @@ class NCSearchUserDropDownCell: DropDownCell, NCCellProtocol {
 
     func setupCell(sharee: NKSharee, session: NCSession.Session) {
         let utility = NCUtility()
-        imageItem.image = NCShareCommon().getImageShareType(shareType: sharee.shareType)
-        imageShareeType.image = NCShareCommon().getImageShareType(shareType: sharee.shareType)?
+        imageItem.image = NCShareCommon.getImageShareType(shareType: sharee.shareType)
+        imageShareeType.image = NCShareCommon.getImageShareType(shareType: sharee.shareType)?
             .withRenderingMode(.alwaysTemplate)
         imageShareeType.tintColor = UIColor(resource: .Share.SearchUserCell.userType)
         let status = utility.getUserStatus(userIcon: sharee.userIcon, userStatus: sharee.userStatus, userMessage: sharee.userMessage)

@@ -36,21 +36,30 @@ extension UIAlertController {
                              session: NCSession.Session,
                              markE2ee: Bool = false,
                              sceneIdentifier: String? = nil,
-                             transferDelegate: NCTransferDelegate? = nil,
+                             capabilities: NKCapabilities.Capabilities,
                              completion: ((_ error: NKError) -> Void)? = nil) -> UIAlertController {
         let alertController = UIAlertController(title: NSLocalizedString("_create_folder_", comment: ""), message: nil, preferredStyle: .alert)
-        let isDirectoryEncrypted = NCUtilityFileSystem().isDirectoryE2EE(session: session, serverUrl: serverUrl)
+        let isDirectoryEncrypted = NCUtilityFileSystem().isDirectoryE2EE(serverUrl: serverUrl, urlBase: session.urlBase, userId: session.userId, account: session.account)
 
         let okAction = UIAlertAction(title: NSLocalizedString("_save_", comment: ""), style: .default, handler: { _ in
             guard let fileNameFolder = alertController.textFields?.first?.text else { return }
+
             if markE2ee {
                 if NCNetworking.shared.isOffline {
                     return NCContentPresenter().showInfo(error: NKError(errorCode: NCGlobal.shared.errorInternalError, errorDescription: "_offline_not_allowed_"))
                 }
                 Task {
-                    let createFolderResults = await NCNetworking.shared.createFolder(serverUrlFileName: serverUrl + "/" + fileNameFolder, account: session.account)
+                    let serverUrlFileName = NCUtilityFileSystem().createServerUrl(serverUrl: serverUrl, fileName: fileNameFolder)
+                    let createFolderResults = await NextcloudKit.shared.createFolderAsync(serverUrlFileName: serverUrlFileName, account: session.account) { task in
+                        Task {
+                            let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: session.account,
+                                                                                                        path: serverUrlFileName,
+                                                                                                        name: "createFolder")
+                            await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+                        }
+                    }
                     if createFolderResults.error == .success {
-                        let error = await NCNetworkingE2EEMarkFolder().markFolderE2ee(account: session.account, fileName: fileNameFolder, serverUrl: serverUrl, userId: session.userId)
+                        let error = await NCNetworkingE2EEMarkFolder().markFolderE2ee(account: session.account, serverUrlFileName: serverUrlFileName, userId: session.userId)
                         if error != .success {
                             NCContentPresenter().showError(error: error)
                         }
@@ -63,41 +72,31 @@ extension UIAlertController {
                     return NCContentPresenter().showInfo(error: NKError(errorCode: NCGlobal.shared.errorInternalError, errorDescription: "_offline_not_allowed_"))
                 }
                 Task {
-                    await NCNetworkingE2EECreateFolder().createFolder(fileName: fileNameFolder, serverUrl: serverUrl, withPush: true, sceneIdentifier: sceneIdentifier, session: session)
+                    await NCNetworkingE2EECreateFolder().createFolder(fileName: fileNameFolder, serverUrl: serverUrl, sceneIdentifier: sceneIdentifier, session: session)
                 }
             } else {
-#if EXTENSION
+                #if EXTENSION
                 Task {
-                    let error = await NCNetworking.shared.createFolder(fileName: fileNameFolder, serverUrl: serverUrl, overwrite: false, withPush: true, sceneIdentifier: sceneIdentifier, session: session)
+                    let error = await NCNetworking.shared.createFolder(fileName: fileNameFolder, serverUrl: serverUrl, overwrite: false, session: session)
                     completion?(error)
                 }
-#else
+                #else
                 var metadata = tableMetadata()
 
                 if let result = NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@ AND fileNameView == %@", session.account, serverUrl, fileNameFolder)) {
                     metadata = result
                 } else {
-                    metadata = NCManageDatabase.shared.createMetadata(fileName: fileNameFolder,
-                                                                      fileNameView: fileNameFolder,
-                                                                      ocId: NSUUID().uuidString,
-                                                                      serverUrl: serverUrl,
-                                                                      url: "",
-                                                                      contentType: "httpd/unix-directory",
-                                                                      directory: true,
-                                                                      session: session,
-                                                                      sceneIdentifier: sceneIdentifier)
+                    metadata = NCManageDatabase.shared.createMetadataDirectory(fileName: fileNameFolder,
+                                                                               ocId: NSUUID().uuidString,
+                                                                               serverUrl: serverUrl,
+                                                                               session: session,
+                                                                               sceneIdentifier: sceneIdentifier)
                 }
 
                 metadata.status = NCGlobal.shared.metadataStatusWaitCreateFolder
                 metadata.sessionDate = Date()
 
                 NCManageDatabase.shared.addMetadata(metadata)
-
-                NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterCreateFolder, userInfo: ["ocId": metadata.ocId, "serverUrl": metadata.serverUrl, "account": metadata.account, "withPush": true, "sceneIdentifier": sceneIdentifier as Any])
-
-                transferDelegate?.tranferChange(status: NCGlobal.shared.notificationCenterCreateFolder,
-                                                metadata: tableMetadata(value: metadata),
-                                                error: .success)
 #endif
             }
         })
@@ -110,17 +109,19 @@ extension UIAlertController {
             textField.autocapitalizationType = .words
         }
 
-        // only allow saving if folder name exists
         NotificationCenter.default.addObserver(
             forName: UITextField.textDidChangeNotification,
             object: alertController.textFields?.first,
             queue: .main) { _ in
-                guard let text = alertController.textFields?.first?.text else { return }
+                guard let text = alertController.textFields?.first?.text else {
+                    return
+                }
                 let folderName = text.trimmingCharacters(in: .whitespaces)
                 let isFileHidden = FileNameValidator.isFileHidden(text)
-                let textCheck = FileNameValidator.checkFileName(folderName, account: session.account)
+                let textCheck = FileNameValidator.checkFileName(folderName, account: session.account, capabilities: capabilities)
+                let alreadyExists = NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@ AND fileNameView == %@", session.account, serverUrl, folderName)) != nil
 
-                okAction.isEnabled = !text.isEmpty && textCheck?.error == nil
+                okAction.isEnabled = !text.isEmpty && textCheck?.error == nil && alreadyExists == false
 
                 var message = ""
                 var messageColor = UIColor.label
@@ -130,6 +131,8 @@ extension UIAlertController {
                     messageColor = .red
                 } else if isFileHidden {
                     message = NSLocalizedString("hidden_file_name_warning", comment: "")
+                } else if alreadyExists {
+                    message = NSLocalizedString("_item_with_same_name_already_exists_", comment: "")
                 }
 
                 let attributedString = NSAttributedString(string: message, attributes: [
@@ -173,26 +176,24 @@ extension UIAlertController {
             preferredStyle: .alert)
         if canDeleteServer {
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_yes_", comment: ""), style: .destructive) { (_: UIAlertAction) in
-                NCNetworking.shared.deleteMetadatas(selectedMetadatas, sceneIdentifier: sceneIdentifier)
-                NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterReloadDataSource)
+                Task {
+                    await NCNetworking.shared.setStatusWaitDelete(metadatas: selectedMetadatas, sceneIdentifier: sceneIdentifier)
+                }
                 completion(false)
             })
         }
 
+        #if !EXTENSION
         alertController.addAction(UIAlertAction(title: NSLocalizedString("_remove_local_file_", comment: ""), style: .default) { (_: UIAlertAction) in
             Task {
                 var error = NKError()
-                var ocId: [String] = []
                 for metadata in selectedMetadatas where error == .success {
                     error = await NCNetworking.shared.deleteCache(metadata, sceneIdentifier: sceneIdentifier)
-                    if error == .success {
-                        ocId.append(metadata.ocId)
-                    }
                 }
-                NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDeleteFile, userInfo: ["ocId": ocId, "error": error])
             }
             completion(false)
         })
+        #endif
 
         alertController.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel) { (_: UIAlertAction) in
             completion(true)
@@ -200,7 +201,11 @@ extension UIAlertController {
         return alertController
     }
 
-    static func renameFile(fileName: String, isDirectory: Bool = false, account: String, completion: @escaping (_ newFileName: String) -> Void) -> UIAlertController {
+    static func renameFile(fileName: String,
+                           isDirectory: Bool = false,
+                           capabilities: NKCapabilities.Capabilities,
+                           account: String,
+                           completion: @escaping (_ newFileName: String) -> Void) -> UIAlertController {
         let alertController = UIAlertController(title: NSLocalizedString(isDirectory ? "_rename_folder_" : "_rename_file_", comment: ""), message: nil, preferredStyle: .alert)
 
         let okAction = UIAlertAction(title: NSLocalizedString("_save_", comment: ""), style: .default, handler: { _ in
@@ -220,8 +225,8 @@ extension UIAlertController {
 
         let oldExtension = fileName.fileExtension
 
-        let text = alertController.textFields?.first?.text ?? ""
-        let textCheck = FileNameValidator.checkFileName(text, account: account)
+        let text = alertController.textFields?.first?.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        let textCheck = FileNameValidator.checkFileName(text, account: account, capabilities: capabilities)
         var message = textCheck?.error.localizedDescription ?? ""
         var messageColor = UIColor.red
 
@@ -251,7 +256,7 @@ extension UIAlertController {
                 guard let text = alertController.textFields?.first?.text else { return }
                 let newExtension = text.fileExtension
 
-                let textCheck = FileNameValidator.checkFileName(text, account: account)
+                let textCheck = FileNameValidator.checkFileName(text, account: account, capabilities: capabilities)
                 let isFileHidden = FileNameValidator.isFileHidden(text)
 
                 okAction.isEnabled = !text.isEmpty && textCheck?.error == nil
@@ -280,29 +285,44 @@ extension UIAlertController {
         return alertController
     }
 
-    static func renameFile(metadata: tableMetadata, completion: @escaping (_ newFileName: String) -> Void = { _ in }) -> UIAlertController {
-        renameFile(fileName: metadata.fileNameView, isDirectory: metadata.isDirectory, account: metadata.account) { fileNameNew in
-            // verify if already exists
-            if NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@ AND fileName == %@", metadata.account, metadata.serverUrl, fileNameNew)) != nil {
-                NCContentPresenter().showError(error: NKError(errorCode: 0, errorDescription: "_rename_already_exists_"))
-                return
+    /// Presents a rename prompt and returns the new name asynchronously.
+    @MainActor
+    static func renameFileAsync(fileName: String,
+                                isDirectory: Bool = false,
+                                capabilities: NKCapabilities.Capabilities,
+                                account: String,
+                                presenter: UIViewController) async -> String {
+        await withCheckedContinuation { continuation in
+            let alert = renameFile(fileName: fileName,
+                                   isDirectory: isDirectory,
+                                   capabilities: capabilities,
+                                   account: account) { newFileName in
+                continuation.resume(returning: newFileName)
             }
 
-            NCNetworking.shared.renameMetadata(metadata, fileNameNew: fileNameNew)
-
-            NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterReloadDataSource, userInfo: ["serverUrl": metadata.serverUrl])
-
-            completion(fileNameNew)
+            presenter.present(alert, animated: true)
         }
     }
 
     static func warning(title: String? = nil, message: String? = nil, completion: @escaping () -> Void = {}) -> UIAlertController {
         let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
-
         let okAction = UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default) { _ in completion() }
 
         alertController.addAction(okAction)
-
         return alertController
+    }
+
+    /// Presents a warning
+    @MainActor
+    static func warningAsync(title: String? = nil,
+                             message: String? = nil,
+                             presenter: UIViewController) async {
+        await withCheckedContinuation { continuation in
+            let alert = warning(title: title, message: message) {
+                continuation.resume()
+            }
+
+            presenter.present(alert, animated: true)
+        }
     }
 }
