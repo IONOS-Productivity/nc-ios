@@ -324,11 +324,12 @@ extension NCShareExtension {
                 guard utilityFileSystem.copyFile(atPath: (NSTemporaryDirectory() + fileName), toPath: toPath) else {
                     continue
                 }
-                let metadataForUpload = await NCManageDatabase.shared.createMetadataAsync(fileName: fileName,
-                                                                                          ocId: ocId,
-                                                                                          serverUrl: serverUrl,
-                                                                                          session: session,
-                                                                                          sceneIdentifier: nil)
+                let metadataForUpload = await NCManageDatabaseCreateMetadata().createMetadataAsync(
+                    fileName: fileName,
+                    ocId: ocId,
+                    serverUrl: serverUrl,
+                    session: session,
+                    sceneIdentifier: nil)
 
                 metadataForUpload.session = NCNetworking.shared.sessionUpload
                 metadataForUpload.sessionSelector = NCGlobal.shared.selectorUploadFileShareExtension
@@ -412,21 +413,32 @@ extension NCShareExtension {
             error = await NCNetworkingE2EEUpload().upload(metadata: metadata, session: session, controller: self)
         } else if metadata.chunk > 0 {
             var numChunks = 0
-            var counterUpload: Int = 0
-            hud.pieProgress(text: NSLocalizedString("_wait_file_preparation_", comment: ""))
+            var countUpload: Int = 0
+            var taskHandler: URLSessionTask?
+
+            hud.pieProgress(text: NSLocalizedString("_wait_file_preparation_", comment: ""), tapToCancelDetailText: true) {
+                NotificationCenter.default.postOnMainThread(name: NextcloudKit.shared.nkCommonInstance.notificationCenterChunkedFileStop.rawValue)
+            }
 
             let results = await NCNetworking.shared.uploadChunkFile(metadata: metadata) { num in
                 numChunks = num
             } counterChunk: { counter in
                 self.hud.progress(num: Float(counter), total: Float(numChunks))
             } startFilesChunk: { _ in
-                self.hud.setText(NSLocalizedString("_keep_active_for_upload_", comment: ""))
+                self.hud.pieProgress(text: NSLocalizedString("_keep_active_for_upload_", comment: ""), tapToCancelDetailText: true) {
+                    taskHandler?.cancel()
+                }
             } requestHandler: { _ in
-                self.hud.progress(num: Float(counterUpload), total: Float(numChunks))
-                counterUpload += 1
+                self.hud.progress(num: Float(countUpload), total: Float(numChunks))
+                countUpload += 1
+            } taskHandler: { task in
+                taskHandler = task
             } assembling: {
                 self.hud.setText(NSLocalizedString("_wait_", comment: ""))
             }
+
+            hud.dismiss()
+
             error = results.error
         } else {
             let fileNameLocalPath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,

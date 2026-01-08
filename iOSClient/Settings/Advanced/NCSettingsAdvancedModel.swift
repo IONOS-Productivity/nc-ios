@@ -32,8 +32,6 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     @Published var selectedLogLevel: NKLogLevel = .normal
     // State variable for storing the selected cache deletion interval.
     @Published var selectedInterval: CacheDeletionInterval = .never
-    // State variable for storing the footer title, usually used for cache deletion.
-    @Published var footerTitle: String = ""
     // Root View Controller
     @Published var controller: NCMainTabBarController?
     // Get session
@@ -59,10 +57,6 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
         crashReporter = keychain.disableCrashservice
         selectedLogLevel = keychain.log
         selectedInterval = CacheDeletionInterval(rawValue: keychain.cleanUpDay) ?? .never
-
-        Task {
-            await self.calculateSize()
-        }
     }
 
     // MARK: - All functions
@@ -99,6 +93,13 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
         NKLogFileManager.shared.logLevel = selectedLogLevel
     }
 
+    /// Remove directory LOG
+    func clearLogFile() {
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let logsFolder = documents.appendingPathComponent("Logs", isDirectory: true)
+        try? FileManager.default.removeItem(at: logsFolder)
+    }
+
     /// Updates the value of `selectedInterval` in the keychain.
     func updateSelectedInterval() {
         keychain.cleanUpDay = selectedInterval.rawValue
@@ -126,26 +127,10 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
 
             await NCService().startRequestServicesServer(account: self.session.account, controller: self.controller)
 
-            await self.calculateSize()
-
             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterClearCache)
 
             NCActivityIndicator.shared.stop()
         }
-    }
-
-    /// Asynchronously calculates the size of cache directory and updates the footer title.
-    @MainActor
-    func calculateSize() async {
-        // Run the heavy calculation off the main thread
-        let totalSize = await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .utility).async {
-                let size = NCUtilityFileSystem().getAppSize()
-                continuation.resume(returning: size)
-            }
-        }
-
-        self.footerTitle = "\(NSLocalizedString("_clear_cache_footer_", comment: "")). (\(NSLocalizedString("_used_space_", comment: "")) \(NCUtilityFileSystem().transformedSize(totalSize)))"
     }
 
     /// Removes all accounts & exits the Nextcloud application if specified.

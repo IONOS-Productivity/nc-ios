@@ -187,8 +187,8 @@ struct NCSettingsAdvancedView: View {
 			}, header: {
 				Text(NSLocalizedString("_delete_files_desc_", comment: ""))
 			}, footer: {
-				Text(model.footerTitle)
-					.multilineTextAlignment(.leading)
+				Text("_clear_cache_footer_")
+                    .multilineTextAlignment(.leading)
 			})
 			.applyGlobalFormSectionStyle()
 			/// Reset Application

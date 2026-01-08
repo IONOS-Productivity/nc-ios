@@ -8,6 +8,7 @@
 
 import UIKit
 import Combine
+import SwiftUI
 
 class HiDriveMainNavigationController: UINavigationController, UINavigationControllerDelegate {
     
@@ -129,11 +130,13 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
         }
         let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
                                               style: .plain) { [weak self] in
-            if let navigationController = UIStoryboard(name: "NCTransfers", bundle: nil).instantiateInitialViewController() as? UINavigationController,
-               let viewController = navigationController.topViewController as? NCTransfers {
-                viewController.modalPresentationStyle = .pageSheet
-                self?.present(navigationController, animated: true, completion: nil)
-            }
+            let rootView = TransfersView(session: self?.session, onClose: { [weak self] in
+                self?.dismiss(animated: true)
+            })
+            let hosting = UIHostingController(rootView: rootView)
+            hosting.modalPresentationStyle = .pageSheet
+
+            self?.present(hosting, animated: true)
         }
 		transfersButton.tintColor = UIColor(resource: .Transfers.buttonBackground)
         return transfersButton

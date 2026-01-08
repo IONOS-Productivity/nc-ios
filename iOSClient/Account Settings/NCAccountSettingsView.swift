@@ -234,7 +234,7 @@ extension NCAccountSettingsView {
 
 struct AccountView: View {
     let account: tableAccount
-    let userStatus: (statusImage: UIImage?, statusMessage: String, descriptionMessage: String)
+    let userStatus: (statusImage: UIImage?, statusImageColor: UIColor, statusMessage: String, descriptionMessage: String)
 
     var body: some View {
 		let userAvatar = Image(.userAvatar)

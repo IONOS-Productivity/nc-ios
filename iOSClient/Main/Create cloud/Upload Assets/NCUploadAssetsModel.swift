@@ -34,6 +34,8 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
     @Published var uploadInProgress = false
     // Root View Controller
     @Published var controller: NCMainTabBarController?
+    // Keychain access
+    var keychain = NCPreferences()
     // Session
     var session: NCSession.Session {
         NCSession.shared.getSession(controller: controller)
@@ -52,6 +54,9 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
         self.assets = assets
         self.serverUrl = serverUrl
         self.controller = controller
+
+        self.useAutoUploadFolder = keychain.getUploadUseAutoUploadFolder(account: session.account)
+        self.useAutoUploadSubFolder = keychain.getUploadUseAutoUploadSubFolder(account: session.account)
 
         for asset in self.assets {
             var uti: String?
@@ -73,6 +78,14 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
         }
 
         self.hiddenSave = false
+    }
+
+    func updateUseAutoUploadFolder() {
+        keychain.setUploadUseAutoUploadFolder(account: session.account, value: useAutoUploadFolder)
+    }
+
+    func updateUseAutoUploadSubFolder() {
+        keychain.setUploadUseAutoUploadSubFolder(account: session.account, value: useAutoUploadSubFolder)
     }
 
     func getTextServerUrl() -> String {
@@ -169,7 +182,7 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
 
         if useAutoUploadFolder {
             let assets = self.assets.compactMap { $0.phAsset }
-            self.database.createMetadatasFolder(assets: assets, useSubFolder: self.useAutoUploadSubFolder, session: self.session) { metadatasFolder in
+            NCManageDatabaseCreateMetadata().createMetadatasFolder(assets: assets, useSubFolder: self.useAutoUploadSubFolder, session: self.session) { metadatasFolder in
                 self.database.addMetadatas(metadatasFolder)
                 self.showHUD = false
                 createProcessUploads()
@@ -220,11 +233,12 @@ class NCUploadAssetsModel: ObservableObject, NCCreateFormUploadConflictDelegate 
                     continue
                 }
 
-                let metadataForUpload = await database.createMetadataAsync(fileName: fileName,
-                                                                           ocId: NSUUID().uuidString,
-                                                                           serverUrl: serverUrl,
-                                                                           session: session,
-                                                                           sceneIdentifier: controller?.sceneIdentifier)
+                let metadataForUpload = await NCManageDatabaseCreateMetadata().createMetadataAsync(
+                    fileName: fileName,
+                    ocId: NSUUID().uuidString,
+                    serverUrl: serverUrl,
+                    session: session,
+                    sceneIdentifier: controller?.sceneIdentifier)
 
                 if livePhoto {
                     metadataForUpload.livePhotoFile = (metadataForUpload.fileName as NSString).deletingPathExtension + ".mov"

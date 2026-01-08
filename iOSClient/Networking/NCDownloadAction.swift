@@ -31,19 +31,25 @@ class NCDownloadAction: NSObject, UIDocumentInteractionControllerDelegate, NCSel
 
     // MARK: - Download
 
-    func transferChange(status: String, metadata: tableMetadata, error: NKError) {
-        DispatchQueue.main.async {
-            switch status {
-            /// DOWNLOADED
-            case self.global.networkingStatusDownloaded:
-                self.downloadedFile(metadata: metadata, error: error)
-            default:
-                break
+    func transferChange(status: String,
+                        account: String,
+                        fileName: String,
+                        serverUrl: String,
+                        selector: String?,
+                        ocId: String,
+                        destination: String?,
+                        error: NKError) {
+        Task { @MainActor in
+            guard status == self.global.networkingStatusDownloaded,
+                  let metadata = await NCManageDatabase.shared.getMetadataFromOcIdAsync(ocId)
+            else {
+                return
             }
+            self.downloadedFile(metadata: metadata, selector: selector ?? metadata.sessionSelector, error: error)
         }
     }
 
-    func downloadedFile(metadata: tableMetadata, error: NKError) {
+    private func downloadedFile(metadata: tableMetadata, selector: String, error: NKError) {
         guard error == .success else {
             return
         }
@@ -66,7 +72,7 @@ class NCDownloadAction: NSObject, UIDocumentInteractionControllerDelegate, NCSel
         }
         guard let controller else { return }
 
-        switch metadata.sessionSelector {
+        switch selector {
         case NCGlobal.shared.selectorLoadFileQuickLook:
 
             let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,
@@ -151,16 +157,16 @@ class NCDownloadAction: NSObject, UIDocumentInteractionControllerDelegate, NCSel
                 await NCManageDatabase.shared.setOffLocalFileAsync(ocId: metadata.ocId)
             }
         } else if metadata.directory {
-            await NCManageDatabase.shared.setDirectoryAsync(serverUrl: metadata.serverUrlFileName, offline: true, metadata: metadata)
             await NCManageDatabase.shared.cleanTablesOcIds(account: metadata.account, userId: metadata.userId, urlBase: metadata.urlBase)
-            await NCNetworking.shared.synchronization(account: metadata.account, serverUrl: metadata.serverUrlFileName, userId: metadata.userId, urlBase: metadata.urlBase, metadatasInDownload: nil)
+            await NCManageDatabase.shared.setDirectoryAsync(serverUrl: metadata.serverUrlFileName, offline: true, metadata: metadata)
+            await NCNetworking.shared.synchronizationDownload(account: metadata.account, serverUrl: metadata.serverUrlFileName, userId: metadata.userId, urlBase: metadata.urlBase, metadatasInDownload: nil)
         } else {
             var metadatasSynchronizationOffline: [tableMetadata] = []
             metadatasSynchronizationOffline.append(metadata)
             if let metadata = await NCManageDatabase.shared.getMetadataLivePhotoAsync(metadata: metadata) {
                 metadatasSynchronizationOffline.append(metadata)
             }
-            await NCManageDatabase.shared.addLocalFileAsync(metadata: metadata, offline: true)
+            await NCManageDatabase.shared.addLocalFilesAsync(metadatas: [metadata], offline: true)
             for metadata in metadatasSynchronizationOffline {
                 await NCManageDatabase.shared.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,
                                                                                     session: NCNetworking.shared.sessionDownloadBackground,
@@ -214,7 +220,7 @@ class NCDownloadAction: NSObject, UIDocumentInteractionControllerDelegate, NCSel
             return
         }
 
-        let metadata = await NCManageDatabase.shared.convertFileToMetadataAsync(file)
+        let metadata = await NCManageDatabaseCreateMetadata().convertFileToMetadataAsync(file)
         await NCManageDatabase.shared.addMetadataAsync(metadata)
 
         let fileNameLocalPath = self.utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,
@@ -257,7 +263,7 @@ class NCDownloadAction: NSObject, UIDocumentInteractionControllerDelegate, NCSel
                                                               etag: download.etag)
 
         if download.nkError == .success {
-            await NCManageDatabase.shared.addLocalFileAsync(metadata: metadata)
+            await NCManageDatabase.shared.addLocalFilesAsync(metadatas: [metadata])
             if let vc = await NCViewer().getViewerController(metadata: metadata, delegate: viewController) {
                 viewController.navigationController?.pushViewController(vc, animated: true)
             }
@@ -525,7 +531,7 @@ class NCDownloadAction: NSObject, UIDocumentInteractionControllerDelegate, NCSel
                     NCManageDatabase.shared.addLocalFile(account: account, etag: etag!, ocId: ocId!, fileName: fileName)
                     Task {
                         await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
-                            delegate.transferRequestData(serverUrl: serverUrl)
+                            delegate.transferReloadData(serverUrl: serverUrl, requestData: true, status: nil)
                         }
                     }
                 } else {
@@ -622,7 +628,7 @@ class NCDownloadAction: NSObject, UIDocumentInteractionControllerDelegate, NCSel
                         continue
                     }
 
-                    NCNetworking.shared.copyMetadata(metadata, destination: destination, overwrite: overwrite)
+                    NCNetworking.shared.setStatusWaitCopy(metadata, destination: destination, overwrite: overwrite)
                 }
 
             } else if move {
@@ -631,7 +637,7 @@ class NCDownloadAction: NSObject, UIDocumentInteractionControllerDelegate, NCSel
                         continue
                     }
 
-                    NCNetworking.shared.moveMetadata(metadata, destination: destination, overwrite: overwrite)
+                    NCNetworking.shared.setStatusWaitMove(metadata, destination: destination, overwrite: overwrite)
                 }
             }
         }

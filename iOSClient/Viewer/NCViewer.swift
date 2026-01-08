@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
 // SPDX-FileCopyrightText: 2020 Marino Faggiana
-// SPDX-FileCopyrightText: 2025 Serhii Kaliberda
+// SPDX-FileCopyrightText: 2025 STRATO GmbH
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit

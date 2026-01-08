@@ -16,13 +16,12 @@ class NCFiles: NCCollectionViewCommon {
     internal var lastScrollTime: TimeInterval = 0
     internal var accumulatedScrollDown: CGFloat = 0
 
-    internal var syncMetadatasTask: Task<Void, Never>?
-
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
 
         titleCurrentFolder = NCBrandOptions.shared.brand
         layoutKey = NCGlobal.shared.layoutViewFiles
+        enableSearchBar = true
         headerRichWorkspaceDisable = false
         emptyTitle = "_files_no_files_"
         emptyDescription = "_no_file_pull_down_"
@@ -99,8 +98,6 @@ class NCFiles: NCCollectionViewCommon {
         super.viewWillAppear(animated)
 
         Task {
-            let capabilities = await database.getCapabilities(account: self.session.account) ?? NKCapabilities.Capabilities()
-
             await self.reloadDataSource()
         }
     }
@@ -115,8 +112,11 @@ class NCFiles: NCCollectionViewCommon {
             self.fileNameOpen = nil
         }
 
-        if !isSearchingMode {
-            Task {
+        Task {
+            // Plus Menu reload
+            let capabilities = await database.getCapabilities(account: self.session.account) ?? NKCapabilities.Capabilities()
+            // Server data
+            if !isSearchingMode {
                 await getServerData()
             }
         }
@@ -152,9 +152,6 @@ class NCFiles: NCCollectionViewCommon {
         }
         if let metadataFolder {
             nkLog(info: "Inside metadata folder \(metadataFolder.fileName) with permissions: \(metadataFolder.permissions)")
-
-            // disable + button if no create permission
-            let color = NCBrandColor.shared.getElement(account: self.session.account)
         }
 
         let metadatas = await self.database.getMetadatasAsyncDataSource(withServerUrl: self.serverUrl,

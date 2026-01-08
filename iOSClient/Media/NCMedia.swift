@@ -8,6 +8,7 @@ import UIKit
 import NextcloudKit
 import RealmSwift
 import Combine
+import SwiftUI
 
 class NCMedia: UIViewController {
 	@IBOutlet weak var collectionView: UICollectionView!
@@ -64,7 +65,7 @@ class NCMedia: UIViewController {
 	var numberOfColumns: Int = 0
 	var lastNumberOfColumns: Int = 0
 
-    let debouncer = NCDebouncer(delay: 1)
+    let debouncer = NCDebouncer(maxEventCount: 10)
 
     @MainActor
 	var session: NCSession.Session {
@@ -286,11 +287,13 @@ extension NCMedia {
 		}
 		let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
 											  style: .plain) { [weak self] in
-			if let navigationController = UIStoryboard(name: "NCTransfers", bundle: nil).instantiateInitialViewController() as? UINavigationController,
-			   let viewController = navigationController.topViewController as? NCTransfers {
-				viewController.modalPresentationStyle = .pageSheet
-				self?.present(navigationController, animated: true, completion: nil)
-			}
+            let rootView = TransfersView(session: self?.session, onClose: { [weak self] in
+                self?.dismiss(animated: true)
+            })
+            let hosting = UIHostingController(rootView: rootView)
+            hosting.modalPresentationStyle = .pageSheet
+
+            self?.present(hosting, animated: true)
 		}
 		return transfersButton
 	}

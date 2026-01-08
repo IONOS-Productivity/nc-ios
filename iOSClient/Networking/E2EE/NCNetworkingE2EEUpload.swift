@@ -188,12 +188,17 @@ class NCNetworkingE2EEUpload: NSObject {
             metadata.status = NCGlobal.shared.metadataStatusNormal
 
             await self.database.addMetadataAsync(metadata)
-            await self.database.addLocalFileAsync(metadata: metadata)
+            await self.database.addLocalFilesAsync(metadatas: [metadata])
             utility.createImageFileFrom(metadata: metadata)
 
             await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
                 delegate.transferChange(status: global.networkingStatusUploaded,
-                                        metadata: metadata,
+                                        account: metadata.account,
+                                        fileName: metadata.fileName,
+                                        serverUrl: metadata.serverUrl,
+                                        selector: metadata.sessionSelector,
+                                        ocId: metadata.ocId,
+                                        destination: nil,
                                         error: .success)
             }
         }
@@ -202,27 +207,37 @@ class NCNetworkingE2EEUpload: NSObject {
         return finalError
     }
 
-    // BRIDGE for chunk
     //
     private func sendFile(metadata: tableMetadata, e2eToken: String, hud: NCHud, controller: UIViewController?) async -> (ocId: String?, etag: String?, date: Date?, error: NKError) {
-
         if metadata.chunk > 0 {
-            var counterUpload: Int = 0
-            let results = await NCNetworking.shared.uploadChunkFile(metadata: metadata, withUploadComplete: false) { num in
-                self.numChunks = num
+            var numChunks = 0
+            var countUpload: Int = 0
+            var taskHandler: URLSessionTask?
+
+            hud.pieProgress(text: NSLocalizedString("_wait_file_preparation_", comment: ""), tapToCancelDetailText: true) {
+                NotificationCenter.default.postOnMainThread(name: NextcloudKit.shared.nkCommonInstance.notificationCenterChunkedFileStop.rawValue)
+            }
+
+            let results = await NCNetworking.shared.uploadChunkFile(metadata: metadata) { num in
+                numChunks = num
             } counterChunk: { counter in
-                hud.progress(num: Float(counter), total: Float(self.numChunks))
+                hud.progress(num: Float(counter), total: Float(numChunks))
             } startFilesChunk: { _ in
-                hud.setText(NSLocalizedString("_keep_active_for_upload_", comment: ""))
+                hud.pieProgress(text: NSLocalizedString("_keep_active_for_upload_", comment: ""), tapToCancelDetailText: true) {
+                        taskHandler?.cancel()
+                }
             } requestHandler: { _ in
-                hud.progress(num: Float(counterUpload), total: Float(self.numChunks))
-                counterUpload += 1
+                hud.progress(num: Float(countUpload), total: Float(numChunks))
+                countUpload += 1
+            } taskHandler: { task in
+                taskHandler = task
             } assembling: {
                 hud.setText(NSLocalizedString("_wait_", comment: ""))
             }
 
-            return (results.file?.ocId, results.file?.etag, results.file?.date, results.error)
+            hud.dismiss()
 
+            return (results.file?.ocId, results.file?.etag, results.file?.date, results.error)
         } else {
             let fileNameLocalPath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,
                                                                                       fileName: metadata.fileName,
@@ -235,7 +250,7 @@ class NCNetworkingE2EEUpload: NSObject {
                                                                dateModificationFile: metadata.date as Date,
                                                                account: metadata.account,
                                                                metadata: metadata,
-                                                               withUploadComplete: false,
+                                                               performPostProcessing: false,
                                                                customHeaders: ["e2e-token": e2eToken]) { _ in
                 hud.setText(NSLocalizedString("_keep_active_for_upload_", comment: ""))
             } progressHandler: { _, _, fractionCompleted in

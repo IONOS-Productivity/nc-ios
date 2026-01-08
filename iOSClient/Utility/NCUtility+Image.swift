@@ -1,27 +1,9 @@
-//
-//  NCUtility+Image.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 06/11/23.
-//  Copyright © 2023 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2023 Marino Faggiana
+// SPDX-FileCopyrightText: 2024 STRATO GmbH
+// SPDX-License-Identifier: GPL-3.0-or-later
 
+import Foundation
 import UIKit
 import NextcloudKit
 import PDFKit
@@ -341,29 +323,39 @@ extension NCUtility {
         }
     }
 
-    func getUserStatus(userIcon: String?, userStatus: String?, userMessage: String?) -> (statusImage: UIImage?, statusMessage: String, descriptionMessage: String) {
+    func getUserStatus(userIcon: String?, userStatus: String?, userMessage: String?) -> (statusImage: UIImage?, statusImageColor: UIColor, statusMessage: String, descriptionMessage: String) {
         var statusImage: UIImage?
+        var statusImageColor: UIColor = .black
         var statusMessage: String = ""
         var descriptionMessage: String = ""
         var messageUserDefined: String = ""
 
         if userStatus?.lowercased() == "online" {
-            statusImage = loadImage(named: "circle_fill", colors: [UIColor(red: 103.0 / 255.0, green: 176.0 / 255.0, blue: 134.0 / 255.0, alpha: 1.0)])
+            statusImage = UIImage(systemName: "checkmark.circle.fill")?.withTintColor(.systemGreen).withRenderingMode(.alwaysOriginal)
+            statusImageColor = UIColor.systemGreen
             messageUserDefined = NSLocalizedString("_online_", comment: "")
         }
         if userStatus?.lowercased() == "away" {
-            statusImage = loadImage(named: "userStatusAway", colors: [UIColor(red: 233.0 / 255.0, green: 166.0 / 255.0, blue: 75.0 / 255.0, alpha: 1.0)])
+            statusImage = UIImage(systemName: "clock.fill")?.withTintColor(.systemYellow).withRenderingMode(.alwaysOriginal)
+            statusImageColor = UIColor.systemYellow
             messageUserDefined = NSLocalizedString("_away_", comment: "")
         }
         if userStatus?.lowercased() == "dnd" {
-            statusImage = loadImage(named: "userStatusDnd")
+            statusImage = UIImage(systemName: "minus.circle.fill")?.withTintColor(.systemRed).withRenderingMode(.alwaysOriginal)
+            statusImageColor = UIColor.systemRed
             messageUserDefined = NSLocalizedString("_dnd_", comment: "")
             descriptionMessage = NSLocalizedString("_dnd_description_", comment: "")
         }
         if userStatus?.lowercased() == "offline" || userStatus?.lowercased() == "invisible" {
-            statusImage = UIImage(named: "userStatusOffline")!.withTintColor(.init(named: "SystemBackgroundInverted")!)
+            statusImage = UIImage(systemName: "circle")?.withTintColor(.init(named: "SystemBackgroundInverted")!).withRenderingMode(.alwaysOriginal)
+            statusImageColor = .init(named: "SystemBackgroundInverted")!
             messageUserDefined = NSLocalizedString("_invisible_", comment: "")
             descriptionMessage = NSLocalizedString("_invisible_description_", comment: "")
+        }
+        if userStatus?.lowercased() == "busy" {
+            statusImage = UIImage(systemName: "circle.fill")?.withTintColor(.systemRed).withRenderingMode(.alwaysOriginal)
+            statusImageColor = UIColor.systemRed
+            messageUserDefined = NSLocalizedString("_busy_", comment: "")
         }
 
         if let userIcon = userIcon {
@@ -377,7 +369,7 @@ extension NCUtility {
             statusMessage = messageUserDefined
         }
 
-        return(statusImage, statusMessage, descriptionMessage)
+        return(statusImage, statusImageColor, statusMessage, descriptionMessage)
     }
 
     func memorySizeOfImage(_ image: UIImage) -> Int {

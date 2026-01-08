@@ -119,8 +119,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             if NCBrandOptions.shared.disable_intro {
                 appDelegate?.openLogin(selector: NCGlobal.shared.introLogin, window: window)
             } else {
-                if let viewController = UIStoryboard(name: "NCIntro", bundle: nil).instantiateInitialViewController() as? NCIntroViewController {
-                    let navigationController = NCLoginNavigationController(rootViewController: viewController)
+                if let navigationController = UIStoryboard(name: "NCIntro", bundle: nil).instantiateInitialViewController() as? UINavigationController {
                     window?.rootViewController = navigationController
                     window?.makeKeyAndVisible()
                 }
@@ -225,8 +224,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
-        WidgetCenter.shared.reloadAllTimelines()
-
         if NCPreferences().privacyScreenEnabled {
             if SwiftEntryKit.isCurrentlyDisplaying {
                 SwiftEntryKit.dismiss {
@@ -239,30 +236,54 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
-        // Must be outside the Task otherwise isSuspendingDatabaseOperation suspends it
+        let app = UIApplication.shared
+        var bgID: UIBackgroundTaskIdentifier = .invalid
+        let isBackgroundRefreshStatus = (UIApplication.shared.backgroundRefreshStatus == .available)
         let session = SceneManager.shared.getSession(scene: scene)
         guard let tblAccount = NCManageDatabase.shared.getTableAccount(predicate: NSPredicate(format: "account == %@", session.account)) else {
             return
         }
-        Task { @MainActor in
-            await NCManageDatabase.shared.backupTableAccountToFileAsync()
+        bgID = app.beginBackgroundTask(withName: "FlushBeforeSuspend") {
+            app.endBackgroundTask(bgID); bgID = .invalid
+        }
 
-            nkLog(info: "Auto upload in background: \(tblAccount.autoUploadStart)")
-            nkLog(info: "Update in background: \(UIApplication.shared.backgroundRefreshStatus == .available)")
-
-            if let error = await NCAccount().updateAppsShareAccounts() {
-                nkLog(error: "Create Apps share accounts \(error.localizedDescription)")
+        Task {
+            Task { @MainActor in
+                if NCPreferences().presentPasscode {
+                    showPrivacyProtectionWindow()
+                }
+            }
+            defer {
+                app.endBackgroundTask(bgID); bgID = .invalid
+            }
+            // Timeout auto
+            let didFinish = await withTaskGroup(of: Bool.self) { group -> Bool in
+                group.addTask {
+                    // QUEUE
+                    NCNetworking.shared.cancelAllQueue()
+                    // FLUSH TRANSFERS SUCCESS
+                    await NCNetworking.shared.metadataTranfersSuccess.flush()
+                    // BACKUP
+                    await NCManageDatabase.shared.backupTableAccountToFileAsync()
+                    // LOG
+                    nkLog(info: "Auto upload in background: \(tblAccount.autoUploadStart)")
+                    nkLog(info: "Update in background: \(isBackgroundRefreshStatus)")
+                    // UPDATE SHARE GROUP ACCOUNTS
+                    if let error = await NCAccount().updateAppsShareAccounts() {
+                        nkLog(error: "Create Apps share accounts \(error.localizedDescription)")
+                    }
+                    return true
+                }
+                group.addTask {
+                    try? await Task.sleep(nanoseconds: 25 * 1_000_000_000) // ~25s
+                    return false
+                }
+                return await group.next() ?? false
             }
 
-            NCNetworking.shared.cancelAllQueue()
-
-            if NCPreferences().presentPasscode {
-                showPrivacyProtectionWindow()
+            if !didFinish {
+                nkLog(debug: "Flush timed out, will continue next launch")
             }
-
-            // Clear older files
-            await NCManageDatabase.shared.cleanTablesOcIds(account: tblAccount.account, userId: tblAccount.userId, urlBase: tblAccount.urlBase)
-            await NCUtilityFileSystem().cleanUpAsync()
         }
     }
 
@@ -455,7 +476,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let window = SceneManager.shared.getWindow(scene: scene),
            let controller = SceneManager.shared.getController(scene: scene) {
             window.rootViewController = controller
-
             if NCPreferences().presentPasscode {
                 NCPasscode.shared.presentPasscode(viewController: controller, delegate: self) {
                     NCPasscode.shared.enableTouchFaceID()
@@ -467,16 +487,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         Task {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
-            if let tblAccount = await NCManageDatabase.shared.getTableAccountAsync(account: account) {
-                let num = await NCAutoUpload.shared.initAutoUpload(tblAccount: tblAccount)
-                nkLog(start: "Auto upload with \(num) photo")
-            }
+
+            let num = await NCAutoUpload.shared.initAutoUpload()
+            nkLog(start: "Auto upload with \(num) photo")
 
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             await NCService().startRequestServicesServer(account: account, controller: controller)
-
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            await NCNetworking.shared.verifyZombie()
         }
 
         NotificationCenter.default.postOnMainThread(name: global.notificationCenterRichdocumentGrabFocus)
@@ -571,8 +587,7 @@ final class SceneManager: @unchecked Sendable {
     func getSceneIdentifier() -> [String] {
         var results: [String] = []
         for controller in sceneController.keys {
-            let sceneIdentifier = controller.sceneIdentifier
-            results.append(sceneIdentifier)
+            results.append(controller.sceneIdentifier)
         }
         return results
     }

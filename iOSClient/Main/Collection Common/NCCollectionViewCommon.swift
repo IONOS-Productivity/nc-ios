@@ -26,6 +26,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
     let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
 	var tipViewAccounts: EasyTipView?
+    var syncMetadatasTask: Task<Void, Never>?
     var autoUploadFileName = ""
     var autoUploadDirectory = ""
     let refreshControl = UIRefreshControl()
@@ -176,7 +177,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         return self.serverUrl == self.utilityFileSystem.getHomeServer(session: self.session) && capabilities.recommendations
     }
 
-    internal let debouncer = NCDebouncer(delay: 1)
+    internal let debouncer = NCDebouncer(maxEventCount: NCBrandOptions.shared.numMaximumProcess)
 
     // MARK: - View Life Cycle
 
@@ -234,6 +235,10 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
 
                 // Stop the refresh control after data is loaded
                 self.refreshControl.endRefreshing()
+
+                // Wait 1.5 seconds before resetting the button alpha
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+               // self.mainNavigationController?.resetPlusButtonAlpha()
             }
         }
 
@@ -418,7 +423,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         DispatchQueue.main.async {
             switch status {
             // UPLOADED, UPLOADED LIVEPHOTO
-            case self.global.networkingStatusUploaded, self.global.networkingStatusUploadedLivePhoto:
+            case self.global.networkingStatusUploaded:
                 self.debouncer.call {
                     if self.isSearchingMode {
                         self.networkSearch()
@@ -681,6 +686,8 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         }
         // TIP
         dismissTip()
+        
+        //mainNavigationController?.hiddenPlusButton(true)
     }
 
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
@@ -699,6 +706,7 @@ class NCCollectionViewCommon: UIViewController, UIGestureRecognizerDelegate, UIS
         Task {
             await self.reloadDataSource()
         }
+        //mainNavigationController?.hiddenPlusButton(false)
     }
 
     // MARK: - TAP EVENT

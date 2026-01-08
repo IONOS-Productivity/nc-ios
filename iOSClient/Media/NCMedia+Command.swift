@@ -118,7 +118,7 @@ extension NCMedia {
                 }
                 let fileName = url.lastPathComponent
                 Task {
-                    let metadata = await self.database.createMetadataAsync(fileName: fileName,
+                    let metadata = await NCManageDatabaseCreateMetadata().createMetadataAsync(fileName: fileName,
                                                                            ocId: NSUUID().uuidString,
                                                                            serverUrl: "",
                                                                            url: stringUrl,

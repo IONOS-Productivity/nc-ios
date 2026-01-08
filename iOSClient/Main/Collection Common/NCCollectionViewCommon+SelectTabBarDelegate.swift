@@ -109,22 +109,23 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
     }
 
     func setEditMode(_ editMode: Bool) {
-    	Task {
-        	isEditMode = editMode
-        	fileSelect.removeAll()
+        Task {
+            isEditMode = editMode
+            fileSelect.removeAll()
 
-        	navigationItem.hidesBackButton = editMode
-        	navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
-        	searchController(enabled: !editMode)
+            navigationItem.hidesBackButton = editMode
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
+            searchController(enabled: !editMode)
+           // mainNavigationController?.hiddenPlusButton(editMode)
 
-        	if editMode {
-        	    navigationItem.leftBarButtonItems = nil
-        	} else {
-        	    (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
-        	}
-        	(self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+            if editMode {
+                navigationItem.leftBarButtonItems = nil
+            } else {
+                (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
+            }
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 
-        	self.collectionView.reloadData()
+            self.collectionView.reloadData()
         }
     }
 
