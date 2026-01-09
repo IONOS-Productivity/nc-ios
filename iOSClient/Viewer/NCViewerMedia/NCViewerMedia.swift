@@ -254,11 +254,6 @@ class NCViewerMedia: UIViewController {
             self.image = image
             self.imageVideoContainer.image = self.image
             return
-        } else if metadata.isAudio {
-            let image = utility.loadImage(named: "waveform", colors: [NCBrandColor.shared.iconImageColor2])
-            self.image = image
-            self.imageVideoContainer.image = self.image
-            return
         } else if metadata.isImage {
             if fileNameExtension == "GIF" {
                 if !NCUtility().existsImage(ocId: metadata.ocId, etag: metadata.etag, ext: global.previewExt1024, userId: metadata.userId, urlBase: metadata.urlBase) {
@@ -305,6 +300,11 @@ class NCViewerMedia: UIViewController {
                                                                                                       urlBase: metadata.urlBase)) {
             self.image = image
             self.imageVideoContainer.image = self.image
+        } else if metadata.isAudio {
+            let image = utility.loadImage(named: "waveform", colors: [NCBrandColor.shared.iconImageColor2])
+            self.image = image
+            self.imageVideoContainer.image = self.image
+            return
         } else {
             NextcloudKit.shared.downloadPreview(fileId: metadata.fileId,
                                                 etag: metadata.etag,
