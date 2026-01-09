@@ -146,6 +146,7 @@
 		D59D37CC2F0ECAEC0072C824 /* NCManageDatabase+Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76340FB2EBDF64A0056F538 /* NCManageDatabase+Tag.swift */; };
 		D59D37CE2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37CD2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift */; };
 		D59D37D02F0EE97C0072C824 /* TransfersListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37CF2F0EE97C0072C824 /* TransfersListener.swift */; };
+		D59D37D72F1082F60072C824 /* NCBackgroundLocationUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37D22F1082F50072C824 /* NCBackgroundLocationUploadManager.swift */; };
 		D5B6AA7827200C7200D49C24 /* NCActivityTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B6AA7727200C7200D49C24 /* NCActivityTableViewCell.swift */; };
 		D5C2D21F2C9DC0EF00E7579D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C2D21E2C9DC0EF00E7579D /* PrimaryButton.swift */; };
 		D5C5133B2C91970B00AE35CA /* NCImagesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C5133A2C91970B00AE35CA /* NCImagesRepository.swift */; };
@@ -1274,6 +1275,7 @@
 		D59793B52CF7A73A00C44F4E /* DataProtectionAgreementManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataProtectionAgreementManager.swift; sourceTree = "<group>"; };
 		D59D37CD2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIDevice+VirtualOrientation.swift"; sourceTree = "<group>"; };
 		D59D37CF2F0EE97C0072C824 /* TransfersListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersListener.swift; sourceTree = "<group>"; };
+		D59D37D22F1082F50072C824 /* NCBackgroundLocationUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCBackgroundLocationUploadManager.swift; sourceTree = "<group>"; };
 		D5B6AA7727200C7200D49C24 /* NCActivityTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCActivityTableViewCell.swift; sourceTree = "<group>"; };
 		D5C2D21E2C9DC0EF00E7579D /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
 		D5C5133A2C91970B00AE35CA /* NCImagesRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCImagesRepository.swift; sourceTree = "<group>"; };
@@ -3253,6 +3255,7 @@
 		F7F67BAA1A24D27800EE80DA /* iOSClient */ = {
 			isa = PBXGroup;
 			children = (
+				D59D37D22F1082F50072C824 /* NCBackgroundLocationUploadManager.swift */,
 				426D0F862D2826B200F76A65 /* Toolbar */,
 				D5E1D4FA2CF4A86F00813AB6 /* DataProtection */,
 				D5C2D21D2C9DC0D800E7579D /* Components */,
@@ -4684,6 +4687,7 @@
 				AA8D31702D4123B200FE2775 /* DownloadLimitViewModel.swift in Sources */,
 				AA8D31712D4123B200FE2775 /* NCShareDownloadLimitViewController.swift in Sources */,
 				AF93471B27E2361E002537EE /* NCShareAdvancePermission.swift in Sources */,
+				D59D37D72F1082F60072C824 /* NCBackgroundLocationUploadManager.swift in Sources */,
 				F77BC3ED293E528A005F2B08 /* NCConfigServer.swift in Sources */,
 				F7A560422AE1593700BE8FD6 /* NCOperationSaveLivePhoto.swift in Sources */,
 				F7D1C4AC2C9484FD00EC6D44 /* NCMedia+CollectionViewDataSourcePrefetching.swift in Sources */,

@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>In order to measure the quality of the programming of the app and to find crashes and errors and their cause, anonymized data from the program flow is evaluated. At no time are individual users identified, your identity remains protected.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.nextcloud.refreshTask</string>
@@ -81,6 +79,8 @@
 		<string>AccountIntent</string>
 		<string>DashboardIntent</string>
 	</array>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>In order to measure the quality of the programming of the app and to find crashes and errors and their cause, anonymized data from the program flow is evaluated. At no time are individual users identified, your identity remains protected.</string>
 	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
 	<true/>
 	<key>UIAppFonts</key>
@@ -116,6 +116,7 @@
 		<string>fetch</string>
 		<string>processing</string>
 		<string>remote-notification</string>
+		<string>location</string>
 	</array>
 	<key>UIDesignRequiresCompatibility</key>
 	<true/>

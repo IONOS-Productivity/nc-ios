@@ -34,9 +34,7 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     @IBOutlet weak var labelInfo: UILabel!
     @IBOutlet weak var labelSubinfo: UILabel!
     @IBOutlet weak var buttonMore: UIButton!
-    @IBOutlet weak var imageVisualEffect: UIVisualEffectView!
-    @IBOutlet weak var iconsStackView: UIStackView!
-
+ 
     var ocId = ""
     var ocIdTransfer = ""
     var account = ""
@@ -113,13 +111,6 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         labelTitle.text = ""
         labelInfo.text = ""
         labelSubinfo.text = ""
-        imageVisualEffect.layer.cornerRadius = 6
-        imageVisualEffect.clipsToBounds = true
-        imageVisualEffect.alpha = 0.5
-
-        iconsStackView.addBlurBackground(style: .systemMaterial)
-        iconsStackView.layer.cornerRadius = 8
-        iconsStackView.clipsToBounds = true
 
         let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(longPress(gestureRecognizer:)))
         longPressedGesture.minimumPressDuration = 0.5

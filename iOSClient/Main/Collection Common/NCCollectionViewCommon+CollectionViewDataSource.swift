@@ -418,31 +418,6 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             break
         }
 
-        // AVATAR
-        if !metadata.ownerId.isEmpty, metadata.ownerId != metadata.userId {
-            let fileName = NCSession.shared.getFileName(urlBase: metadata.urlBase, user: metadata.ownerId)
-            if let image = NCImageCache.shared.getImageCache(key: fileName) {
-                cell.fileAvatarImageView?.contentMode = .scaleAspectFill
-                cell.fileAvatarImageView?.image = image
-            } else {
-                self.database.getImageAvatarLoaded(fileName: fileName) { image, tblAvatar in
-                    if let image {
-                        cell.fileAvatarImageView?.contentMode = .scaleAspectFill
-                        cell.fileAvatarImageView?.image = image
-                        NCImageCache.shared.addImageCache(image: image, key: fileName)
-                    } else {
-                        cell.fileAvatarImageView?.contentMode = .scaleAspectFill
-                        cell.fileAvatarImageView?.image = self.utility.loadUserImage(for: metadata.ownerId, displayName: metadata.ownerDisplayName, urlBase: metadata.urlBase)
-                    }
-
-                    if !(tblAvatar?.loaded ?? false),
-                       self.networking.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
-                        self.networking.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: metadata.ownerId, fileName: fileName, account: metadata.account, view: collectionView))
-                    }
-                }
-            }
-        }
-
         // URL
         if metadata.classFile == NKTypeClassFile.url.rawValue {
             cell.fileLocalImage?.image = nil

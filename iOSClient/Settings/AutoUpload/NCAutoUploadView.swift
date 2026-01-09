@@ -184,6 +184,19 @@ struct NCAutoUploadView: View {
                     Text(NSLocalizedString("_autoupload_create_subfolder_footer_", comment: ""))
                 })
 				.applyGlobalFormSectionStyle()
+                
+                // Location
+                Section(content: {
+                    Toggle(NSLocalizedString("_enable_background_location_title_", comment: ""), isOn: $model.permissionGranted)
+                        .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                        .opacity(model.autoUploadStart ? 0.15 : 1)
+                        .onChange(of: model.permissionGranted) { _, newValue in
+                            model.handleLocationChange(newValue: newValue)
+                        }
+                }, footer: {
+                    Text(NSLocalizedString("_enable_background_location_footer_", comment: ""))
+                })
+                .applyGlobalFormSectionStyle()
 
             }
             .disabled(model.autoUploadStart)
