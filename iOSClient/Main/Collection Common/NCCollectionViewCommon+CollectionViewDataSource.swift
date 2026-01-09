@@ -263,14 +263,8 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
 
             if metadata.e2eEncrypted {
                 cell.filePreviewImageView?.image = imageCache.getFolderEncrypted(account: metadata.account)
-            } else if isShare {
-                cell.filePreviewImageView?.image = imageCache.getFolderSharedWithMe(account: metadata.account)
-            } else if !metadata.shareType.isEmpty {
-                metadata.shareType.contains(NKShare.ShareType.publicLink.rawValue) ?
-                (cell.filePreviewImageView?.image = imageCache.getFolderPublic(account: metadata.account)) :
-                (cell.filePreviewImageView?.image = imageCache.getFolderSharedWithMe(account: metadata.account))
-            } else if !metadata.shareType.isEmpty && metadata.shareType.contains(NKShare.ShareType.publicLink.rawValue) {
-                cell.filePreviewImageView?.image = imageCache.getFolderPublic(account: metadata.account)
+            } else if canHaveShareIcon {
+                cell.filePreviewImageView?.image = ItemShareState.state(by: metadata, isShare: isShare).folderImage
             } else if metadata.mountType == "group" {
                 cell.filePreviewImageView?.image = imageCache.getFolderGroup(account: metadata.account)
             } else if isMounted {

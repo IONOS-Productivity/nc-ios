@@ -86,7 +86,7 @@ class NCFiles: NCCollectionViewCommon {
                     self.titleCurrentFolder = self.getNavigationTitle()
                     self.navigationItem.title = self.titleCurrentFolder
 
-                    await (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
+                    (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
                     await self.reloadDataSource()
                     await self.getServerData()
                 }
@@ -406,7 +406,7 @@ class NCFiles: NCCollectionViewCommon {
         }
 
         Task {
-            await (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
         }
     }
 }

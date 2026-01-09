@@ -155,7 +155,7 @@ extension NCMedia: HiDriveCollectionViewCommonSelectToolbarDelegate {
                 self.updateHeadersView()
 
                 Task {
-                    await (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+                    (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 
                     for ocId in ocIds {
                         await self.deleteImage(with: ocId)
