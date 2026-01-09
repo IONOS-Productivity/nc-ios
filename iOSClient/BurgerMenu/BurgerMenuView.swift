@@ -17,7 +17,7 @@ private enum _Constants {
 
 struct BurgerMenuView: View {
     @ObservedObject var viewModel: BurgerMenuViewModel
-    
+
     var body: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
@@ -62,7 +62,7 @@ struct BurgerMenuView: View {
                         }
                     }
                     .padding(EdgeInsets(top: 0, leading: 24, bottom: 0, trailing: 24))
-                    .frame(width: min(width*0.75, 300), alignment: .leading)
+                    .frame(width: min(width * 0.75, 300), alignment: .leading)
                     .background(Color(.BurgerMenu.background))
                     .offset(x: viewModel.isVisible ? 0 : -width)
                 })
@@ -76,7 +76,7 @@ struct BurgerMenuView: View {
 
 private struct BurgerMenuMainSectionView: View {
     @ObservedObject var viewModel: BurgerMenuViewModel
-    
+
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
@@ -162,7 +162,7 @@ private struct CustomBackgroundOnPressButtonStyle: ButtonStyle {
                 if configuration.isPressed {
                     GeometryReader { geometry in
                         Color(.BurgerMenu.pressedButton)
-                            .clipShape(RoundedRectangle(cornerRadius: geometry.size.height/2))
+                            .clipShape(RoundedRectangle(cornerRadius: geometry.size.height / 2))
                     }
                 } else {
                     EmptyView()
@@ -182,13 +182,13 @@ private struct CustomProgressView: View {
                 Color(.BurgerMenu.progressBarBackground)
                     .overlay {
                         RoundedRectangle(cornerRadius: cornerRadius)
-                            .stroke(Color(.BurgerMenu.commonShadow).opacity(0.6), 
+                            .stroke(Color(.BurgerMenu.commonShadow).opacity(0.6),
                                     lineWidth: 1)
-                            .frame(width: geometry.size.width+blurRadius,
-                                   height: 2*geometry.size.height)
+                            .frame(width: geometry.size.width + blurRadius,
+                                   height: 2 * geometry.size.height)
                             .blur(radius: blurRadius)
-                            .offset(x: blurRadius/2,
-                                    y: geometry.size.height/2)
+                            .offset(x: blurRadius / 2,
+                                    y: geometry.size.height / 2)
                             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                     }
             }
@@ -233,7 +233,7 @@ private extension View {
             isVisible = true
         }
     }
-    
+
     struct CustomPreviewView: View {
         @StateObject var viewModel = BurgerMenuViewModelMock(delegate: nil, controller: nil)
         var body: some View {
@@ -253,6 +253,6 @@ private extension View {
              }
         }
     }
-    
+
     return CustomPreviewView()
 }

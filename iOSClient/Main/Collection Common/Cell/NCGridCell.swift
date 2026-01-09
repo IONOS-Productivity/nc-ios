@@ -23,6 +23,7 @@
 //
 
 import UIKit
+import Combine
 
 class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProtocol {
     @IBOutlet weak var imageItem: UIImageView!
@@ -34,11 +35,14 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     @IBOutlet weak var labelInfo: UILabel!
     @IBOutlet weak var labelSubinfo: UILabel!
     @IBOutlet weak var buttonMore: UIButton!
+    @IBOutlet weak var progressView: UIProgressView!
 
     var ocId = ""
     var ocIdTransfer = ""
     var account = ""
     var user = ""
+
+    private var cancellables = Set<AnyCancellable>()
 
     weak var gridCellDelegate: NCGridCellDelegate?
 
@@ -111,6 +115,14 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         longPressedGesture.delegate = self
         longPressedGesture.delaysTouchesBegan = true
         self.addGestureRecognizer(longPressedGesture)
+
+        #if !EXTENSION
+        progressView.tintColor = NCBrandColor.shared.brandElement
+        progressView.trackTintColor = UIColor(resource: .BurgerMenu.progressBarBackground)
+        progressView.isHidden = true
+        progressView.progress = 0
+        cancellables.removeAll()
+        #endif
     }
 
     override func snapshotView(afterScreenUpdates afterUpdates: Bool) -> UIView? {
@@ -206,6 +218,76 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         }
     }
 }
+
+#if !EXTENSION
+extension NCGridCell: NCCellMedia {
+    func setupPlaybackProgress(visible: Bool) {
+        cancellables.removeAll()
+
+        guard visible else {
+            progressView.isHidden = true
+            progressView.progress = 0
+            return
+        }
+
+        let mediaCoordinator = NCMediaCoordinator.shared
+
+        mediaCoordinator.positionPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] position in
+                guard let self = self else { return }
+                if self.ocId == mediaCoordinator.item?.ocId {
+                    self.progressView.progress = position
+                    self.progressView.isHidden = false
+                } else {
+                    self.progressView.isHidden = true
+                    self.progressView.progress = 0
+                }
+            }
+            .store(in: &cancellables)
+
+        mediaCoordinator.metadataSwitchPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, newItem in
+                guard let self = self else { return }
+                if self.ocId == newItem?.ocId {
+                    let currentPosition = mediaCoordinator.position
+                    self.progressView.progress = currentPosition
+                    self.progressView.isHidden = false
+                } else {
+                    self.progressView.isHidden = true
+                    self.progressView.progress = 0
+                }
+            }
+            .store(in: &cancellables)
+
+        mediaCoordinator.statePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                guard let self = self else { return }
+                if self.ocId == mediaCoordinator.item?.ocId {
+                    switch state {
+                    case .stopped, .ended, .error:
+                        self.progressView.isHidden = true
+                        self.progressView.progress = 0
+                    default:
+                        self.progressView.isHidden = false
+                    }
+                }
+            }
+            .store(in: &cancellables)
+
+        if ocId == mediaCoordinator.item?.ocId {
+            let currentPosition = mediaCoordinator.position
+            progressView.progress = currentPosition
+            progressView.isHidden = false
+        } else {
+            progressView.isHidden = true
+            progressView.progress = 0
+        }
+    }
+}
+#endif
 
 protocol NCGridCellDelegate: AnyObject {
     func tapMoreGridItem(with ocId: String, ocIdTransfer: String, image: UIImage?, sender: Any)

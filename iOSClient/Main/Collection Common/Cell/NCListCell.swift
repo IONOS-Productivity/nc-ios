@@ -23,6 +23,7 @@
 //
 
 import UIKit
+import Combine
 
 class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProtocol {
     @IBOutlet weak var imageItem: UIImageView!
@@ -54,7 +55,9 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
 
     weak var listCellDelegate: NCListCellDelegate?
     var namedButtonMore = ""
-    
+
+    private var cancellables = Set<AnyCancellable>()
+
     var separatorBackground: UIColor? {
        UIColor(named: "ListCell/Separator")
     }
@@ -178,6 +181,14 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         labelTitle.textColor = UIColor(resource: .ListCell.title)
         labelInfo.textColor = UIColor(resource: .ListCell.subtitle)
         labelSubinfo.textColor = UIColor(resource: .ListCell.subtitle)
+
+        #if !EXTENSION
+        progressView.tintColor = NCBrandColor.shared.brandElement
+        progressView.trackTintColor = UIColor(resource: .BurgerMenu.progressBarBackground)
+        progressView.isHidden = true
+        progressView.progress = 0
+        cancellables.removeAll()
+        #endif
     }
 
     override func snapshotView(afterScreenUpdates afterUpdates: Bool) -> UIView? {
@@ -303,6 +314,76 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         }
     }
 }
+
+#if !EXTENSION
+extension NCListCell: NCCellMedia {
+    func setupPlaybackProgress(visible: Bool) {
+        cancellables.removeAll()
+
+        guard visible else {
+            progressView.isHidden = true
+            progressView.progress = 0
+            return
+        }
+
+        let mediaCoordinator = NCMediaCoordinator.shared
+
+        mediaCoordinator.positionPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] position in
+                guard let self = self else { return }
+                if self.ocId == mediaCoordinator.item?.ocId {
+                    self.progressView.progress = position
+                    self.progressView.isHidden = false
+                } else {
+                    self.progressView.isHidden = true
+                    self.progressView.progress = 0
+                }
+            }
+            .store(in: &cancellables)
+
+        mediaCoordinator.metadataSwitchPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, newItem in
+                guard let self = self else { return }
+                if self.ocId == newItem?.ocId {
+                    let currentPosition = mediaCoordinator.position
+                    self.progressView.progress = currentPosition
+                    self.progressView.isHidden = false
+                } else {
+                    self.progressView.isHidden = true
+                    self.progressView.progress = 0
+                }
+            }
+            .store(in: &cancellables)
+
+        mediaCoordinator.statePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                guard let self = self else { return }
+                if self.ocId == mediaCoordinator.item?.ocId {
+                    switch state {
+                    case .stopped, .ended, .error:
+                        self.progressView.isHidden = true
+                        self.progressView.progress = 0
+                    default:
+                        self.progressView.isHidden = false
+                    }
+                }
+            }
+            .store(in: &cancellables)
+
+        if ocId == mediaCoordinator.item?.ocId {
+            let currentPosition = mediaCoordinator.position
+            progressView.progress = currentPosition
+            progressView.isHidden = false
+        } else {
+            progressView.isHidden = true
+            progressView.progress = 0
+        }
+    }
+}
+#endif
 
 protocol NCListCellDelegate: AnyObject {
     func tapShareListItem(with ocId: String, ocIdTransfer: String, sender: Any)
