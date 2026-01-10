@@ -21,7 +21,6 @@
 		0F9DB9BD2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
 		0F9DB9BE2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
 		0F9DB9BF2DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
-		0F9DB9C02DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
 		0F9DB9C12DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9DB9B92DD2381B00E31A24 /* NCBrand-IONOS.swift */; };
 		0F9E787D2DD77EB8007980BF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
 		0F9E787E2DD77EB8007980BF /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
@@ -2097,6 +2096,16 @@
 			path = NextcloudIntegrationTests;
 			sourceTree = "<group>";
 		};
+		D5AF19722F127D9700D4F47F /* Account */ = {
+			isa = PBXGroup;
+			children = (
+				F7FDFF592E437E55000D7688 /* NCAccount.swift */,
+				F7FDFF552E437E55000D7688 /* Account Request */,
+				F7FDFF582E437E55000D7688 /* Account Settings */,
+			);
+			path = Account;
+			sourceTree = "<group>";
+		};
 		D5C2D21D2C9DC0D800E7579D /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -3255,6 +3264,7 @@
 		F7F67BAA1A24D27800EE80DA /* iOSClient */ = {
 			isa = PBXGroup;
 			children = (
+				D5AF19722F127D9700D4F47F /* Account */,
 				D59D37D22F1082F50072C824 /* NCBackgroundLocationUploadManager.swift */,
 				426D0F862D2826B200F76A65 /* Toolbar */,
 				D5E1D4FA2CF4A86F00813AB6 /* DataProtection */,
@@ -3264,7 +3274,6 @@
 				F794E13E2BBC0F70003693D7 /* SceneDelegate.swift */,
 				F7CF067A2E0FF38F0063AD04 /* NCAppStateManager.swift */,
 				F77DD6A72C5CC093009448FB /* NCSession.swift */,
-				F7FDFF592E437E55000D7688 /* NCAccount.swift */,
 				F76B649B2ADFFAED00014640 /* NCImageCache.swift */,
 				D5C5133A2C91970B00AE35CA /* NCImagesRepository.swift */,
 				F702F2CE25EE5B5C008F8E80 /* NCGlobal.swift */,
@@ -3278,8 +3287,6 @@
 				4240DB4C2C56446D00E72FC0 /* BurgerMenu */,
 				F769CA1B2966EF4F00039397 /* GUI */,
 				F70211F31BAC56E9003FC03E /* Main */,
-				F7FDFF552E437E55000D7688 /* Account Request */,
-				F7FDFF582E437E55000D7688 /* Account Settings */,
 				F7A321621E9E37960069AD1B /* Activity */,
 				F76687042B7D067400779E3F /* AudioRecorder */,
 				F3A0478E2BD2668800658E7B /* Assistant */,
@@ -4108,7 +4115,6 @@
 				AA52EB472D42AC9E0089C348 /* Placeholder.swift in Sources */,
 				F372087D2BAB4C0F006B5430 /* TestConstants.swift in Sources */,
 				F78E2D6C29AF02DB0024D4F3 /* Database.swift in Sources */,
-				0F9DB9C02DD2381B00E31A24 /* NCBrand-IONOS.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
