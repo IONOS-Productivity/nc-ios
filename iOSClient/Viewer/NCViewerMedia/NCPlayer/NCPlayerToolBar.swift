@@ -10,6 +10,7 @@ import UIKit
 import AVKit
 import FloatingPanel
 import Alamofire
+import Combine
 
 class NCPlayerToolBar: UIView {
     @IBOutlet weak var utilityView: UIView!
@@ -29,6 +30,8 @@ class NCPlayerToolBar: UIView {
     @IBOutlet weak var repeatButton: UIButton?
 
     private var mediaCoordinator = NCMediaCoordinator.shared
+    private var cancellables = Set<AnyCancellable>()
+    private var isPlaying: Bool = false
 
     enum sliderEventType {
         case began
@@ -105,6 +108,17 @@ class NCPlayerToolBar: UIView {
         // Normally hide
         self.alpha = 0
         self.isHidden = true
+
+        mediaCoordinator.isPlayingPublisher.sink { [weak self] isPlaying in
+            if self?.isPlaying != isPlaying {
+                self?.isPlaying = isPlaying
+                if isPlaying {
+                    self?.playButton.setImage(NCImagesRepository.mediaIconPause, for: .normal)
+                } else {
+                    self?.playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
+                }
+            }
+        }.store(in: &cancellables)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -176,14 +190,6 @@ class NCPlayerToolBar: UIView {
         }, completion: { (_: Bool) in
             self.isHidden = true
         })
-    }
-
-    func playButtonPause() {
-        playButton.setImage(NCImagesRepository.mediaIconPause, for: .normal)
-    }
-
-    func playButtonPlay() {
-        playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
     }
 
     // MARK: - Event / Gesture

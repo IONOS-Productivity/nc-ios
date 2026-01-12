@@ -155,7 +155,23 @@ class NCMediaCoordinator: NSObject {
 
     weak var videoOutputView: UIView? {
         didSet {
-            player?.drawable = videoOutputView
+            guard let player = player, let newView = videoOutputView else { return }
+
+            let wasPlaying = player.isPlaying
+            let currentPosition = player.position
+
+            if wasPlaying {
+                player.stop()
+            }
+
+            player.drawable = newView
+
+            DispatchQueue.main.async {
+                if wasPlaying {
+                    player.play()
+                    player.position = currentPosition
+                }
+            }
         }
     }
 

@@ -21,12 +21,9 @@ class NCPlayer: NSObject {
     private weak var playerToolBar: NCPlayerToolBar?
     internal weak var viewerMediaPage: NCViewerMediaPage?
 
-    weak var imageVideoContainer: UIImageView?
-
     // MARK: - View Life Cycle
 
-    init(imageVideoContainer: UIImageView, playerToolBar: NCPlayerToolBar?, metadata: tableMetadata, viewerMediaPage: NCViewerMediaPage?) {
-        self.imageVideoContainer = imageVideoContainer
+    init(playerToolBar: NCPlayerToolBar?, metadata: tableMetadata, viewerMediaPage: NCViewerMediaPage?) {
         self.playerToolBar = playerToolBar
         self.metadata = metadata
         self.viewerMediaPage = viewerMediaPage
@@ -44,21 +41,12 @@ class NCPlayer: NSObject {
 
     private func configurePlayingUI() {
         self.singleTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(didSingleTapWith(gestureRecognizer:)))
-        if metadata.isVideo {
-            mediaCoordinator.videoOutputView = imageVideoContainer
-            if let view = mediaCoordinator.videoOutputView, let singleTapGestureRecognizer = singleTapGestureRecognizer {
-                view.isUserInteractionEnabled = true
-                view.addGestureRecognizer(singleTapGestureRecognizer)
-            }
+        if let singleTapGestureRecognizer = self.singleTapGestureRecognizer {
+            self.viewerMediaPage?.currentViewController.imageVideoContainer.isUserInteractionEnabled = true
+            self.viewerMediaPage?.currentViewController.imageVideoContainer.addGestureRecognizer(singleTapGestureRecognizer)
         }
-
         playerToolBar?.setBarPlayer(position: 0, ncplayer: self, metadata: metadata, viewerMediaPage: viewerMediaPage)
         playerToolBar?.playerButtonView?.isHidden = false
-        if mediaCoordinator.isPlaying {
-            playerToolBar?.playButtonPause()
-        } else {
-            playerToolBar?.playButtonPlay()
-        }
     }
 
     // MARK: - UIGestureRecognizerDelegate

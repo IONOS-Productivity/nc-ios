@@ -325,6 +325,7 @@ extension NCViewerMediaPage: UIPageViewControllerDelegate, UIPageViewControllerD
         }
         if completed {
             NCMediaCoordinator.shared.finishMediaSession(clearQueue: false)
+            NCMediaCoordinator.shared.videoOutputView = currentViewController.imageVideoContainer
         }
         changeScreenMode(mode: viewerMediaScreenMode)
         startTimerAutoHide()
