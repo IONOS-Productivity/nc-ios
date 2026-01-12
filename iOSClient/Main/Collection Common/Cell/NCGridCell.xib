@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina4_7" orientation="portrait" appearance="dark"/>
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -88,6 +87,9 @@
                             <action selector="touchUpInsideMore:" destination="vf1-Kf-9uL" eventType="touchUpInside" id="GDx-NN-gE9"/>
                         </connections>
                     </button>
+                    <progressView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" progress="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="ye7-nn-BuE">
+                        <rect key="frame" x="25" y="520" width="363" height="4"/>
+                    </progressView>
                 </subviews>
             </view>
             <constraints>
@@ -98,6 +100,7 @@
                 <constraint firstAttribute="bottom" secondItem="EJs-Ro-nbe" secondAttribute="bottom" constant="8" id="G0O-Kx-3kV"/>
                 <constraint firstAttribute="trailing" secondItem="VRH-IZ-lXO" secondAttribute="trailing" constant="5" id="HAS-uF-AuS"/>
                 <constraint firstItem="AYs-f2-vve" firstAttribute="trailing" secondItem="5Ci-V1-hf5" secondAttribute="trailing" constant="-5" id="HgQ-KH-cPc"/>
+                <constraint firstItem="12P-pO-DHO" firstAttribute="bottom" secondItem="ye7-nn-BuE" secondAttribute="top" constant="-3" id="J94-c8-DLK"/>
                 <constraint firstAttribute="trailing" secondItem="5Ci-V1-hf5" secondAttribute="trailing" id="NR3-9y-oZq"/>
                 <constraint firstItem="2po-8g-XeS" firstAttribute="top" secondItem="VRH-IZ-lXO" secondAttribute="bottom" constant="7" id="OPl-xq-XOx"/>
                 <constraint firstItem="5Ci-V1-hf5" firstAttribute="top" secondItem="vf1-Kf-9uL" secondAttribute="top" id="Ouj-ZD-UFm"/>
@@ -107,12 +110,14 @@
                 <constraint firstItem="VRH-IZ-lXO" firstAttribute="leading" secondItem="vf1-Kf-9uL" secondAttribute="leading" constant="5" id="dTF-dl-Awr"/>
                 <constraint firstItem="12P-pO-DHO" firstAttribute="leading" secondItem="vf1-Kf-9uL" secondAttribute="leading" constant="25" id="fTQ-Ye-Xj2"/>
                 <constraint firstItem="12P-pO-DHO" firstAttribute="top" secondItem="2po-8g-XeS" secondAttribute="bottom" constant="3" id="hbc-KL-fRj"/>
+                <constraint firstItem="EJs-Ro-nbe" firstAttribute="leading" secondItem="ye7-nn-BuE" secondAttribute="trailing" constant="3" id="ngu-A3-J2h"/>
                 <constraint firstAttribute="trailing" secondItem="EJs-Ro-nbe" secondAttribute="trailing" constant="5" id="ntP-en-sy6"/>
                 <constraint firstAttribute="trailing" secondItem="81G-wH-fjN" secondAttribute="trailing" constant="5" id="omW-UB-blH"/>
                 <constraint firstItem="5Ci-V1-hf5" firstAttribute="leading" secondItem="vf1-Kf-9uL" secondAttribute="leading" id="qT3-WD-iTV"/>
                 <constraint firstItem="AYs-f2-vve" firstAttribute="top" secondItem="5Ci-V1-hf5" secondAttribute="top" constant="5" id="r8H-oi-tdJ"/>
                 <constraint firstItem="81G-wH-fjN" firstAttribute="bottom" secondItem="5Ci-V1-hf5" secondAttribute="bottom" constant="-5" id="rf2-Z0-OlX"/>
                 <constraint firstItem="a0p-rj-jnV" firstAttribute="leading" secondItem="5Ci-V1-hf5" secondAttribute="leading" constant="5" id="rfI-Sz-Yg3"/>
+                <constraint firstItem="ye7-nn-BuE" firstAttribute="leading" secondItem="vf1-Kf-9uL" secondAttribute="leading" constant="25" id="wKc-n7-nDQ"/>
                 <constraint firstItem="12P-pO-DHO" firstAttribute="centerX" secondItem="vf1-Kf-9uL" secondAttribute="centerX" id="xhm-Np-2Ua"/>
             </constraints>
             <size key="customSize" width="416" height="524"/>
@@ -126,6 +131,7 @@
                 <outlet property="labelInfo" destination="2po-8g-XeS" id="FJ4-wI-9cW"/>
                 <outlet property="labelSubinfo" destination="12P-pO-DHO" id="K6d-7r-FGh"/>
                 <outlet property="labelTitle" destination="eU3-lY-fKr" id="0P7-yM-Asb"/>
+                <outlet property="progressView" destination="ye7-nn-BuE" id="8au-pg-FQu"/>
             </connections>
             <point key="canvasLocation" x="233.59999999999999" y="242.42878560719643"/>
         </collectionViewCell>

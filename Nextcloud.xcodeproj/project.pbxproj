@@ -36,6 +36,8 @@
 		370D26AF248A3D7A00121797 /* NCCellProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370D26AE248A3D7A00121797 /* NCCellProtocol.swift */; };
 		371B5A2E23D0B04500FAFAE9 /* NCMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B5A2D23D0B04500FAFAE9 /* NCMenu.swift */; };
 		3CEA5F122BFBBCAF0097E536 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
+		420113DC2D1303E00063BF54 /* NCMediaSelectTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420113DB2D1303E00063BF54 /* NCMediaSelectTabBar.swift */; };
+		420274712F11558400ECB06B /* NCCellMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4202746F2F11557500ECB06B /* NCCellMedia.swift */; };
 		421657AB2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421657AA2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift */; };
 		4232DC0A2C9D7C44008D546D /* UIView+GridSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4232DC092C9D7C44008D546D /* UIView+GridSelection.swift */; };
 		4232DC0B2C9D7C44008D546D /* UIView+GridSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4232DC092C9D7C44008D546D /* UIView+GridSelection.swift */; };
@@ -1174,6 +1176,7 @@
 		370D26AE248A3D7A00121797 /* NCCellProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCCellProtocol.swift; sourceTree = "<group>"; };
 		371B5A2D23D0B04500FAFAE9 /* NCMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMenu.swift; sourceTree = "<group>"; };
 		420113DB2D1303E00063BF54 /* NCMediaSelectTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMediaSelectTabBar.swift; sourceTree = "<group>"; };
+		4202746F2F11557500ECB06B /* NCCellMedia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCCellMedia.swift; sourceTree = "<group>"; };
 		4216512A2E28F654002E19D6 /* NextcloudDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NextcloudDebug.entitlements; sourceTree = "<group>"; };
 		4216512B2E28F685002E19D6 /* WidgetDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WidgetDebug.entitlements; sourceTree = "<group>"; };
 		4216512C2E28F6A4002E19D6 /* WidgetDashboardIntentHandlerDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WidgetDashboardIntentHandlerDebug.entitlements; sourceTree = "<group>"; };
@@ -2477,6 +2480,7 @@
 			isa = PBXGroup;
 			children = (
 				370D26AE248A3D7A00121797 /* NCCellProtocol.swift */,
+				4202746F2F11557500ECB06B /* NCCellMedia.swift */,
 				F78ACD3F21903CC20088454D /* NCGridCell.swift */,
 				F78ACD4521903D010088454D /* NCGridCell.xib */,
 				F78ACD4121903CE00088454D /* NCListCell.swift */,
@@ -4490,6 +4494,7 @@
 				F77BB74A2899857B0090FC19 /* UINavigationController+Extension.swift in Sources */,
 				F769454622E9F1B0000A798A /* NCShareCommon.swift in Sources */,
 				F70753F12542A9A200972D44 /* NCViewerMedia.swift in Sources */,
+				420274712F11558400ECB06B /* NCCellMedia.swift in Sources */,
 				F799DF822C4B7DCC003410B5 /* NCSectionFooter.swift in Sources */,
 				F76B649C2ADFFAED00014640 /* NCImageCache.swift in Sources */,
 				F76341182EBE0BC60056F538 /* NCNetworking+NextcloudKitDelegate.swift in Sources */,

@@ -534,14 +534,14 @@ class NCMediaCoordinator: NSObject {
                                                ext: global.previewExt1024,
                                                userId: item.userId,
                                                urlBase: item.urlBase)
-        } else if item.isAudio {
-            self.coverImage = utility.loadImage(named: "waveform", colors: [NCBrandColor.shared.iconImageColor2])
         } else if let image = UIImage(contentsOfFile: utilityFileSystem.getDirectoryProviderStorageImageOcId(item.ocId,
                                                                                                              etag: item.etag,
                                                                                                              ext: global.previewExt1024,
                                                                                                              userId: item.userId,
                                                                                                              urlBase: item.urlBase)) {
             self.coverImage = image
+        } else if item.isAudio {
+            self.coverImage = utility.loadImage(named: "waveform", colors: [NCBrandColor.shared.iconImageColor2])
         }
     }
 

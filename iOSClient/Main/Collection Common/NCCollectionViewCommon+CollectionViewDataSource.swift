@@ -487,6 +487,11 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             cell.hideButtonShare(true)
             cell.hideButtonMore(true)
         }
+        #if !EXTENSION
+        if let mediaCell = cell as? NCCellMedia {
+            mediaCell.setupPlaybackProgress(visible: metadata.isAudioOrVideo)
+        }
+        #endif
 
         cell.setIconOutlines()
 
