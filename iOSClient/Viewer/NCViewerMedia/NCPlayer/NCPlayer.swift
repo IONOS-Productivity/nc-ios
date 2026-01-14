@@ -12,7 +12,6 @@ import Combine
 class NCPlayer: NSObject {
     private var mediaCoordinator = NCMediaCoordinator.shared
     private var metadata: tableMetadata
-    internal var singleTapGestureRecognizer: UITapGestureRecognizer?
     internal let database = NCManageDatabase.shared
     internal var width: Int?
     internal var height: Int?
@@ -40,29 +39,8 @@ class NCPlayer: NSObject {
     }
 
     private func configurePlayingUI() {
-        self.singleTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(didSingleTapWith(gestureRecognizer:)))
-        if let singleTapGestureRecognizer = self.singleTapGestureRecognizer {
-            self.viewerMediaPage?.currentViewController.imageVideoContainer.isUserInteractionEnabled = true
-            self.viewerMediaPage?.currentViewController.imageVideoContainer.addGestureRecognizer(singleTapGestureRecognizer)
-        }
         playerToolBar?.setBarPlayer(position: 0, ncplayer: self, metadata: metadata, viewerMediaPage: viewerMediaPage)
         playerToolBar?.playerButtonView?.isHidden = false
-    }
-
-    // MARK: - UIGestureRecognizerDelegate
-
-    @objc func didSingleTapWith(gestureRecognizer: UITapGestureRecognizer) {
-        changeScreenMode()
-    }
-
-    func changeScreenMode() {
-        guard let viewerMediaPage = viewerMediaPage else { return }
-
-        if viewerMediaScreenMode == .full {
-            viewerMediaPage.changeScreenMode(mode: .normal)
-        } else {
-            viewerMediaPage.changeScreenMode(mode: .full)
-        }
     }
 
     // MARK: -

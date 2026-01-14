@@ -110,15 +110,9 @@ class NCPlayerToolBar: UIView {
         self.isHidden = true
 
         mediaCoordinator.isPlayingPublisher.sink { [weak self] isPlaying in
-            if self?.isPlaying != isPlaying {
-                self?.isPlaying = isPlaying
-                if isPlaying {
-                    self?.playButton.setImage(NCImagesRepository.mediaIconPause, for: .normal)
-                } else {
-                    self?.playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
-                }
-            }
+            self?.setPlayButtonImage(isPlaying: isPlaying)
         }.store(in: &cancellables)
+        setPlayButtonImage(isPlaying: mediaCoordinator.isPlaying)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -143,8 +137,6 @@ class NCPlayerToolBar: UIView {
         }
 
         playerButtonView.isHidden = true
-
-        playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
 
         playbackSlider.value = position
 
@@ -171,6 +163,16 @@ class NCPlayerToolBar: UIView {
         if let metadata = metadata, metadata.isVideo {
             self.subtitleButton.isEnabled = true
             self.audioButton.isEnabled = true
+        }
+    }
+
+    private func setPlayButtonImage(isPlaying: Bool) {
+        guard self.isPlaying != isPlaying else { return }
+        self.isPlaying = isPlaying
+        if isPlaying {
+            playButton.setImage(NCImagesRepository.mediaIconPause, for: .normal)
+        } else {
+            playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
         }
     }
 
