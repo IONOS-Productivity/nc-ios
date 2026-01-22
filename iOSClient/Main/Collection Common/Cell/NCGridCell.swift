@@ -37,12 +37,14 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     @IBOutlet weak var buttonMore: UIButton!
     @IBOutlet weak var progressView: UIProgressView!
 
+    #if !EXTENSION
+    private var playbackProgressView = PlaybackProgressView()
+    #endif
+
     var ocId = ""
     var ocIdTransfer = ""
     var account = ""
     var user = ""
-
-    private var cancellables = Set<AnyCancellable>()
 
     weak var gridCellDelegate: NCGridCellDelegate?
 
@@ -117,11 +119,16 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         self.addGestureRecognizer(longPressedGesture)
 
         #if !EXTENSION
-        progressView.tintColor = NCBrandColor.shared.brandElement
-        progressView.trackTintColor = UIColor(resource: .BurgerMenu.progressBarBackground)
-        progressView.isHidden = true
-        progressView.progress = 0
-        cancellables.removeAll()
+        if playbackProgressView.superview == nil {
+            addSubview(playbackProgressView)
+            playbackProgressView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                playbackProgressView.leadingAnchor.constraint(equalTo: progressView.leadingAnchor),
+                playbackProgressView.trailingAnchor.constraint(equalTo: progressView.trailingAnchor),
+                playbackProgressView.topAnchor.constraint(equalTo: progressView.topAnchor),
+                playbackProgressView.bottomAnchor.constraint(equalTo: progressView.bottomAnchor)
+            ])
+        }
         #endif
     }
 
@@ -222,69 +229,7 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
 #if !EXTENSION
 extension NCGridCell: NCCellMedia {
     func setupPlaybackProgress(visible: Bool) {
-        cancellables.removeAll()
-
-        guard visible else {
-            progressView.isHidden = true
-            progressView.progress = 0
-            return
-        }
-
-        let mediaCoordinator = NCMediaCoordinator.shared
-
-        mediaCoordinator.positionPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] position in
-                guard let self = self else { return }
-                if self.ocId == mediaCoordinator.item?.ocId {
-                    self.progressView.progress = position
-                    self.progressView.isHidden = false
-                } else {
-                    self.progressView.isHidden = true
-                    self.progressView.progress = 0
-                }
-            }
-            .store(in: &cancellables)
-
-        mediaCoordinator.metadataSwitchPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _, newItem in
-                guard let self = self else { return }
-                if self.ocId == newItem?.ocId {
-                    let currentPosition = mediaCoordinator.position
-                    self.progressView.progress = currentPosition
-                    self.progressView.isHidden = false
-                } else {
-                    self.progressView.isHidden = true
-                    self.progressView.progress = 0
-                }
-            }
-            .store(in: &cancellables)
-
-        mediaCoordinator.statePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                guard let self = self else { return }
-                if self.ocId == mediaCoordinator.item?.ocId {
-                    switch state {
-                    case .stopped, .ended, .error:
-                        self.progressView.isHidden = true
-                        self.progressView.progress = 0
-                    default:
-                        self.progressView.isHidden = false
-                    }
-                }
-            }
-            .store(in: &cancellables)
-
-        if ocId == mediaCoordinator.item?.ocId {
-            let currentPosition = mediaCoordinator.position
-            progressView.progress = currentPosition
-            progressView.isHidden = false
-        } else {
-            progressView.isHidden = true
-            progressView.progress = 0
-        }
+        playbackProgressView.setupPlaybackProgress(ocId: ocId, visible: visible)
     }
 }
 #endif
