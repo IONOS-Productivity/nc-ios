@@ -489,7 +489,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         }
         #if !EXTENSION
         if let mediaCell = cell as? NCCellMedia {
-            mediaCell.setupPlaybackProgress(visible: metadata.isAudioOrVideo)
+            mediaCell.setupPlaybackProgress(visible: metadata.isAudioOrVideo && !isEditMode)
         }
         #endif
 

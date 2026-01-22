@@ -12,7 +12,6 @@ import Combine
 class NCPlayer: NSObject {
     private var mediaCoordinator = NCMediaCoordinator.shared
     private var metadata: tableMetadata
-    internal var singleTapGestureRecognizer: UITapGestureRecognizer?
     internal let database = NCManageDatabase.shared
     internal var width: Int?
     internal var height: Int?
@@ -21,12 +20,9 @@ class NCPlayer: NSObject {
     private weak var playerToolBar: NCPlayerToolBar?
     internal weak var viewerMediaPage: NCViewerMediaPage?
 
-    weak var imageVideoContainer: UIImageView?
-
     // MARK: - View Life Cycle
 
-    init(imageVideoContainer: UIImageView, playerToolBar: NCPlayerToolBar?, metadata: tableMetadata, viewerMediaPage: NCViewerMediaPage?) {
-        self.imageVideoContainer = imageVideoContainer
+    init(playerToolBar: NCPlayerToolBar?, metadata: tableMetadata, viewerMediaPage: NCViewerMediaPage?) {
         self.playerToolBar = playerToolBar
         self.metadata = metadata
         self.viewerMediaPage = viewerMediaPage
@@ -43,38 +39,8 @@ class NCPlayer: NSObject {
     }
 
     private func configurePlayingUI() {
-        self.singleTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(didSingleTapWith(gestureRecognizer:)))
-        if metadata.isVideo {
-            mediaCoordinator.videoOutputView = imageVideoContainer
-            if let view = mediaCoordinator.videoOutputView, let singleTapGestureRecognizer = singleTapGestureRecognizer {
-                view.isUserInteractionEnabled = true
-                view.addGestureRecognizer(singleTapGestureRecognizer)
-            }
-        }
-
         playerToolBar?.setBarPlayer(position: 0, ncplayer: self, metadata: metadata, viewerMediaPage: viewerMediaPage)
         playerToolBar?.playerButtonView?.isHidden = false
-        if mediaCoordinator.isPlaying {
-            playerToolBar?.playButtonPause()
-        } else {
-            playerToolBar?.playButtonPlay()
-        }
-    }
-
-    // MARK: - UIGestureRecognizerDelegate
-
-    @objc func didSingleTapWith(gestureRecognizer: UITapGestureRecognizer) {
-        changeScreenMode()
-    }
-
-    func changeScreenMode() {
-        guard let viewerMediaPage = viewerMediaPage else { return }
-
-        if viewerMediaScreenMode == .full {
-            viewerMediaPage.changeScreenMode(mode: .normal)
-        } else {
-            viewerMediaPage.changeScreenMode(mode: .full)
-        }
     }
 
     // MARK: -

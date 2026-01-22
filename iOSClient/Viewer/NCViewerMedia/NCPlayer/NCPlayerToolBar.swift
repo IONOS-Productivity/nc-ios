@@ -10,6 +10,7 @@ import UIKit
 import AVKit
 import FloatingPanel
 import Alamofire
+import Combine
 
 class NCPlayerToolBar: UIView {
     @IBOutlet weak var utilityView: UIView!
@@ -29,6 +30,8 @@ class NCPlayerToolBar: UIView {
     @IBOutlet weak var repeatButton: UIButton?
 
     private var mediaCoordinator = NCMediaCoordinator.shared
+    private var cancellables = Set<AnyCancellable>()
+    private var isPlaying: Bool = false
 
     enum sliderEventType {
         case began
@@ -105,6 +108,11 @@ class NCPlayerToolBar: UIView {
         // Normally hide
         self.alpha = 0
         self.isHidden = true
+
+        mediaCoordinator.isPlayingPublisher.sink { [weak self] isPlaying in
+            self?.setPlayButtonImage(isPlaying: isPlaying)
+        }.store(in: &cancellables)
+        setPlayButtonImage(isPlaying: mediaCoordinator.isPlaying)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -129,8 +137,6 @@ class NCPlayerToolBar: UIView {
         }
 
         playerButtonView.isHidden = true
-
-        playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
 
         playbackSlider.value = position
 
@@ -160,6 +166,16 @@ class NCPlayerToolBar: UIView {
         }
     }
 
+    private func setPlayButtonImage(isPlaying: Bool) {
+        guard self.isPlaying != isPlaying else { return }
+        self.isPlaying = isPlaying
+        if isPlaying {
+            playButton.setImage(NCImagesRepository.mediaIconPause, for: .normal)
+        } else {
+            playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
+        }
+    }
+
     // MARK: -
 
     public func show() {
@@ -176,14 +192,6 @@ class NCPlayerToolBar: UIView {
         }, completion: { (_: Bool) in
             self.isHidden = true
         })
-    }
-
-    func playButtonPause() {
-        playButton.setImage(NCImagesRepository.mediaIconPause, for: .normal)
-    }
-
-    func playButtonPlay() {
-        playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
     }
 
     // MARK: - Event / Gesture

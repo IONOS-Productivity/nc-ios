@@ -9,6 +9,13 @@ import MediaPlayer
 import NextcloudKit
 import Alamofire
 
+private class PassThroughVLCVideoView: UIView {
+    override func addSubview(_ view: UIView) {
+        super.addSubview(view)
+        view.isUserInteractionEnabled = false
+    }
+}
+
 protocol NCMediaCoordinatorDelegate: AnyObject {
     func showError(withTitle title: String, message: String)
     func showAlert(alert: UIAlertController)
@@ -153,10 +160,20 @@ class NCMediaCoordinator: NSObject {
         item?.fileName ?? ""
     }
 
-    weak var videoOutputView: UIView? {
-        didSet {
-            player?.drawable = videoOutputView
-        }
+    private let videoOutputView = PassThroughVLCVideoView()
+
+    func putVideoOutputView(in view: UIView) {
+        guard videoOutputView.superview != view else { return }
+        videoOutputView.removeFromSuperview()
+        videoOutputView.translatesAutoresizingMaskIntoConstraints = false
+        videoOutputView.isUserInteractionEnabled = false
+        view.addSubview(videoOutputView)
+        NSLayoutConstraint.activate([
+            videoOutputView.topAnchor.constraint(equalTo: view.topAnchor),
+            videoOutputView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            videoOutputView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            videoOutputView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
     }
 
     var position: Float {
@@ -397,7 +414,6 @@ class NCMediaCoordinator: NSObject {
         player = nil
         item = nil
         url = nil
-        videoOutputView = nil
         playRepeat = false
         if clearQueue {
             items.removeAll()

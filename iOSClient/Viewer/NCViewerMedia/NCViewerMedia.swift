@@ -122,7 +122,7 @@ class NCViewerMedia: UIViewController {
 
             mediaCoordinator.delegate = self
 
-            self.ncplayer = NCPlayer(imageVideoContainer: self.imageVideoContainer, playerToolBar: self.playerToolBar, metadata: self.metadata, viewerMediaPage: self.viewerMediaPage)
+            self.ncplayer = NCPlayer(playerToolBar: self.playerToolBar, metadata: self.metadata, viewerMediaPage: self.viewerMediaPage)
         }
 
         detailViewTopConstraint.constant = 0
@@ -166,6 +166,7 @@ class NCViewerMedia: UIViewController {
             mediaCoordinator.positionPublisher.sink { [weak self] position in
                 self?.mediaCoordinator(didChangePosition: position)
             }.store(in: &cancellables)
+            mediaCoordinator.putVideoOutputView(in: self.imageVideoContainer)
         } else if metadata.isImage {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 self.showTip()
@@ -542,7 +543,6 @@ extension NCViewerMedia {
 
         switch state {
         case .stopped:
-            playerToolBar?.playButtonPlay()
             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterPlayerStoppedPlaying)
             #if DEBUG
             print("Played mode: STOPPED")
@@ -557,7 +557,6 @@ extension NCViewerMedia {
             #endif
         case .ended:
             database.addVideoOrAudio(metadata: metadata, position: 0)
-            playerToolBar?.playButtonPlay()
             #if DEBUG
             print("Played mode: ENDED")
             #endif
@@ -591,7 +590,6 @@ extension NCViewerMedia {
                 playerToolBar.playerButtonView.isHidden = false
                 viewerMediaPage?.changeScreenMode(mode: .normal)
             }
-            playerToolBar.playButtonPause()
             // Set track audio/subtitle
             let data = database.getVideoOrAudio(metadata: metadata)
             if let currentAudioTrackIndex = data?.currentAudioTrackIndex {
@@ -614,7 +612,6 @@ extension NCViewerMedia {
             #endif
         case .paused:
             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterPlayerStoppedPlaying)
-            playerToolBar?.playButtonPlay()
             #if DEBUG
             print("Played mode: PAUSED")
             #endif

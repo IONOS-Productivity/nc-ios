@@ -45,7 +45,9 @@ class NCViewer: NSObject {
             let viewerMediaPageContainer = UIStoryboard(name: "NCViewerMediaPage", bundle: nil).instantiateInitialViewController() as? NCViewerMediaPage {
                 if metadata.isAudioOrVideo {
                     let mediaCoordinator = NCMediaCoordinator.shared
-                    mediaCoordinator.finishMediaSession()
+                    if mediaCoordinator.item?.ocId != metadata.ocId {
+                        mediaCoordinator.finishMediaSession()
+                    }
                     mediaCoordinator.items = siblingMedia
                 }
 
