@@ -9,7 +9,7 @@
     <key>teamID</key>
     <string>R7V5Z67X53</string>
     <key>signingCertificate</key>
-	<string>iPhone Distribution: Viseven Europe Ou (R7V5Z67X53)</string>
+	<string>Apple Distribution: Viseven Europe Ou (R7V5Z67X53)</string>
     <key>provisioningProfiles</key>
     <dict>
         <key>com.viseven.ionos.easystorage</key>
