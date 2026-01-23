@@ -83,6 +83,8 @@
 		<string>AccountIntent</string>
 		<string>DashboardIntent</string>
 	</array>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>In order to measure the quality of the programming of the app and to find crashes and errors and their cause, anonymized data from the program flow is evaluated. At no time are individual users identified, your identity remains protected.</string>
 	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
 	<true/>
 	<key>UIAppFonts</key>
