@@ -119,9 +119,9 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
             selectCommandViewSelect?.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0).isActive = true
             selectCommandViewSelect?.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0).isActive = true
             selectCommandViewSelect?.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0).isActive = true
-            selectCommandViewSelect?.heightAnchor.constraint(equalToConstant: 80).isActive = true
+            selectCommandViewSelect?.heightAnchor.constraint(equalToConstant: 100).isActive = true
 
-            bottomContraint?.constant = 80
+            bottomContraint?.constant = 100
         }
 
         if typeOfCommandView == .copyMove {

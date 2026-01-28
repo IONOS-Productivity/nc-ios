@@ -42,6 +42,7 @@ struct NCAutoUploadView: View {
                 .onDisappear {
                     model.setAutoUploadDirectory(serverUrl: model.serverUrl)
                 }
+                .ignoresSafeArea()
         }
         .sheet(isPresented: $showSelectAlbums) {
             SelectAlbumView(model: albumModel)
@@ -108,7 +109,7 @@ struct NCAutoUploadView: View {
                             model.handleAutoUploadOnlyNew(newValue: newValue)
                         }
                     ))
-                    .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                    .tint(Color(NCBrandColor.shared.switchColor))
                     .opacity(model.autoUploadStart ? 0.15 : 1)
                     .accessibilityIdentifier("NewPhotosToggle")
                 }, footer: {
@@ -188,7 +189,7 @@ struct NCAutoUploadView: View {
                 // Location
                 Section(content: {
                     Toggle(NSLocalizedString("_enable_background_location_title_", comment: ""), isOn: $model.permissionGranted)
-                        .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                        .tint(Color(NCBrandColor.shared.switchColor))
                         .opacity(model.autoUploadStart ? 0.15 : 1)
                         .onChange(of: model.permissionGranted) { _, newValue in
                             model.handleLocationChange(newValue: newValue)
@@ -206,6 +207,7 @@ struct NCAutoUploadView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 10)
         }
+        .applyGlobalFormStyle()
     }
 
     @ViewBuilder
@@ -258,7 +260,7 @@ var noPermissionsView: some View {
     }
     .padding(16)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color(UIColor.systemGroupedBackground))
+    .background(Color(NCBrandColor.shared.appBackgroundColor))
 }
 
 // Custom prominent brand button style used for Toggle-as-Button
