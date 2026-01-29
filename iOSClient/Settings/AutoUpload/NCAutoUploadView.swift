@@ -225,14 +225,8 @@ struct NCAutoUploadView: View {
             }
             .font(.headline)
 
-            if #available(iOS 26.0, *) {
-                toggle
-                    .toggleStyle(.button)
-                    .buttonStyle(.glass)
-            } else {
-                toggle
-                    .toggleStyle(AutoUploadProminentButtonStyle(model: model))
-            }
+            toggle
+                .toggleStyle(AutoUploadProminentButtonStyle(model: model))
         })
     }
 	
@@ -266,10 +260,10 @@ var noPermissionsView: some View {
 // Custom prominent brand button style used for Toggle-as-Button
 private struct AutoUploadProminentButtonStyle: ToggleStyle {
     let model: NCAutoUploadModel
-    private var onBackground: Color { Color(NCBrandColor.shared.getElement(account: model.session.account)) }
-    private let offBackground = Color(UIColor.systemGray5)
-    private let onForeground = Color.white
-    private let offForeground = Color.primary
+    private var onBackground: Color { Color(.Button.Primary.Background.selected) }
+    private let offBackground = Color(.Button.Primary.Background.selected)
+    private let onForeground = Color(.Button.Primary.Text.selected)
+    private let offForeground = Color(.Button.Primary.Text.selected)
     private let cornerRadius: CGFloat = 40
 
     func makeBody(configuration: Configuration) -> some View {

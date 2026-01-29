@@ -94,11 +94,6 @@ class customPhotoPickerViewController: TLPhotosPickerViewController {
 
         self.customNavItem.leftBarButtonItem?.tintColor = NCBrandColor.shared.iconImageColor
         self.customNavItem.rightBarButtonItem?.tintColor = NCBrandColor.shared.iconImageColor
-        if #available(iOS 26.0, *) {
-            doneButton.image = UIImage(systemName: "checkmark")
-            cancelButton.image = UIImage(systemName: "xmark")
-            navigationBarTopConstraint.constant = self.navigationBarTopConstraint.constant + 10
-        }
     }
 }
 
