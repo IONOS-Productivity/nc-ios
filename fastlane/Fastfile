@@ -109,7 +109,8 @@ platform :ios do
       skip_archive: true,
       destination: "generic/platform=iOS Simulator",
       derived_data_path: "./BuildForSimulator",
-      silent: true
+      silent: true,
+      xcargs: "-quiet"
     )
   end
 end
