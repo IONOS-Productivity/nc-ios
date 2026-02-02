@@ -100,7 +100,7 @@ platform :ios do
     )
   end
 
-  desc "Build .app for simulator (Alpha configuration)"
+  desc "Build .app for simulator (Alpha configuration). Prints only errors (requires xcbeautify: brew install xcbeautify)."
   lane :build_simulator do
     gym(
       scheme: scheme,
@@ -110,7 +110,8 @@ platform :ios do
       destination: "generic/platform=iOS Simulator",
       derived_data_path: "./BuildForSimulator",
       silent: true,
-      xcargs: "-quiet"
+      suppress_xcode_output: true,
+      xcodebuild_formatter: "xcbeautify -qq"
     )
   end
 end
