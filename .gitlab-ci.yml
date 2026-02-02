@@ -76,7 +76,7 @@ build_simulator:
   script:
     - *download_google_info_plist
     - fastlane build_simulator
-    - zip -r ./${scheme}.zip ./BuildForSimulator/Build/Products/Debug-iphonesimulator/${scheme}.app
+    - zip -r ./${scheme}.zip ./BuildForSimulator/Build/Products/Alpha-iphonesimulator/${scheme}.app
   only:
     - develop
     - /^feature/
