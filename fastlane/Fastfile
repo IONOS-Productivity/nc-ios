@@ -23,6 +23,55 @@ platform :ios do
 
   desc "Build IPA for develop/feature/release (Alpha configuration, ad-hoc)"
   lane :build_alpha do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APPSTORE_API_KEY_ID"],
+      issuer_id: ENV["APPSTORE_API_KEY_ISSUER_ID"],
+      key_content: ENV["APPSTORE_API_KEY_CONTENT"],
+      duration: 1200, # optional (maximum 1200)
+    )
+
+    get_provisioning_profile(
+		  api_key: api_key,
+		  app_identifier: "com.viseven.ionos.easystorage",
+		  adhoc: true
+	  )
+
+    get_provisioning_profile(
+		  api_key: api_key,
+		  app_identifier: "com.viseven.ionos.easystorage.Widget",
+		  adhoc: true
+	  )
+
+    get_provisioning_profile(
+		  api_key: api_key,
+		  app_identifier: "com.viseven.ionos.easystorage.WidgetDashboardIntentHandler",
+		  adhoc: true
+	  )
+
+    get_provisioning_profile(
+		  api_key: api_key,
+		  app_identifier: "com.viseven.ionos.easystorage.Share",
+		  adhoc: true
+	  )
+
+    get_provisioning_profile(
+		  api_key: api_key,
+		  app_identifier: "com.viseven.ionos.easystorage.File-Provider-Extension",
+		  adhoc: true
+	  )
+
+    get_provisioning_profile(
+		  api_key: api_key,
+		  app_identifier: "com.viseven.ionos.easystorage.File-Provider-Extension-UI",
+		  adhoc: true
+	  )
+
+    get_provisioning_profile(
+		  api_key: api_key,
+		  app_identifier: "com.viseven.ionos.easystorage.Notification-Service-Extension",
+		  adhoc: true
+	  )
+
     gym(
       scheme: scheme,
       configuration: "Alpha",
@@ -59,7 +108,8 @@ platform :ios do
       skip_package_ipa: true,
       skip_archive: true,
       destination: "generic/platform=iOS Simulator",
-      derived_data_path: "./BuildForSimulator"
+      derived_data_path: "./BuildForSimulator",
+      silent: true
     )
   end
 end
