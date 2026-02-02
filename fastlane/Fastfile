@@ -1,0 +1,65 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  scheme = "Nextcloud"
+  xcodeproj = "Nextcloud.xcodeproj"
+  output_dir_path = "./build/sym"
+  archive_path = "#{output_dir_path}/#{scheme}"
+
+  desc "Build IPA for develop/feature/release (Alpha configuration, ad-hoc)"
+  lane :build_alpha do
+    gym(
+      scheme: scheme,
+      configuration: "Alpha",
+      output_directory: output_dir_path,
+      derived_data_path: "./ipaDerivedData",
+      output_name: scheme,
+      archive_path: archive_path,
+      export_method: "ad-hoc",
+      silent: true,
+      clean: true
+    )
+  end
+
+  desc "Build IPA for beta (Beta configuration, ad-hoc)"
+  lane :build_beta do
+    gym(
+      scheme: scheme,
+      configuration: "Beta",
+      output_directory: output_dir_path,
+      derived_data_path: "./ipaDerivedData",
+      output_name: scheme,
+      archive_path: archive_path,
+      export_method: "ad-hoc",
+      silent: true,
+      clean: true
+    )
+  end
+
+  desc "Build .app for simulator (Alpha configuration)"
+  lane :build_simulator do
+    gym(
+      scheme: scheme,
+      configuration: "Alpha",
+      skip_package_ipa: true,
+      skip_archive: true,
+      destination: "generic/platform=iOS Simulator",
+      derived_data_path: "./BuildForSimulator"
+    )
+  end
+end
