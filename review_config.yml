@@ -1,0 +1,5 @@
+# AI Code Review Configuration
+
+# Files to be analysed
+file_extensions:
+  - swift

@@ -1,3 +1,8 @@
+include:
+  - project: 'it-infrastructure/ai-powered-solutions/gitlabaireviewer'
+    file:
+      - 'templates/ai_reviewer.yml'
+
 variables:
   outputDirPath: "./build/sym"
   scheme: "Nextcloud"
@@ -7,6 +12,7 @@ variables:
 stages:
 - build
 - deploy
+- ai_review
 
 .mac_general_scripts: &mac_general_scripts
   - security unlock-keychain -p $PASSWORD_BUILDE ~/Library/Keychains/login.keychain-db
@@ -114,3 +120,14 @@ deploy_beta:
     - develop
     - /^feature/
     - /^release/
+
+##################################
+######### AI review ##############
+##################################
+
+ai_review:
+  extends: .ai_review
+  variables:
+        GIT_DEPTH: 0
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
