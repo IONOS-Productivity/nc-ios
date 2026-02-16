@@ -60,6 +60,14 @@ class NCMainTabBarController: UITabBarController {
             self.timerTask?.cancel()
         }
 
+        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
+            if !isAppInBackground {
+                self.timerTask = Task { @MainActor [weak self] in
+                    await self?.timerCheck()
+                }
+            }
+        }
+
 		setupTabBarView()
         burgerMenuController = BurgerMenuAttachController(with: self)
     }
@@ -75,6 +83,24 @@ class NCMainTabBarController: UITabBarController {
             vc.isModalInPresentation = true
 
             present(vc, animated: true)
+        }
+    }
+
+    @MainActor
+    private func timerCheck() async {
+        let nanoseconds: UInt64 = 3_000_000_000
+
+        while !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: nanoseconds)
+
+            guard isViewLoaded, view.window != nil else {
+                continue
+            }
+
+            let capabilities = await NKCapabilities.shared.getCapabilities(for: self.account)
+
+            // Check error
+            await NCNetworking.shared.checkServerError(account: self.account, controller: self)
         }
     }
 
