@@ -368,13 +368,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
                         await NCCreateDocument().createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "text", creatorId: creator.identifier, templateId: "document", account: session.account)
                     case self.global.actionVoiceMemo:
-                        NCAskAuthorization().askAuthorizationAudioRecord(controller: controller) { hasPermission in
-                            if hasPermission {
-                                if let viewController = UIStoryboard(name: "NCAudioRecorderViewController", bundle: nil).instantiateInitialViewController() as? NCAudioRecorderViewController {
-                                    viewController.controller = controller
-                                    viewController.modalTransitionStyle = .crossDissolve
-                                    viewController.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
-                                    controller.present(viewController, animated: true, completion: nil)
+                        await MainActor.run {
+                            NCAskAuthorization().askAuthorizationAudioRecord(controller: controller) { hasPermission in
+                                if hasPermission {
+                                    if let viewController = UIStoryboard(name: "NCAudioRecorderViewController", bundle: nil).instantiateInitialViewController() as? NCAudioRecorderViewController {
+                                        viewController.controller = controller
+                                        viewController.modalTransitionStyle = .crossDissolve
+                                        viewController.modalPresentationStyle = UIModalPresentationStyle.overCurrentContext
+                                        controller.present(viewController, animated: true, completion: nil)
+                                    }
                                 }
                             }
                         }
