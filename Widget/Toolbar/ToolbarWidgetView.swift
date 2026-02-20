@@ -41,12 +41,9 @@ struct ToolbarWidgetView: View {
         let linkActionScanDocument: URL = URL(string: NCGlobal.shared.widgetActionScanDocument + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionScanDocument + parameterLink)! : URL(string: NCGlobal.shared.widgetActionScanDocument)!
         let linkActionVoiceMemo: URL = URL(string: NCGlobal.shared.widgetActionVoiceMemo + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionVoiceMemo + parameterLink)! : URL(string: NCGlobal.shared.widgetActionVoiceMemo)!
 
-
         return GeometryReader { geo in
             ZStack(alignment: .topLeading) {
-				
                 HStack(spacing: 0) {
-					
 					let height: CGFloat = 60
                     let width = geo.size.width / 3
 
@@ -72,7 +69,7 @@ struct ToolbarWidgetView: View {
                             .scaledToFit()
                             .frame(width: width, height: height)
                     })
-					
+
 					Link(destination: entry.isPlaceholder ? linkNoAction : linkActionVoiceMemo, label: {
 						Image(uiImage: UIImage(resource: .mic))
 							.resizable()

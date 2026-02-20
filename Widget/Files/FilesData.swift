@@ -272,7 +272,7 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
             }
         }
     }
-	
+
 	@Sendable func colorByImageName(_ name: String) -> UIColor {
 		switch name {
 		case NKTypeIconFile.audio.rawValue,
@@ -285,7 +285,7 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
 		case NKTypeIconFile.document.rawValue: return NCBrandColor.shared.documentIconColor
 		case NKTypeIconFile.ppt.rawValue: return NCBrandColor.shared.presentationIconColor
 		case NKTypeIconFile.xls.rawValue: return NCBrandColor.shared.spreadsheetIconColor
-			
+
         default: return NCBrandColor.shared.brandElement
 		}
 	}
