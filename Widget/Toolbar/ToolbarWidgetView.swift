@@ -31,7 +31,7 @@ struct ToolbarWidgetView: View {
     @ViewBuilder
     var body: some View {
         mainContent
-            .containerBackground(Color.black, for: .widget)
+            .containerBackground(Color(.background), for: .widget)
     }
 
     private var mainContent: some View {
