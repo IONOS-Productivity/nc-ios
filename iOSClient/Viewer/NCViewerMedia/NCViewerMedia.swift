@@ -616,7 +616,6 @@ extension NCViewerMedia {
             ncplayer?.length = Int(mediaCoordinator.length)
             ncplayer?.width = Int(size.width)
             ncplayer?.height = Int(size.height)
-            playerToolBar.updateTopToolBar()
             database.addVideoOrAudio(metadata: metadata, width: ncplayer?.width, height: ncplayer?.height, length: ncplayer?.length)
 
             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterPlayerIsPlaying)

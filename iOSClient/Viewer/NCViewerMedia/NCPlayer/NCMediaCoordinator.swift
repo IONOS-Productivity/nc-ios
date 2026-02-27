@@ -8,6 +8,7 @@ import Combine
 import MediaPlayer
 import NextcloudKit
 import Alamofire
+import AVKit
 
 private class PassThroughVLCVideoView: UIView {
     override func addSubview(_ view: UIView) {
@@ -86,6 +87,21 @@ class NCMediaCoordinator: NSObject {
     // MARK: - Delegate
     weak var delegate: NCMediaCoordinatorDelegate?
 
+    // MARK: - Picture in Picture Properties
+    private(set) var isPictureInPictureActive: Bool = false {
+        didSet(oldValue) {
+            guard oldValue != isPictureInPictureActive else { return }
+            isPictureInPictureActiveSubject.send(isPictureInPictureActive)
+        }
+    }
+    private(set) var isPictureInPictureSupported: Bool = false {
+        didSet(oldValue) {
+            guard oldValue != isPictureInPictureSupported else { return }
+            isPictureInPictureSupportedSubject
+                .send(isPictureInPictureSupported)
+        }
+    }
+
     // MARK: - Command Center Properties
     private var playCommand: Any?
     private var pauseCommand: Any?
@@ -93,9 +109,10 @@ class NCMediaCoordinator: NSObject {
     private var nextTrackCommand: Any?
 
     private var media: VLCMedia?
-    var url: URL? {
+    private var url: URL? {
         didSet {
             if let url = url {
+                updateIsPictureInPictureSupported(for: url)
                 media = VLCMedia(url: url)
                 media?.addOption(":http-user-agent=\(userAgent)")
             } else {
@@ -110,6 +127,8 @@ class NCMediaCoordinator: NSObject {
     private let positionSubject = PassthroughSubject<Float, Never>()
     private let isPlayingSubject = PassthroughSubject<Bool, Never>()
     private let stateSubject = PassthroughSubject<NCPlayerState, Never>()
+    private let isPictureInPictureSupportedSubject = PassthroughSubject<Bool, Never>()
+    private let isPictureInPictureActiveSubject = PassthroughSubject<Bool, Never>()
 
     // MARK: - Public Publishers
     var metadataSwitchPublisher: AnyPublisher<(old: tableMetadata?, new: tableMetadata?), Never> {
@@ -130,6 +149,16 @@ class NCMediaCoordinator: NSObject {
 
     var statePublisher: AnyPublisher<NCPlayerState, Never> {
         stateSubject.eraseToAnyPublisher()
+    }
+
+    var isPictureInPictureSupportedPublisher: AnyPublisher<Bool, Never> {
+        isPictureInPictureSupportedSubject
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
+    var isPictureInPictureActivePublisher: AnyPublisher<Bool, Never> {
+        isPictureInPictureActiveSubject.eraseToAnyPublisher()
     }
 
     var currentItemIndex: Int? {
@@ -420,6 +449,8 @@ class NCMediaCoordinator: NSObject {
         }
         clearNowPlaying()
         dialogProvider = nil
+        stopPictureInPicture()
+        isPictureInPictureSupported = false
     }
 
     // MARK: - Command Center
@@ -580,6 +611,36 @@ class NCMediaCoordinator: NSObject {
     private func currentMediaIsInPlayer() -> Bool {
         guard let player else { return false }
         return (player.media?.compare(media) == .orderedSame)
+    }
+
+    // MARK: - Picture in Picture
+
+    func switchPictureInPicture() {
+        if isPictureInPictureActive {
+            stopPictureInPicture()
+        } else {
+            startPictureInPicture()
+        }
+    }
+
+    private func startPictureInPicture() {
+        isPictureInPictureActive = true
+    }
+
+    private func stopPictureInPicture() {
+        isPictureInPictureActive = false
+    }
+
+    private func updateIsPictureInPictureSupported(for url: URL?) {
+        guard let url else { return }
+        Task {
+            let asset = AVAsset(url: url)
+            let isPlayable = (try? await asset.load(.isPlayable)) ?? false
+            let isVideo = item?.isVideo == true
+            isPictureInPictureSupported = AVPictureInPictureController.isPictureInPictureSupported() &&
+                isPlayable &&
+                isVideo
+        }
     }
 }
 

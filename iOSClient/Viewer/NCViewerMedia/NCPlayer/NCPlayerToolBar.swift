@@ -9,12 +9,14 @@ import UIKit
 import AVKit
 import Alamofire
 import LucidBanner
+import Combine
 
 class NCPlayerToolBar: UIView {
     @IBOutlet weak var utilityView: UIView!
     @IBOutlet weak var fullscreenButton: UIButton!
     @IBOutlet weak var subtitleButton: UIButton!
     @IBOutlet weak var audioButton: UIButton!
+    @IBOutlet weak var pictureInPictureButton: UIButton!
 
     @IBOutlet weak var playerButtonView: UIStackView!
     @IBOutlet weak var backButton: UIButton!
@@ -58,6 +60,8 @@ class NCPlayerToolBar: UIView {
     private weak var viewerMediaPage: NCViewerMediaPage?
     private var buttonImage = UIImage()
 
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - View Life Cycle
 
     override func awakeFromNib() {
@@ -74,6 +78,11 @@ class NCPlayerToolBar: UIView {
         audioButton.setImage(utility.loadImage(named: "speaker.zzz", colors: [.white]), for: .normal)
         audioButton.isEnabled = false
         audioButton.showsMenuAsPrimaryAction = true
+
+        pictureInPictureButton.setImage(UIImage(systemName: "pip.enter")!.withTintColor(.white,
+                                                                                         renderingMode: .alwaysOriginal),
+                                         for: .normal)
+        pictureInPictureButton.isHidden = true
 
         if UIDevice.current.userInterfaceIdiom == .pad {
             pointSize = 60
@@ -111,6 +120,19 @@ class NCPlayerToolBar: UIView {
         // Normally hide
         self.alpha = 0
         self.isHidden = true
+
+        NCMediaCoordinator.shared.isPictureInPictureSupportedPublisher.sink { [weak self] isPictureInPictureSupported in
+            self?.pictureInPictureButton.isHidden = !isPictureInPictureSupported
+        }.store(in: &cancellables)
+
+        NCMediaCoordinator.shared.isPictureInPictureActivePublisher.sink { [weak self] isPictureInPictureActive in
+            self?.updatePictureInPictureButtonImage(isPictureInPictureActive)
+        }.store(in: &cancellables)
+
+        NCMediaCoordinator.shared.metadataSwitchPublisher.sink { [weak self] _, newItem in
+            self?.subtitleButton.isEnabled = newItem?.isVideo == true
+            self?.audioButton.isEnabled = newItem?.isVideo == true
+        }.store(in: &cancellables)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -161,13 +183,6 @@ class NCPlayerToolBar: UIView {
         }
         labelCurrentTime.text = playedTime
         labelLeftTime.text = remainingTime
-    }
-
-    public func updateTopToolBar() {
-        if let metadata = metadata, metadata.isVideo {
-            self.subtitleButton.isEnabled = true
-            self.audioButton.isEnabled = true
-        }
     }
 
     // MARK: -
@@ -239,6 +254,18 @@ class NCPlayerToolBar: UIView {
             fullscreenButton.setImage(utility.loadImage(named: "arrow.up.left.and.arrow.down.right", colors: [.white]), for: .normal)
         }
         viewerMediaPage?.changeScreenMode(mode: viewerMediaScreenMode)
+    }
+
+    @IBAction func tapPictureInPicture(_ sender: Any) {
+        mediaCoordinator.switchPictureInPicture()
+    }
+
+    private func updatePictureInPictureButtonImage(_ isPictureInPictureActive: Bool) {
+        if isPictureInPictureActive {
+            pictureInPictureButton.setImage(UIImage(systemName: "pip.exit")?.withTintColor(.white, renderingMode: .alwaysOriginal), for: .normal)
+        } else {
+            pictureInPictureButton.setImage(UIImage(systemName: "pip.enter")?.withTintColor(.white, renderingMode: .alwaysOriginal), for: .normal)
+        }
     }
 
     private func setupSubtitleButton() {
