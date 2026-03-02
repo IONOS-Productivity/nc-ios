@@ -1,0 +1,476 @@
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2025 Serhii Kaliberda
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+import AVKit
+import UIKit
+
+protocol NCMediaCoordinatorAVKitStrategyContext: AnyObject {
+    var currentItem: tableMetadata? { get }
+
+    func play(item: tableMetadata)
+    func savedPosition(for metadata: tableMetadata) -> Float?
+
+    func handleMediaPlayerStateChanged(isPlaying: Bool, state: NCPlayerState)
+    func handleMediaPlayerTimeChanged()
+
+    func handlePictureInPictureStateChanged(isActive: Bool)
+}
+
+private class NCMediaCoordinatorAVKitVideoView: UIView {
+    override class var layerClass: AnyClass {
+        AVPlayerLayer.self
+    }
+
+    var playerLayer: AVPlayerLayer {
+        // swiftlint:disable force_cast
+        return layer as! AVPlayerLayer
+        // swiftlint:enable force_cast
+    }
+}
+
+class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
+
+    private static let preferredTimescale: CMTimeScale = 600
+
+    private let context: NCMediaCoordinatorAVKitStrategyContext
+
+    private let videoOutputView = NCMediaCoordinatorAVKitVideoView()
+    private var player: AVPlayer?
+    private var playerItem: AVPlayerItem?
+
+    private var timeObserverToken: Any?
+    private var playbackEndedObserver: Any?
+
+    private var pictureInPictureController: AVPictureInPictureController?
+
+    private(set) var state: NCPlayerState = .stopped
+
+    var isPictureInPictureSupported: Bool {
+        return AVPictureInPictureController.isPictureInPictureSupported()
+    }
+
+    init(context: NCMediaCoordinatorAVKitStrategyContext) {
+        self.context = context
+    }
+
+    deinit {
+        removeObservers()
+    }
+
+    // MARK: - NCMediaCoordinatorStrategy
+
+    var url: URL? {
+        didSet {
+            if let url {
+                playerItem = AVPlayerItem(url: url)
+            } else {
+                playerItem = nil
+            }
+        }
+    }
+
+    var position: Float {
+        get {
+            guard let currentItem = player?.currentItem,
+                currentItem.duration.isNumeric,
+                currentItem.duration.seconds > 0 else {
+                    return 0
+                }
+
+            let currentTime = player?.currentTime() ?? .zero
+            let ratio = currentTime.seconds / currentItem.duration.seconds
+            return Float(ratio)
+        }
+        set {
+            guard let currentItem = player?.currentItem,
+                currentItem.duration.isNumeric,
+                currentItem.duration.seconds > 0 else {
+                return
+            }
+
+            let seconds = currentItem.duration.seconds * Double(newValue)
+            let time = CMTime(seconds: max(0, seconds), preferredTimescale: Self.preferredTimescale)
+            player?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        }
+    }
+
+    var length: Float {
+        guard let duration = player?.currentItem?.duration, duration.isNumeric else { return 0 }
+        return Float(duration.seconds * 1000)
+    }
+
+    var isPlaying: Bool {
+        return player?.timeControlStatus == .playing
+    }
+
+    var currentAudioTrackIndex: Int32 {
+        get {
+            guard let item = player?.currentItem,
+                let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .audible),
+                let selected = item.currentMediaSelection.selectedMediaOption(in: group),
+                let index = group.options.firstIndex(of: selected) else {
+                    return 0
+            }
+            return Int32(index)
+        }
+        set {
+            guard let item = player?.currentItem,
+                let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .audible) else {
+                return
+            }
+
+            let options = group.options
+            let idx = Int(newValue)
+            guard options.indices.contains(idx) else { return }
+
+            let option = options[idx]
+            item.select(option, in: group)
+        }
+    }
+
+    var currentVideoSubTitleIndex: Int32 {
+        get {
+            guard let item = player?.currentItem,
+                let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible),
+                let selected = item.currentMediaSelection.selectedMediaOption(in: group),
+                let index = group.options.firstIndex(of: selected) else {
+                    return 0
+            }
+            return Int32(index)
+        }
+        set {
+            guard let item = player?.currentItem,
+                let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) else {
+                    return
+            }
+
+            let options = group.options
+            let idx = Int(newValue)
+            guard options.indices.contains(idx) else { return }
+
+            let option = options[idx]
+            item.select(option, in: group)
+        }
+    }
+
+    var videoSubTitlesNames: [String] {
+        guard let item = player?.currentItem,
+            let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) else {
+                return []
+        }
+
+        return group.options.map { $0.displayName }
+    }
+
+    var videoSubTitlesIndexes: [Int32] {
+        guard let item = player?.currentItem,
+            let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .legible) else {
+                return []
+        }
+
+        return group.options.indices.map { Int32($0) }
+    }
+
+    var audioTrackNames: [String] {
+        guard let item = player?.currentItem,
+            let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .audible)
+        else { return [] }
+
+        return group.options.map { $0.displayName }
+    }
+
+    var audioTrackIndexes: [Int32] {
+        guard let item = player?.currentItem,
+            let group = item.asset.mediaSelectionGroup(forMediaCharacteristic: .audible) else {
+                return []
+        }
+
+        return group.options.indices.map { Int32($0) }
+    }
+
+    var videoSize: CGSize {
+        return player?.currentItem?.presentationSize ?? .zero
+    }
+
+    var playedTimeInSeconds: Int {
+        let seconds = player?.currentTime().seconds ?? 0
+        guard seconds.isFinite && seconds >= 0 else { return 0 }
+        return Int(seconds)
+    }
+
+    var playedTime: String {
+        return formattedTime(for: player?.currentTime())
+    }
+
+    var remainingTime: String {
+        guard let item = player?.currentItem,
+            item.duration.isNumeric else {
+                return NCMediaCoordinatorConstants.emptyTime
+        }
+
+        let currentSeconds = player?.currentTime().seconds ?? 0
+        let totalSeconds = item.duration.seconds
+
+        guard totalSeconds.isFinite && totalSeconds > 0 else {
+            return NCMediaCoordinatorConstants.emptyTime
+        }
+
+        let remaining = max(0, totalSeconds - currentSeconds)
+        return "-\(formattedTime(for: CMTime(seconds: remaining, preferredTimescale: Self.preferredTimescale)))"
+    }
+
+    func finishMediaSession() {
+        player?.pause()
+        player?.seek(to: .zero)
+        removeObservers()
+        pictureInPictureController?.stopPictureInPicture()
+        pictureInPictureController = nil
+        player = nil
+        playerItem = nil
+        url = nil
+        updateState(isPlaying: false, state: .stopped)
+    }
+
+    func onItemPlaybackEnded() {
+        removeObservers()
+        pictureInPictureController?.stopPictureInPicture()
+        pictureInPictureController = nil
+        player = nil
+    }
+
+    func putVideoOutputView(in view: UIView) {
+        guard videoOutputView.superview !== view else { return }
+
+        videoOutputView.removeFromSuperview()
+        videoOutputView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(videoOutputView)
+
+        NSLayoutConstraint.activate([
+            videoOutputView.topAnchor.constraint(equalTo: view.topAnchor),
+            videoOutputView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            videoOutputView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            videoOutputView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        if let player {
+            videoOutputView.playerLayer.player = player
+            videoOutputView.playerLayer.videoGravity = .resizeAspect
+        }
+    }
+
+    func startPictureInPicture() {
+        guard isPictureInPictureSupported else { return }
+
+        if pictureInPictureController == nil {
+            let controller = AVPictureInPictureController(playerLayer: videoOutputView.playerLayer)
+            controller?.canStartPictureInPictureAutomaticallyFromInline = true
+            controller?.delegate = self
+            pictureInPictureController = controller
+        }
+
+        guard let controller = pictureInPictureController,
+              !controller.isPictureInPictureActive else {
+            return
+        }
+
+        controller.startPictureInPicture()
+    }
+
+    func stopPictureInPicture() {
+        guard let controller = pictureInPictureController,
+              controller.isPictureInPictureActive else {
+            return
+        }
+
+        controller.stopPictureInPicture()
+    }
+
+    func play() {
+        play(restart: false)
+    }
+
+    func play(restart: Bool) {
+        guard !isPlayerInErrorState() else {
+            if let item = context.currentItem {
+                context.play(item: item)
+            }
+            return
+        }
+
+        if player == nil {
+            setUpPlayer()
+        }
+
+        if (player?.currentItem !== playerItem) || restart {
+            if restart {
+                seekToSavedPositionOrBeginning()
+            }
+        }
+
+        player?.play()
+        updateState(isPlaying: true, state: .playing)
+    }
+
+    func pause() {
+        player?.pause()
+        updateState(isPlaying: false, state: .paused)
+    }
+
+    func stop() {
+        player?.pause()
+        player?.seek(to: .zero)
+        updateState(isPlaying: false, state: .stopped)
+    }
+
+    func jumpForward(_ seconds: Int32) {
+        seek(by: TimeInterval(seconds))
+    }
+
+    func jumpBackward(_ seconds: Int32) {
+        seek(by: -TimeInterval(seconds))
+    }
+
+    func currentMediaLengthInSeconds() -> Int {
+        guard let duration = player?.currentItem?.duration, duration.isNumeric else { return 0 }
+        return Int(duration.seconds)
+    }
+
+    func currentMediaIsInPlayer() -> Bool {
+        guard let currentItem = player?.currentItem,
+            let asset = currentItem.asset as? AVURLAsset,
+            let url else {
+                return false
+        }
+
+        return asset.url == url
+    }
+
+    @discardableResult
+    func addPlaybackSlave(_ slaveURL: URL, type slaveType: NCMediaCoordinator.SlaveType, enforce enforceSelection: Bool) -> Int32 {
+        // AVKit does not support external playback slaves in the same way as VLC.
+        // This is a no-op implementation to satisfy the protocol.
+        return 0
+    }
+
+    // MARK: - Private helpers
+
+    private func setUpPlayer() {
+        removeObservers()
+
+        guard let playerItem else { return }
+
+        let player = AVPlayer(playerItem: playerItem)
+        self.player = player
+
+        videoOutputView.playerLayer.player = player
+        videoOutputView.playerLayer.videoGravity = .resizeAspect
+
+        addObservers()
+    }
+
+    private func seekToSavedPositionOrBeginning() {
+        var position: Float = 0
+        if let item = context.currentItem, let savedPosition = context.savedPosition(for: item) {
+            position = savedPosition
+        }
+        self.position = position
+    }
+
+    private func seek(by delta: TimeInterval) {
+        guard let player else { return }
+
+        let currentSeconds = player.currentTime().seconds
+        guard currentSeconds.isFinite else { return }
+
+        let targetSeconds = max(0, currentSeconds + delta)
+        let time = CMTime(seconds: targetSeconds, preferredTimescale: Self.preferredTimescale)
+        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+    private func isPlayerInErrorState() -> Bool {
+        switch state {
+        case .error: return true
+        default: return false
+        }
+    }
+
+    private func addObservers() {
+        guard let player else { return }
+
+        timeObserverToken = player.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 0.5, preferredTimescale: Self.preferredTimescale),
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.context.handleMediaPlayerTimeChanged()
+        }
+
+        playbackEndedObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: player.currentItem,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.updateState(isPlaying: false, state: .ended)
+            self.context.handleMediaPlayerTimeChanged()
+        }
+    }
+
+    private func removeObservers() {
+        if let token = timeObserverToken {
+            player?.removeTimeObserver(token)
+            timeObserverToken = nil
+        }
+
+        if let playbackEndedObserver {
+            NotificationCenter.default.removeObserver(playbackEndedObserver)
+            self.playbackEndedObserver = nil
+        }
+    }
+
+    private func updateState(isPlaying: Bool, state: NCPlayerState) {
+        self.state = state
+        context.handleMediaPlayerStateChanged(isPlaying: isPlaying, state: state)
+    }
+
+    private func formattedTime(for time: CMTime?) -> String {
+        guard let time,
+              time.isNumeric else {
+            return NCMediaCoordinatorConstants.emptyTime
+        }
+
+        let totalSeconds = Int(time.seconds)
+        let seconds = totalSeconds % 60
+        let minutes = (totalSeconds / 60) % 60
+        let hours = totalSeconds / 3600
+
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+}
+
+extension NCMediaCoordinatorAVKitStrategy: AVPictureInPictureControllerDelegate {
+
+    func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        context.handlePictureInPictureStateChanged(isActive: true)
+    }
+
+    func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        self.pictureInPictureController = nil
+        context.handlePictureInPictureStateChanged(isActive: false)
+    }
+
+    func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
+        self.pictureInPictureController = nil
+        context.handlePictureInPictureStateChanged(isActive: false)
+    }
+
+    func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController,
+                                    restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+        completionHandler(true)
+    }
+}

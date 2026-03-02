@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2020 Marino Faggiana
 // SPDX-FileCopyrightText: 2025 Serhii Kaliberda
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -638,8 +639,8 @@ extension NCViewerMedia {
         guard metadata.ocId == mediaCoordinator.item?.ocId else { return }
         playerToolBar?.update(position: position,
                               length: Float(mediaCoordinator.length / 1000),
-                              playedTime: mediaCoordinator.time.stringValue,
-                              remainingTime: mediaCoordinator.remainingTime?.stringValue)
+                              playedTime: mediaCoordinator.playedTime,
+                              remainingTime: mediaCoordinator.remainingTime)
     }
 
     private func addDownloadHudIfNeeded() {
@@ -753,7 +754,7 @@ extension NCViewerMedia: NCTransferDelegate {
 
 // MARK: - NCMediaCoordinatorDelegate
 
-extension NCViewerMedia: NCMediaCoordinatorDelegate {
+extension NCViewerMedia: NCMediaCoordinatorVLCStrategyDelegate {
     func showError(withTitle title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
 

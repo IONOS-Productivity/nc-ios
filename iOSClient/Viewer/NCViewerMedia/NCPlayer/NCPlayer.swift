@@ -106,7 +106,7 @@ class NCPlayer: NSObject {
     }
 
     @discardableResult
-    func addPlaybackSlave(_ slaveURL: URL, type slaveType: VLCMediaPlaybackSlaveType, enforce enforceSelection: Bool) -> Int32 {
+    func addPlaybackSlave(_ slaveURL: URL, type slaveType: NCMediaCoordinator.SlaveType, enforce enforceSelection: Bool) -> Int32 {
         mediaCoordinator.addPlaybackSlave(slaveURL, type: slaveType, enforce: enforceSelection)
     }
 }

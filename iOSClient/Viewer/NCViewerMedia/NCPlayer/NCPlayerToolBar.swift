@@ -163,8 +163,8 @@ class NCPlayerToolBar: UIView {
 
         playbackSlider.value = position
 
-        labelCurrentTime.text = "--:--"
-        labelLeftTime.text = "--:--"
+        labelCurrentTime.text = NCMediaCoordinatorConstants.emptyTime
+        labelLeftTime.text = NCMediaCoordinatorConstants.emptyTime
 
         if viewerMediaScreenMode == .normal {
             show()

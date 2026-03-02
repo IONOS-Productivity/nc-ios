@@ -150,8 +150,6 @@ class NCViewerMediaPage: UIViewController {
 
         changeScreenMode(mode: viewerMediaScreenMode)
         tabBarController?.tabBar.isHidden = true
-
-        FloatingPlayerViewPresenter.shared.isMediaScreenVisible = true
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -166,8 +164,6 @@ class NCViewerMediaPage: UIViewController {
 
         changeScreenMode(mode: .normal)
         tabBarController?.tabBar.isHidden = false
-
-        FloatingPlayerViewPresenter.shared.isMediaScreenVisible = false
     }
 
     override func viewDidDisappear(_ animated: Bool) {
