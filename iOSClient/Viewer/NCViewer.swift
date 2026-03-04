@@ -46,7 +46,11 @@ class NCViewer: NSObject {
                 if metadata.isAudioOrVideo {
                     let mediaCoordinator = NCMediaCoordinator.shared
                     mediaCoordinator.finishMediaSession()
-                    mediaCoordinator.items = siblingMedia
+                    if metadata.isAudio {
+                        mediaCoordinator.items = siblingMedia
+                    } else {
+                        mediaCoordinator.items = [metadata]
+                    }
                 }
 
                 viewerMediaPageContainer.delegateViewController = delegate

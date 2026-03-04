@@ -39,6 +39,8 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
     private var player: AVPlayer?
     private var playerItem: AVPlayerItem?
 
+    private var positionToSeekToOnFirstPlay: Double = Double.nan
+
     private var timeObserverToken: Any?
     private var playbackEndedObserver: Any?
 
@@ -50,18 +52,26 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         return AVPictureInPictureController.isPictureInPictureSupported()
     }
 
-    init(context: NCMediaCoordinatorAVKitStrategyContext) {
+    init(context: NCMediaCoordinatorAVKitStrategyContext, url: URL) {
         self.context = context
+        self.url = url
+        self.playerItem = AVPlayerItem(url: url)
     }
 
     deinit {
         removeObservers()
     }
 
+    func isSupported(url: URL) async -> Bool {
+        let isPlayable = try? await playerItem?.asset.load(.isPlayable)
+        return isPlayable == true
+    }
+
     // MARK: - NCMediaCoordinatorStrategy
 
     var url: URL? {
-        didSet {
+        didSet(oldValue) {
+            guard oldValue != url else { return }
             if let url {
                 playerItem = AVPlayerItem(url: url)
             } else {
@@ -72,9 +82,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
 
     var position: Float {
         get {
-            guard let currentItem = player?.currentItem,
-                currentItem.duration.isNumeric,
-                currentItem.duration.seconds > 0 else {
+            guard isVideoDurationAvailable(), let currentItem = player?.currentItem else {
                     return 0
                 }
 
@@ -83,9 +91,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
             return Float(ratio)
         }
         set {
-            guard let currentItem = player?.currentItem,
-                currentItem.duration.isNumeric,
-                currentItem.duration.seconds > 0 else {
+            guard isVideoDurationAvailable(), let currentItem = player?.currentItem else {
                 return
             }
 
@@ -230,6 +236,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         playerItem = nil
         url = nil
         updateState(isPlaying: false, state: .stopped)
+        videoOutputView.removeFromSuperview()
     }
 
     func onItemPlaybackEnded() {
@@ -287,7 +294,8 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
     }
 
     func play() {
-        play(restart: false)
+        player?.play()
+        updateState(isPlaying: true, state: .playing)
     }
 
     func play(restart: Bool) {
@@ -298,14 +306,15 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
             return
         }
 
-        if player == nil {
+        if player == nil, let url {
+            playerItem = AVPlayerItem(url: url)
             setUpPlayer()
         }
 
-        if (player?.currentItem !== playerItem) || restart {
-            if restart {
-                seekToSavedPositionOrBeginning()
-            }
+        if restart {
+            player?.seek(to: .zero)
+        } else if let item = context.currentItem, let savedPosition = context.savedPosition(for: item) {
+            positionToSeekToOnFirstPlay = Double(savedPosition)
         }
 
         player?.play()
@@ -369,14 +378,6 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         addObservers()
     }
 
-    private func seekToSavedPositionOrBeginning() {
-        var position: Float = 0
-        if let item = context.currentItem, let savedPosition = context.savedPosition(for: item) {
-            position = savedPosition
-        }
-        self.position = position
-    }
-
     private func seek(by delta: TimeInterval) {
         guard let player else { return }
 
@@ -403,6 +404,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
             queue: .main
         ) { [weak self] _ in
             guard let self else { return }
+            self.seekToPositionToSeekToOnFirstPlay()
             self.context.handleMediaPlayerTimeChanged()
         }
 
@@ -415,6 +417,27 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
             self.updateState(isPlaying: false, state: .ended)
             self.context.handleMediaPlayerTimeChanged()
         }
+    }
+
+    private func seekToPositionToSeekToOnFirstPlay() {
+        guard !positionToSeekToOnFirstPlay.isNaN,
+              isVideoDurationAvailable(),
+              let currentItem = player?.currentItem else {
+            return
+        }
+        let seconds = currentItem.duration.seconds * positionToSeekToOnFirstPlay
+        let time = CMTime(seconds: max(0, seconds), preferredTimescale: Self.preferredTimescale)
+        player?.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        positionToSeekToOnFirstPlay = Double.nan
+    }
+
+    private func isVideoDurationAvailable() -> Bool {
+        guard let currentItem = player?.currentItem,
+                currentItem.duration.isNumeric,
+                currentItem.duration.seconds > 0 else {
+                return false
+            }
+        return true
     }
 
     private func removeObservers() {

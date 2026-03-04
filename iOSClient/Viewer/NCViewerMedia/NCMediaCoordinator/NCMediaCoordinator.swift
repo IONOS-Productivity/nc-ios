@@ -7,7 +7,6 @@ import Combine
 import MediaPlayer
 import NextcloudKit
 import Alamofire
-import AVKit
 
 enum NCPlayerState: Equatable {
     static func == (lhs: NCPlayerState, rhs: NCPlayerState) -> Bool {
@@ -100,6 +99,7 @@ class NCMediaCoordinator: NSObject {
     // MARK: - Publishers
     private let metadataSwitchSubject = PassthroughSubject<(old: tableMetadata?, new: tableMetadata?), Never>()
     private let positionSubject = PassthroughSubject<Float, Never>()
+    private let isPlayingSubject = PassthroughSubject<Bool, Never>()
     private let stateSubject = PassthroughSubject<NCPlayerState, Never>()
     private let isPictureInPictureSupportedSubject = PassthroughSubject<Bool, Never>()
     private let isPictureInPictureActiveSubject = PassthroughSubject<Bool, Never>()
@@ -125,6 +125,10 @@ class NCMediaCoordinator: NSObject {
 
     var isPictureInPictureActivePublisher: AnyPublisher<Bool, Never> {
         isPictureInPictureActiveSubject.eraseToAnyPublisher()
+    }
+
+    var isPlayingPublisher: AnyPublisher<Bool, Never> {
+        isPlayingSubject.eraseToAnyPublisher()
     }
 
     var currentItemIndex: Int? {
@@ -372,6 +376,7 @@ class NCMediaCoordinator: NSObject {
     func finishMediaSession(clearQueue: Bool = true) {
         savePosition()
         strategy?.finishMediaSession()
+        isPlayingSubject.send(false)
         strategy = nil
         item = nil
         playRepeat = false
@@ -564,9 +569,9 @@ class NCMediaCoordinator: NSObject {
 
     @MainActor
     private func createStrategy(for url: URL) async -> NCMediaCoordinatorStrategy {
-        let asset = AVAsset(url: url)
-        let isPlayable = (try? await asset.load(.isPlayable)) ?? false
-        let strategy: NCMediaCoordinatorStrategy = isPlayable ? NCMediaCoordinatorAVKitStrategy(context: self) : NCMediaCoordinatorVLCStrategy(context: self)
+        let avKitStrategy = NCMediaCoordinatorAVKitStrategy(context: self, url: url)
+        let isPlayable = await avKitStrategy.isSupported(url: url)
+        let strategy: NCMediaCoordinatorStrategy = isPlayable ? avKitStrategy : NCMediaCoordinatorVLCStrategy(context: self)
         if let viewToPutVideoOutputView {
             strategy.putVideoOutputView(in: viewToPutVideoOutputView)
         }
@@ -584,6 +589,7 @@ extension NCMediaCoordinator: NCMediaCoordinatorVLCStrategyContext, NCMediaCoord
 
     func handleMediaPlayerStateChanged(isPlaying: Bool, state: NCPlayerState) {
         updateNowPlayingPlaybackRate(isPlaying: isPlaying)
+        isPlayingSubject.send(isPlaying)
         self.state = state
         switch state {
         case .ended:

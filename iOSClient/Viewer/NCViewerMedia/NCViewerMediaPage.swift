@@ -507,10 +507,6 @@ extension NCViewerMediaPage: NCTransferDelegate {
                 self.progressView.progress = 0
 
                 if metadata.isAudioOrVideo, let ncplayer = self.currentViewController.ncplayer {
-                    let url = URL(fileURLWithPath: self.utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,
-                                                                                                          fileName: metadata.fileNameView,
-                                                                                                          userId: metadata.userId,
-                                                                                                          urlBase: metadata.urlBase))
                     if ncplayer.isPlaying() {
                         ncplayer.playerPause()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

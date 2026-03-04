@@ -133,6 +133,10 @@ class NCPlayerToolBar: UIView {
             self?.subtitleButton.isEnabled = newItem?.isVideo == true
             self?.audioButton.isEnabled = newItem?.isVideo == true
         }.store(in: &cancellables)
+
+        NCMediaCoordinator.shared.isPlayingPublisher.sink { [weak self] isPlaying in
+            self?.updatePlayButtonImage(isPlaying)
+        }.store(in: &cancellables)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -203,12 +207,22 @@ class NCPlayerToolBar: UIView {
         })
     }
 
-    func showPauseButton() {
+    // MARK: - Update Play Button Image
+
+    private func updatePlayButtonImage(_ isPlaying: Bool) {
+        if isPlaying && (mediaCoordinator.item?.ocId == metadata?.ocId) {
+            showPauseButton()
+        } else {
+            showPlayButton()
+        }
+    }
+
+    private func showPauseButton() {
         buttonImage = UIImage(systemName: "pause.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
         playButton.setImage(buttonImage, for: .normal)
     }
 
-    func showPlayButton() {
+    private func showPlayButton() {
         buttonImage = UIImage(systemName: "play.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
         playButton.setImage(buttonImage, for: .normal)
     }

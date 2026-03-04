@@ -180,6 +180,7 @@ class NCMediaCoordinatorVLCStrategy: NSObject, NCMediaCoordinatorStrategy {
         player = nil
         url = nil
         dialogProvider = nil
+        videoOutputView.removeFromSuperview()
     }
 
     func onItemPlaybackEnded() {
@@ -201,7 +202,7 @@ class NCMediaCoordinatorVLCStrategy: NSObject, NCMediaCoordinatorStrategy {
         ])
     }
 
-    func play(restart: Bool = false) {
+    func play(restart: Bool) {
         guard !isPlayerInErrorState() else {
             if let item = context.currentItem {
                 context.play(item: item)
@@ -217,7 +218,7 @@ class NCMediaCoordinatorVLCStrategy: NSObject, NCMediaCoordinatorStrategy {
             player?.delegate = self
 
             var position: Float = 0
-            if let item = context.currentItem, let resultPosition = context.savedPosition(for: item) {
+            if !restart, let item = context.currentItem, let resultPosition = context.savedPosition(for: item) {
                 position = resultPosition
             }
 
