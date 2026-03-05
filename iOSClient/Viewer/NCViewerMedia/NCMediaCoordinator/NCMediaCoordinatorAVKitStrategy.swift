@@ -485,6 +485,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         guard isAudioSessionActive else { return }
 
         do {
+            pause()
             try session.setActive(false)
             isAudioSessionActive = false
         } catch {
@@ -521,11 +522,13 @@ extension NCMediaCoordinatorAVKitStrategy: AVPictureInPictureControllerDelegate 
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         self.pictureInPictureController = nil
+        deactivateAudioSessionIfNeeded()
         context.handlePictureInPictureStateChanged(isActive: false)
     }
 
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
         self.pictureInPictureController = nil
+        deactivateAudioSessionIfNeeded()
         context.handlePictureInPictureStateChanged(isActive: false)
     }
 
