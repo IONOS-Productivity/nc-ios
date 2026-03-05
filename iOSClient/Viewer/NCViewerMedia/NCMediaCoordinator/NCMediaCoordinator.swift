@@ -46,6 +46,7 @@ class NCMediaCoordinator: NSObject {
     }
 
     static let secondsIn5Minutes: Int = 300
+    static let secondsToSeek: Int = 10
 
     private let database = NCManageDatabase.shared
     private let utility = NCUtility()
@@ -85,6 +86,8 @@ class NCMediaCoordinator: NSObject {
     private var pauseCommand: Any?
     private var previousTrackCommand: Any?
     private var nextTrackCommand: Any?
+    private var skipBackwardCommand: Any?
+    private var skipForwardCommand: Any?
 
     private var url: URL? {
         didSet {
@@ -419,21 +422,40 @@ class NCMediaCoordinator: NSObject {
             }
         }
 
-        // Previous Track
-        MPRemoteCommandCenter.shared().previousTrackCommand.isEnabled = true
-        if previousTrackCommand == nil {
-            previousTrackCommand = MPRemoteCommandCenter.shared().previousTrackCommand.addTarget { _ in
-                self.rewind()
-                return .success
+        if item?.isVideo == true {
+            // Seek Backward
+            MPRemoteCommandCenter.shared().skipBackwardCommand.isEnabled = true
+            if skipBackwardCommand == nil {
+                skipBackwardCommand = MPRemoteCommandCenter.shared().skipBackwardCommand.addTarget { _ in
+                    self.jumpBackward(Int32(Self.secondsToSeek))
+                    return .success
+                }
             }
-        }
+            // Seek Forward
+            MPRemoteCommandCenter.shared().skipForwardCommand.isEnabled = true
+            if skipForwardCommand == nil {
+                skipForwardCommand = MPRemoteCommandCenter.shared().skipForwardCommand.addTarget { _ in
+                    self.jumpForward(Int32(Self.secondsToSeek))
+                    return .success
+                }
+            }
+        } else {
+            // Previous Track
+            MPRemoteCommandCenter.shared().previousTrackCommand.isEnabled = true
+            if previousTrackCommand == nil {
+                previousTrackCommand = MPRemoteCommandCenter.shared().previousTrackCommand.addTarget { _ in
+                    self.rewind()
+                    return .success
+                }
+            }
 
-        // Next Track
-        MPRemoteCommandCenter.shared().nextTrackCommand.isEnabled = true
-        if nextTrackCommand == nil {
-            nextTrackCommand = MPRemoteCommandCenter.shared().nextTrackCommand.addTarget { _ in
-                self.forward()
-                return .success
+            // Next Track
+            MPRemoteCommandCenter.shared().nextTrackCommand.isEnabled = true
+            if nextTrackCommand == nil {
+                nextTrackCommand = MPRemoteCommandCenter.shared().nextTrackCommand.addTarget { _ in
+                    self.forward()
+                    return .success
+                }
             }
         }
 
@@ -485,6 +507,8 @@ class NCMediaCoordinator: NSObject {
         MPRemoteCommandCenter.shared().pauseCommand.isEnabled = false
         MPRemoteCommandCenter.shared().nextTrackCommand.isEnabled = false
         MPRemoteCommandCenter.shared().previousTrackCommand.isEnabled = false
+        MPRemoteCommandCenter.shared().skipBackwardCommand.isEnabled = false
+        MPRemoteCommandCenter.shared().skipForwardCommand.isEnabled = false
 
         if let playCommand = playCommand {
             MPRemoteCommandCenter.shared().playCommand.removeTarget(playCommand)
@@ -501,6 +525,14 @@ class NCMediaCoordinator: NSObject {
         if let nextTrackCommand = nextTrackCommand {
             MPRemoteCommandCenter.shared().nextTrackCommand.removeTarget(nextTrackCommand)
             self.nextTrackCommand = nil
+        }
+        if let skipBackwardCommand = skipBackwardCommand {
+            MPRemoteCommandCenter.shared().skipBackwardCommand.removeTarget(skipBackwardCommand)
+            self.skipBackwardCommand = nil
+        }
+        if let skipForwardCommand = skipForwardCommand {
+            MPRemoteCommandCenter.shared().skipForwardCommand.removeTarget(skipForwardCommand)
+            self.skipForwardCommand = nil
         }
     }
 
