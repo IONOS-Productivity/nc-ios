@@ -6,7 +6,6 @@
 import Foundation
 import NextcloudKit
 import UIKit
-import AVKit
 import Alamofire
 import LucidBanner
 import Combine
@@ -51,7 +50,6 @@ class NCPlayerToolBar: UIView {
 
     private var ncplayer: NCPlayer?
     private var metadata: tableMetadata?
-    private let audioSession = AVAudioSession.sharedInstance()
     private var pointSize: CGFloat = 0
     private let utilityFileSystem = NCUtilityFileSystem()
     private let utility = NCUtility()

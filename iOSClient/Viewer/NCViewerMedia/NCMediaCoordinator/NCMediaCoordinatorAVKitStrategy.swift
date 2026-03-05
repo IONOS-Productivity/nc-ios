@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import AVKit
+import AVFoundation
 import UIKit
 
 protocol NCMediaCoordinatorAVKitStrategyContext: AnyObject {
@@ -45,6 +46,9 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
     private var playbackEndedObserver: Any?
 
     private var pictureInPictureController: AVPictureInPictureController?
+
+    private var isAudioSessionActive: Bool = false
+    private let session = AVAudioSession.sharedInstance()
 
     private(set) var state: NCPlayerState = .stopped
 
@@ -236,14 +240,17 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         playerItem = nil
         url = nil
         updateState(isPlaying: false, state: .stopped)
+        deactivateAudioSessionIfNeeded()
         videoOutputView.removeFromSuperview()
     }
 
     func onItemPlaybackEnded() {
         removeObservers()
         pictureInPictureController?.stopPictureInPicture()
+        context.handlePictureInPictureStateChanged(isActive: false)
         pictureInPictureController = nil
         player = nil
+        deactivateAudioSessionIfNeeded()
     }
 
     func putVideoOutputView(in view: UIView) {
@@ -317,6 +324,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
             positionToSeekToOnFirstPlay = Double(savedPosition)
         }
 
+        activateAudioSessionIfNeeded()
         player?.play()
         updateState(isPlaying: true, state: .playing)
     }
@@ -330,6 +338,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         player?.pause()
         player?.seek(to: .zero)
         updateState(isPlaying: false, state: .stopped)
+        deactivateAudioSessionIfNeeded()
     }
 
     func jumpForward(_ seconds: Int32) {
@@ -455,6 +464,34 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
     private func updateState(isPlaying: Bool, state: NCPlayerState) {
         self.state = state
         context.handleMediaPlayerStateChanged(isPlaying: isPlaying, state: state)
+    }
+
+    private func activateAudioSessionIfNeeded() {
+        guard !isAudioSessionActive else { return }
+
+        do {
+            try session.setCategory(.playback, mode: .moviePlayback)
+            try session.setActive(true)
+            isAudioSessionActive = true
+        } catch {
+            isAudioSessionActive = false
+            #if DEBUG
+            print("Failed to activate AVAudioSession: \(error)")
+            #endif
+        }
+    }
+
+    private func deactivateAudioSessionIfNeeded() {
+        guard isAudioSessionActive else { return }
+
+        do {
+            try session.setActive(false)
+            isAudioSessionActive = false
+        } catch {
+            #if DEBUG
+            print("Failed to deactivate AVAudioSession: \(error)")
+            #endif
+        }
     }
 
     private func formattedTime(for time: CMTime?) -> String {
