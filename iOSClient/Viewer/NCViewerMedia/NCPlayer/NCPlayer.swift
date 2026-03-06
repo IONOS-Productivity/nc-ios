@@ -34,7 +34,6 @@ class NCPlayer: NSObject {
 
     deinit {
         print("deinit NCPlayer with ocId \(metadata.ocId)")
-        NotificationCenter.default.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
         NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterPlayerStoppedPlaying)
     }
 

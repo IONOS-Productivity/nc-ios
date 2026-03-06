@@ -44,6 +44,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
 
     private var timeObserverToken: Any?
     private var playbackEndedObserver: Any?
+    private var playingTimeControlStatusObserver: NSKeyValueObservation?
 
     private var pictureInPictureController: AVPictureInPictureController?
 
@@ -302,7 +303,6 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
 
     func play() {
         player?.play()
-        updateState(isPlaying: true, state: .playing)
     }
 
     func play(restart: Bool) {
@@ -325,13 +325,12 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         }
 
         activateAudioSessionIfNeeded()
+        player?.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
         player?.play()
-        updateState(isPlaying: true, state: .playing)
     }
 
     func pause() {
         player?.pause()
-        updateState(isPlaying: false, state: .paused)
     }
 
     func stop() {
@@ -426,6 +425,20 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
             self.updateState(isPlaying: false, state: .ended)
             self.context.handleMediaPlayerTimeChanged()
         }
+
+        playingTimeControlStatusObserver = player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
+            guard let self = self else { return }
+            switch player.timeControlStatus {
+            case .playing:
+                self.updateState(isPlaying: true, state: .playing)
+            case .paused:
+                self.updateState(isPlaying: false, state: .paused)
+            case .waitingToPlayAtSpecifiedRate:
+                self.updateState(isPlaying: false, state: .buffering)
+            @unknown default:
+                break
+            }
+        }
     }
 
     private func seekToPositionToSeekToOnFirstPlay() {
@@ -458,6 +471,11 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         if let playbackEndedObserver {
             NotificationCenter.default.removeObserver(playbackEndedObserver)
             self.playbackEndedObserver = nil
+        }
+
+        if let playingTimeControlStatusObserver {
+            playingTimeControlStatusObserver.invalidate()
+            self.playingTimeControlStatusObserver = nil
         }
     }
 
@@ -522,18 +540,18 @@ extension NCMediaCoordinatorAVKitStrategy: AVPictureInPictureControllerDelegate 
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         self.pictureInPictureController = nil
-        deactivateAudioSessionIfNeeded()
+        pause()
         context.handlePictureInPictureStateChanged(isActive: false)
     }
 
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
         self.pictureInPictureController = nil
-        deactivateAudioSessionIfNeeded()
         context.handlePictureInPictureStateChanged(isActive: false)
     }
 
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController,
                                     restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+        context.handlePictureInPictureStateChanged(isActive: false)
         completionHandler(true)
     }
 }
