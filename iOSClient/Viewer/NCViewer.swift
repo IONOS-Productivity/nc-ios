@@ -53,8 +53,6 @@ class NCViewer: NSObject {
                     }
                 }
 
-                viewerMediaPageContainer.delegateViewController = delegate
-
                 if let ocIds {
                     viewerMediaPageContainer.currentIndex = ocIds.firstIndex(where: { $0 == metadata.ocId }) ?? 0
                     viewerMediaPageContainer.ocIds = ocIds

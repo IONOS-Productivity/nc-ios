@@ -642,4 +642,33 @@ extension NCMediaCoordinator: NCMediaCoordinatorVLCStrategyContext, NCMediaCoord
     func handlePictureInPictureStateChanged(isActive: Bool) {
         isPictureInPictureActive = isActive
     }
+
+    func restoreUserInterfaceForPictureInPictureStop() {
+        guard let metadata = item, metadata.isVideo else { return }
+
+        Task { @MainActor in
+            // Resolve the tab bar controller for the scene where this media was opened
+            let controller: NCMainTabBarController?
+            if let sceneIdentifier = metadata.sceneIdentifier {
+                controller = SceneManager.shared.getController(sceneIdentifier: sceneIdentifier)
+            } else {
+                controller = SceneManager.shared.getControllers().first
+            }
+
+            guard let tabBarController = controller,
+                  let navigationController = tabBarController.currentNavigationController() else { return }
+
+            if let existingViewer = navigationController.viewControllers.first(where: { $0 is NCViewerMediaPage }) as? NCViewerMediaPage,
+               existingViewer.currentViewController.metadata.ocId == metadata.ocId {
+                navigationController.popToViewController(existingViewer, animated: true)
+                return
+            }
+
+            guard let viewerMediaPageContainer = await NCViewer().getViewerController(metadata: metadata) else {
+                return
+            }
+
+            navigationController.pushViewController(viewerMediaPageContainer, animated: true)
+        }
+    }
 }

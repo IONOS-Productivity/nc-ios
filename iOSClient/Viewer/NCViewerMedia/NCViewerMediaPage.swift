@@ -19,7 +19,6 @@ class NCViewerMediaPage: UIViewController {
     // Parameters
     var ocIds: [String] = []
     var currentIndex: Int = 0
-    var delegateViewController: UIViewController?
 
     var modifiedOcId: [String] = []
     private var nextIndex: Int?

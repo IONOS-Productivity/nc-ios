@@ -16,6 +16,7 @@ protocol NCMediaCoordinatorAVKitStrategyContext: AnyObject {
     func handleMediaPlayerTimeChanged()
 
     func handlePictureInPictureStateChanged(isActive: Bool)
+    func restoreUserInterfaceForPictureInPictureStop()
 }
 
 private class NCMediaCoordinatorAVKitVideoView: UIView {
@@ -552,6 +553,7 @@ extension NCMediaCoordinatorAVKitStrategy: AVPictureInPictureControllerDelegate 
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController,
                                     restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
         context.handlePictureInPictureStateChanged(isActive: false)
+        context.restoreUserInterfaceForPictureInPictureStop()
         completionHandler(true)
     }
 }
