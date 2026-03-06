@@ -389,6 +389,7 @@ class NCMediaCoordinator: NSObject {
         clearNowPlaying()
         stopPictureInPicture()
         isPictureInPictureSupported = false
+        isPictureInPictureActive = false
     }
 
     // MARK: - Command Center
@@ -658,9 +659,8 @@ extension NCMediaCoordinator: NCMediaCoordinatorVLCStrategyContext, NCMediaCoord
             guard let tabBarController = controller,
                   let navigationController = tabBarController.currentNavigationController() else { return }
 
-            if let existingViewer = navigationController.viewControllers.first(where: { $0 is NCViewerMediaPage }) as? NCViewerMediaPage,
+            if let existingViewer = navigationController.viewControllers.last as? NCViewerMediaPage,
                existingViewer.currentViewController.metadata.ocId == metadata.ocId {
-                navigationController.popToViewController(existingViewer, animated: true)
                 return
             }
 
