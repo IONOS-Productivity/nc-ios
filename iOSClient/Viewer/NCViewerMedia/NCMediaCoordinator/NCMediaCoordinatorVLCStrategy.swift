@@ -47,7 +47,7 @@ extension NCPlayerState {
     }
 }
 
-extension NCMediaCoordinator.SlaveType {
+extension NCMediaCoordinator.MediaTrackType {
     var vlcType: VLCMediaPlaybackSlaveType {
         switch self {
         case .audio: return .audio
@@ -265,9 +265,11 @@ class NCMediaCoordinatorVLCStrategy: NSObject, NCMediaCoordinatorStrategy {
         return (player.media?.compare(media) == .orderedSame)
     }
 
-    @discardableResult
-    func addPlaybackSlave(_ slaveURL: URL, type slaveType: NCMediaCoordinator.SlaveType, enforce enforceSelection: Bool) -> Int32 {
-        return player?.addPlaybackSlave(slaveURL, type: slaveType.vlcType, enforce: enforceSelection) ?? 0
+    func addPlaybackTrack(_ trackURL: URL,
+                          type mediaTrackType: NCMediaCoordinator.MediaTrackType,
+                          enforce enforceSelection: Bool) {
+        guard let player else { return }
+        player.addPlaybackSlave(trackURL, type: mediaTrackType.vlcType, enforce: enforceSelection)
     }
 }
 

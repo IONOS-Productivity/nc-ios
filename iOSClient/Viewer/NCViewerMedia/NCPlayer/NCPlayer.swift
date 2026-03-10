@@ -104,8 +104,7 @@ class NCPlayer: NSObject {
         set { mediaCoordinator.currentAudioTrackIndex = newValue }
     }
 
-    @discardableResult
-    func addPlaybackSlave(_ slaveURL: URL, type slaveType: NCMediaCoordinator.SlaveType, enforce enforceSelection: Bool) -> Int32 {
-        mediaCoordinator.addPlaybackSlave(slaveURL, type: slaveType, enforce: enforceSelection)
+    func addPlaybackTrack(_ trackURL: URL, type mediaTrackType: NCMediaCoordinator.MediaTrackType, enforce enforceSelection: Bool) {
+        mediaCoordinator.addPlaybackTrack(trackURL, type: mediaTrackType, enforce: enforceSelection)
     }
 }

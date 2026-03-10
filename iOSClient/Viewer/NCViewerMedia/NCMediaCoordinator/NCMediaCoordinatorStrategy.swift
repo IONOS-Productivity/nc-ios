@@ -42,7 +42,4 @@ protocol NCMediaCoordinatorStrategy {
 
     func currentMediaLengthInSeconds() -> Int
     func currentMediaIsInPlayer() -> Bool
-
-    @discardableResult
-    func addPlaybackSlave(_ slaveURL: URL, type slaveType: NCMediaCoordinator.SlaveType, enforce enforceSelection: Bool) -> Int32
 }

@@ -40,7 +40,7 @@ enum NCPlayerState: Equatable {
 
 class NCMediaCoordinator: NSObject {
 
-    enum SlaveType {
+    enum MediaTrackType {
         case audio
         case subtitle
     }
@@ -286,9 +286,38 @@ class NCMediaCoordinator: NSObject {
         self.database.addVideoOrAudio(metadata: metadata, position: 0)
     }
 
-    @discardableResult
-    func addPlaybackSlave(_ slaveURL: URL, type slaveType: SlaveType, enforce enforceSelection: Bool) -> Int32 {
-        return strategy?.addPlaybackSlave(slaveURL, type: slaveType, enforce: enforceSelection) ?? 0
+    func addPlaybackTrack(_ trackURL: URL, type mediaTrackType: MediaTrackType, enforce enforceSelection: Bool) {
+        guard strategy != nil else { return }
+
+        if let vlcStrategy = strategy as? NCMediaCoordinatorVLCStrategy {
+            vlcStrategy.addPlaybackTrack(trackURL,
+                                         type: mediaTrackType,
+                                         enforce: enforceSelection)
+        }
+
+        guard let currentURL = url else {
+            return
+        }
+
+        stop()
+
+        let vlcStrategy = NCMediaCoordinatorVLCStrategy(context: self)
+        vlcStrategy.delegate = delegate
+
+        strategy = vlcStrategy
+
+        vlcStrategy.url = currentURL
+        if let viewToPutVideoOutputView {
+            vlcStrategy.putVideoOutputView(in: viewToPutVideoOutputView)
+        }
+
+        isPictureInPictureSupported = vlcStrategy.isPictureInPictureSupported
+
+        vlcStrategy.play(restart: false)
+
+        vlcStrategy.addPlaybackTrack(trackURL,
+                                     type: mediaTrackType,
+                                     enforce: enforceSelection)
     }
 
     private var downloadRequest: DownloadRequest?

@@ -364,13 +364,6 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         return asset.url == url
     }
 
-    @discardableResult
-    func addPlaybackSlave(_ slaveURL: URL, type slaveType: NCMediaCoordinator.SlaveType, enforce enforceSelection: Bool) -> Int32 {
-        // AVKit does not support external playback slaves in the same way as VLC.
-        // This is a no-op implementation to satisfy the protocol.
-        return 0
-    }
-
     // MARK: - Private helpers
 
     private func setUpPlayer() {
