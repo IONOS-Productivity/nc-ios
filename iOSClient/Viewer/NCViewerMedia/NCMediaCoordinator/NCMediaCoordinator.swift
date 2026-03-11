@@ -670,6 +670,9 @@ extension NCMediaCoordinator: NCMediaCoordinatorVLCStrategyContext, NCMediaCoord
     }
 
     func handlePictureInPictureStateChanged(isActive: Bool) {
+        if !isActive {
+            pause()
+        }
         isPictureInPictureActive = isActive
     }
 

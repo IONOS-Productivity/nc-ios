@@ -534,7 +534,6 @@ extension NCMediaCoordinatorAVKitStrategy: AVPictureInPictureControllerDelegate 
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         self.pictureInPictureController = nil
-        pause()
         context.handlePictureInPictureStateChanged(isActive: false)
     }
 
