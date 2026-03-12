@@ -15,7 +15,7 @@ protocol NCMediaCoordinatorAVKitStrategyContext: AnyObject {
     func handleMediaPlayerStateChanged(isPlaying: Bool, state: NCPlayerState)
     func handleMediaPlayerTimeChanged()
 
-    func handlePictureInPictureStateChanged(isActive: Bool)
+    func handlePictureInPictureStateChanged(isActive: Bool, dueToPlaybackEnded: Bool)
     func restoreUserInterfaceForPictureInPictureStop()
 }
 
@@ -249,7 +249,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
     func onItemPlaybackEnded() {
         removeObservers()
         pictureInPictureController?.stopPictureInPicture()
-        context.handlePictureInPictureStateChanged(isActive: false)
+        context.handlePictureInPictureStateChanged(isActive: false, dueToPlaybackEnded: true)
         pictureInPictureController = nil
         player = nil
         deactivateAudioSessionIfNeeded()
@@ -529,22 +529,22 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
 extension NCMediaCoordinatorAVKitStrategy: AVPictureInPictureControllerDelegate {
 
     func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        context.handlePictureInPictureStateChanged(isActive: true)
+        context.handlePictureInPictureStateChanged(isActive: true, dueToPlaybackEnded: false)
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         self.pictureInPictureController = nil
-        context.handlePictureInPictureStateChanged(isActive: false)
+        context.handlePictureInPictureStateChanged(isActive: false, dueToPlaybackEnded: false)
     }
 
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
         self.pictureInPictureController = nil
-        context.handlePictureInPictureStateChanged(isActive: false)
+        context.handlePictureInPictureStateChanged(isActive: false, dueToPlaybackEnded: false)
     }
 
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController,
                                     restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
-        context.handlePictureInPictureStateChanged(isActive: false)
+        context.handlePictureInPictureStateChanged(isActive: false, dueToPlaybackEnded: false)
         context.restoreUserInterfaceForPictureInPictureStop()
         completionHandler(true)
     }
