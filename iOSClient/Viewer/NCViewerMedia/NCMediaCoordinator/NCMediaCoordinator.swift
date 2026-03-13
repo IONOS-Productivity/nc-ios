@@ -293,6 +293,7 @@ class NCMediaCoordinator: NSObject {
             vlcStrategy.addPlaybackTrack(trackURL,
                                          type: mediaTrackType,
                                          enforce: enforceSelection)
+            return
         }
 
         guard let currentURL = url else {
@@ -416,7 +417,6 @@ class NCMediaCoordinator: NSObject {
             items.removeAll()
         }
         clearNowPlaying()
-        stopPictureInPicture()
         isPictureInPictureSupported = false
         isPictureInPictureActive = false
     }
@@ -615,25 +615,26 @@ class NCMediaCoordinator: NSObject {
         guard isPictureInPictureSupported else { return }
 
         if isPictureInPictureActive {
-            stopPictureInPicture()
+            strategy?.stopPictureInPicture()
         } else {
-            startPictureInPicture()
+            strategy?.startPictureInPicture()
         }
-    }
-
-    private func startPictureInPicture() {
-        strategy?.startPictureInPicture()
-    }
-
-    private func stopPictureInPicture() {
-        strategy?.stopPictureInPicture()
     }
 
     @MainActor
     private func createStrategy(for url: URL) async -> NCMediaCoordinatorStrategy {
         let avKitStrategy = NCMediaCoordinatorAVKitStrategy(context: self, url: url)
-        let isPlayable = await avKitStrategy.isSupported(url: url)
-        let strategy: NCMediaCoordinatorStrategy = isPlayable ? avKitStrategy : NCMediaCoordinatorVLCStrategy(context: self)
+        let isPlayableByAVKit = await avKitStrategy.isSupported(url: url)
+
+        let strategy: NCMediaCoordinatorStrategy
+        if isPlayableByAVKit {
+            strategy = avKitStrategy
+        } else {
+            let vlcStrategy = NCMediaCoordinatorVLCStrategy(context: self)
+            vlcStrategy.delegate = delegate
+            strategy = vlcStrategy
+        }
+
         if let viewToPutVideoOutputView {
             strategy.putVideoOutputView(in: viewToPutVideoOutputView)
         }
