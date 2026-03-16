@@ -85,7 +85,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Activation singleton
         _ = NCAppStateManager.shared
         _ = NCNetworking.shared
-        _ = NCDownloadAction.shared
         _ = NCNetworkingProcess.shared
 
         if let activeTblAccount, !alreadyMigratedMultiDomains {
@@ -281,7 +280,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     return true
                 }
                 group.addTask {
-                    try? await Task.sleep(nanoseconds: 25 * 1_000_000_000) // ~25s
+                    try? await Task.sleep(for: .seconds(25))
                     return false
                 }
                 return await group.next() ?? false
@@ -317,7 +316,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 if url.contains(urlBase?.host ?? "") && userId == tblAccount.userId {
                     await NCAccount().changeAccount(tblAccount.account, userProfile: nil, controller: controller)
                     // wait switch account
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    try? await Task.sleep(for: .seconds(1))
                     return tblAccount
                 }
             }
@@ -364,9 +363,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                         }
                         let serverUrl = controller.currentServerUrl()
                         let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + creator.ext, account: session.account, serverUrl: serverUrl)
-                        let fileNamePath = NCUtilityFileSystem().getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
+                        let fileNamePath = NCUtilityFileSystem().getRelativeFilePath(String(describing: fileName), serverUrl: serverUrl, session: session)
 
-                        await NCCreateDocument().createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "text", creatorId: creator.identifier, templateId: "document", account: session.account)
+                        await NCCreate().createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "text", creatorId: creator.identifier, templateId: "document", account: session.account)
                     case self.global.actionVoiceMemo:
                         NCAskAuthorization().askAuthorizationAudioRecord(controller: controller) { hasPermission in
                             if hasPermission {
@@ -420,7 +419,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                         serverUrl = tblAccount.urlBase + "/" + davFiles
                     }
 
-                    NCDownloadAction.shared.openFileViewInFolder(serverUrl: serverUrl, fileNameBlink: nil, fileNameOpen: fileName, sceneIdentifier: sceneIdentifier)
+                    NCNetworking.shared.openFileViewInFolder(serverUrl: serverUrl, fileNameBlink: nil, fileNameOpen: fileName, sceneIdentifier: controller.sceneIdentifier)
                 }
             }
 
@@ -492,13 +491,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
 
         Task {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            try? await Task.sleep(for: .seconds(1))
 
             let num = await NCAutoUpload.shared.initAutoUpload()
             nkLog(start: "Auto upload with \(num) photo")
 
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            try? await Task.sleep(for: .seconds(1.5))
             await NCService().startRequestServicesServer(account: account, controller: controller)
+
+            try? await Task.sleep(for: .seconds(2))
+            await NCNetworking.shared.verifyZombie()
         }
 
         NotificationCenter.default.postOnMainThread(name: global.notificationCenterRichdocumentGrabFocus)
@@ -584,9 +586,26 @@ final class SceneManager: @unchecked Sendable {
         return (scene as? UIWindowScene)?.keyWindow
     }
 
-    func getWindow(controller: NCMainTabBarController?) -> UIWindow? {
-        guard let controller,
+    func getWindow(controller: UITabBarController?) -> UIWindow? {
+        guard let controller = controller as? NCMainTabBarController,
               let scene = sceneController[controller] else { return nil }
+        return getWindow(scene: scene)
+    }
+
+    func getWindow(sceneIdentifier: String?) -> UIWindow? {
+        var mainTabBarController: NCMainTabBarController?
+
+        if let sceneIdentifier {
+            for controller in sceneController.keys {
+                if sceneIdentifier == controller.sceneIdentifier {
+                    mainTabBarController = controller
+                }
+            }
+        }
+        guard let mainTabBarController,
+              let scene = sceneController[mainTabBarController] else {
+            return UIApplication.shared.mainAppWindow
+        }
         return getWindow(scene: scene)
     }
 

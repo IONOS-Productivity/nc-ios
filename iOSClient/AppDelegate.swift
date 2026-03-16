@@ -14,7 +14,6 @@ import EasyTipView
 import SwiftUI
 import RealmSwift
 
-@UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     var backgroundSessionCompletionHandler: (() -> Void)?
     var activeLogin: NCLogin?
@@ -58,8 +57,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
         NCBrandColor.shared.createUserColors()
 
+        // Setup Networking
+        //
         NextcloudKit.shared.setup(groupIdentifier: NCBrandOptions.shared.capabilitiesGroup,
                                   delegate: NCNetworking.shared)
+        NCNetworking.shared.setupTransferDelegate()
 
         NextcloudKit.configureLogger(logLevel: (NCBrandOptions.shared.disable_log ? .disabled : NCPreferences().log))
 
@@ -378,7 +380,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
                     return
                 }
 
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                try? await Task.sleep(for: .seconds(1))
 
                 let tblAccounts = await NCManageDatabase.shared.getAllTableAccountAsync()
                 for tblAccount in tblAccounts {
@@ -406,8 +408,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             if app == NCGlobal.shared.termsOfServiceName {
                 Task {
                     await NCNetworking.shared.transferDispatcher.notifyAllDelegatesAsync { delegate in
-                        try? await Task.sleep(nanoseconds: 500_000_000)
-                        delegate.transferReloadData(serverUrl: nil, requestData: true, status: nil)
+                        try? await Task.sleep(for: .seconds(0.5))
+                        delegate.transferReloadDataSource(serverUrl: nil, requestData: true, status: nil)
                     }
                 }
             } else if let navigationController = UIStoryboard(name: "NCNotification", bundle: nil).instantiateInitialViewController() as? UINavigationController,
@@ -423,7 +425,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         if let controller = SceneManager.shared.getControllers().first(where: { $0.account == account }) {
             openNotification(controller: controller)
         } else if let tblAccount = NCManageDatabase.shared.getAllTableAccount().first(where: { $0.account == account }),
-                  let controller = UIApplication.shared.firstWindow?.rootViewController as? NCMainTabBarController {
+                  let controller = UIApplication.shared.mainAppWindow?.rootViewController as? NCMainTabBarController {
             Task { @MainActor in
                 await NCAccount().changeAccount(tblAccount.account, userProfile: nil, controller: controller)
                 openNotification(controller: controller)
@@ -432,7 +434,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             let message = NSLocalizedString("_the_account_", comment: "") + " " + account + " " + NSLocalizedString("_does_not_exist_", comment: "")
             let alertController = UIAlertController(title: NSLocalizedString("_info_", comment: ""), message: message, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default, handler: { _ in }))
-            UIApplication.shared.firstWindow?.rootViewController?.present(alertController, animated: true, completion: { })
+            UIApplication.shared.mainAppWindow?.rootViewController?.present(alertController, animated: true, completion: { })
         }
     }
 
@@ -509,11 +511,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
                let viewController = navigationController.topViewController as? NCViewCertificateDetails {
                 viewController.delegate = self
                 viewController.host = host
-                UIApplication.shared.firstWindow?.rootViewController?.present(navigationController, animated: true)
+                UIApplication.shared.mainAppWindow?.rootViewController?.present(navigationController, animated: true)
             }
         }))
 
-        UIApplication.shared.firstWindow?.rootViewController?.present(alertController, animated: true)
+        UIApplication.shared.mainAppWindow?.rootViewController?.present(alertController, animated: true)
     }
 
     // MARK: - Reset Application

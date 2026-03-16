@@ -169,7 +169,7 @@ class NCFiles: NCCollectionViewCommon {
 
     override func getServerData(forced: Bool = false) async {
         defer {
-            restoreDefaultTitle()
+            stopGUIGetServerData()
             startSyncMetadata(metadatas: self.dataSource.getMetadatas())
         }
 
@@ -254,7 +254,7 @@ class NCFiles: NCCollectionViewCommon {
             return (nil, NKError(), reloadRequired)
         }
 
-        showLoadingTitle()
+        startGUIGetServerData()
 
         let options = NKRequestOptions(timeout: 180)
         let (account, metadataFolder, metadatas, error) = await NCNetworking.shared.readFolderAsync(serverUrl: serverUrl,
@@ -306,14 +306,14 @@ class NCFiles: NCCollectionViewCommon {
 
             // No metadata fount, re-send it
             if results.error.errorCode == NCGlobal.shared.errorResourceNotFound {
-                NCContentPresenter().showInfo(description: "Metadata not found")
+                await showInfoBanner(controller: self.controller, text: "Metadata not found")
                 let error = await NCNetworkingE2EE().uploadMetadata(serverUrl: serverUrl, account: account)
                 if error != .success {
-                    NCContentPresenter().showError(error: error)
+                    await showErrorBanner(controller: self.controller, text: error.errorDescription, errorCode: error.errorCode)
                 }
             } else {
                 // show error
-                NCContentPresenter().showError(error: results.error)
+                await showErrorBanner(controller: self.controller, text: error.errorDescription, errorCode: error.errorCode)
             }
 
             return(metadatas, error, reloadRequired)
@@ -324,21 +324,21 @@ class NCFiles: NCCollectionViewCommon {
 
         if errorDecodeMetadata == .success {
             let capabilities = await NKCapabilities.shared.getCapabilities(for: self.session.account)
-            if version == "v1", capabilities.e2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
-                NCContentPresenter().showInfo(description: "Conversion metadata v1 to v2 required, please wait...")
+            if version == "v1", NCGlobal.shared.isE2eeVersion2(capabilities.e2EEApiVersion) {
+                await showInfoBanner(controller: self.controller, text: "Conversion metadata v1 to v2 required, please wait...")
                 nkLog(tag: self.global.logTagE2EE, message: "Conversion v1 to v2")
                 NCActivityIndicator.shared.start()
 
                 let error = await NCNetworkingE2EE().uploadMetadata(serverUrl: serverUrl, updateVersionV1V2: true, account: account)
                 if error != .success {
-                    NCContentPresenter().showError(error: error)
+                    await showErrorBanner(controller: self.controller, text: error.errorDescription, errorCode: error.errorCode)
                 }
                 NCActivityIndicator.shared.stop()
             }
         } else {
             // Client Diagnostic
             await self.database.addDiagnosticAsync(account: account, issue: NCGlobal.shared.diagnosticIssueE2eeErrors)
-            NCContentPresenter().showError(error: error)
+            await showErrorBanner(controller: self.controller, text: error.errorDescription, errorCode: error.errorCode)
         }
 
         return (metadatas, error, reloadRequired)
@@ -395,7 +395,7 @@ class NCFiles: NCCollectionViewCommon {
                 navigationController = UIStoryboard(name: "NCIntro", bundle: nil).instantiateInitialViewController() as? UINavigationController
             }
 
-            UIApplication.shared.firstWindow?.rootViewController = navigationController
+            UIApplication.shared.mainAppWindow?.rootViewController = navigationController
         } else if let account = tblAccount?.account, account != currentAccount {
             Task {
                 await NCAccount().changeAccount(account, userProfile: nil, controller: controller)

@@ -46,7 +46,7 @@ final class TransfersViewModel: ObservableObject, NCMetadataTransfersSuccessDele
     @MainActor
     func pollTransfers() async {
         while !Task.isCancelled {
-            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" {
+            if !isXcodeRunningForPreviews {
                 isLoading = true
 
                 // Items
@@ -71,7 +71,7 @@ final class TransfersViewModel: ObservableObject, NCMetadataTransfersSuccessDele
 
                 isLoading = false
             }
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            try? await Task.sleep(for: .seconds(0.5))
         }
     }
 
@@ -173,6 +173,12 @@ final class TransfersViewModel: ObservableObject, NCMetadataTransfersSuccessDele
 }
 
 extension TransfersViewModel: NCTransferDelegate {
+    func transferReloadData(serverUrl: String?) { }
+
+    func transferReloadDataSource(serverUrl: String?, requestData: Bool, status: Int?) { }
+
+    func transferChange(status: String, account: String, fileName: String, serverUrl: String, selector: String?, ocId: String, destination: String?, error: NKError) { }
+
     func transferProgressDidUpdate(progress: Float, totalBytes: Int64, totalBytesExpected: Int64, fileName: String, serverUrl: String) {
         Task { @MainActor in
             let key = "\(serverUrl)|\(fileName)"

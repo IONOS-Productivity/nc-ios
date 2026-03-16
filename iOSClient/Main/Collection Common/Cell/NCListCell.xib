@@ -104,9 +104,6 @@
                             <constraint firstAttribute="width" secondItem="yhy-xd-w5C" secondAttribute="height" id="ELZ-iw-JN3"/>
                             <constraint firstAttribute="width" constant="48" id="ZgH-mI-l2k"/>
                         </constraints>
-                        <connections>
-                            <action selector="touchUpInsideMore:" destination="jxV-Pk-fPt" eventType="touchUpInside" id="Mtu-LP-kuR"/>
-                        </connections>
                     </button>
                     <progressView hidden="YES" opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="m2p-oJ-j15">
                         <rect key="frame" x="109" y="57" width="470" height="4"/>

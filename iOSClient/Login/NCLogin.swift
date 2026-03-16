@@ -41,6 +41,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
 
     private var p12Data: Data?
     private var p12Password: String?
+    private var QRCodeCheck: Bool = false
 
     // MARK: - View Life Cycle
 
@@ -110,6 +111,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
         if self.shareAccounts != nil, let image = UIImage(systemName: "person.badge.plus")?.withTintColor(.white, renderingMode: .alwaysOriginal), let backgroundColor = NCBrandColor.shared.customer.lighter(by: 10) {
             let title = String(format: NSLocalizedString("_apps_nextcloud_detect_", comment: ""), NCBrandOptions.shared.brand)
             let description = String(format: NSLocalizedString("_add_existing_account_", comment: ""), NCBrandOptions.shared.brand)
+
             NCContentPresenter().alertAction(image: image, contentModeImage: .scaleAspectFit, sizeImage: CGSize(width: 45, height: 45), backgroundColor: backgroundColor, textColor: textColor, title: title, description: description, textCancelButton: "_cancel_", textOkButton: "_ok_", attributes: EKAttributes.topFloat) { identifier in
                 if identifier == "ok" {
                     self.openShareAccountsViewController(nil)
@@ -141,12 +143,16 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
 
         // AppConfig
         if let url = configServerUrl {
-            if let user = self.configUsername, let password = configAppPassword {
-                return createAccount(urlBase: url, user: user, password: password)
-            } else if let user = self.configUsername, let password = configPassword {
-                return getAppPassword(urlBase: url, user: user, password: password)
-            } else {
-                urlBase = url
+            Task {
+                if let user = self.configUsername, let password = configAppPassword {
+                    await createAccount(urlBase: url, user: user, password: password)
+                    return
+                } else if let user = self.configUsername, let password = configPassword {
+                    await getAppPassword(urlBase: url, user: user, password: password)
+                    return
+                } else {
+                    urlBase = url
+                }
             }
         }
     }
@@ -318,18 +324,17 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
         }
     }
 
-    private func createAccount(urlBase: String, user: String, password: String) {
+    @MainActor
+    private func createAccount(urlBase: String, user: String, password: String) async {
         if self.controller == nil {
-            self.controller = UIApplication.shared.firstWindow?.rootViewController as? NCMainTabBarController
+            self.controller = UIApplication.shared.mainAppWindow?.rootViewController as? NCMainTabBarController
         }
 
         if let host = URL(string: urlBase)?.host {
             NCNetworking.shared.writeCertificate(host: host)
         }
 
-        Task {
-            await NCAccount().createAccount(viewController: self, urlBase: urlBase, user: user, password: password, controller: self.controller)
-        }
+        await NCAccount().createAccount(viewController: self, urlBase: urlBase, user: user, password: password, controller: self.controller)
     }
 }
 

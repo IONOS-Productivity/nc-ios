@@ -52,6 +52,10 @@ final class NCGlobal: Sendable {
     let nextcloudVersion28: Int                     = 28
     let nextcloudVersion30: Int                     = 30
     let nextcloudVersion31: Int                     = 31
+    let nextcloudVersion32: Int                     = 32
+    let nextcloudVersion33: Int                     = 33
+    let nextcloudVersionFuture: Int                 = 99999
+
 
     // Nextcloud unsupported
     //
@@ -94,10 +98,14 @@ final class NCGlobal: Sendable {
     // E2EE
     //
     let e2eePassphraseTest                          = "more over television factory tendency independence international intellectual impress interest sentence pony"
-    let e2eeVersions                                = ["1.1", "1.2", "2.0"]
-    let e2eeVersionV11                              = "1.1"
-    let e2eeVersionV12                              = "1.2"
-    let e2eeVersionV20                              = "2.0"
+    let e2eeCompatibleVersions                      = ["1.1", "1.2", "2.0", "2.1"]
+
+    func isE2eeVersion2(_ version: String) -> Bool {
+        if version == "2.0" || version == "2.1" {
+            return true
+        }
+        return false
+    }
 
     // CHUNK
     let chunkSizeMBCellular                         = 10000000
@@ -142,8 +150,8 @@ final class NCGlobal: Sendable {
 
     // ContentPresenter
     //
-    let dismissAfterSecond: TimeInterval        = 4
-    let dismissAfterSecondLong: TimeInterval    = 7
+    let dismissAfterSecond: TimeInterval        = 5
+    let dismissAfterSecondLong: TimeInterval    = 8
 
     // Error
     //
@@ -278,13 +286,14 @@ final class NCGlobal: Sendable {
     let notificationCenterOpenMediaDetail                       = "openMediaDetail"                 // userInfo: ocId
 
     let notificationCenterDismissScanDocument                   = "dismissScanDocument"
-    let notificationCenterDismissUploadAssets                   = "dismissUploadAssets"
 
     let notificationCenterEnableSwipeGesture                    = "enableSwipeGesture"
     let notificationCenterDisableSwipeGesture                   = "disableSwipeGesture"
 
     let notificationCenterPlayerIsPlaying                       = "playerIsPlaying"
     let notificationCenterPlayerStoppedPlaying                  = "playerStoppedPlaying"
+
+    let notificationCenterUserInteractionMonitor                = "serInteractionMonitor"
 
     // Networking Status
     let networkingStatusCreateFolder                            = "statusCreateFolder"
@@ -402,4 +411,11 @@ final class NCGlobal: Sendable {
     //
     let udMigrationMultiDomains             = "migrationMultiDomains"
     let udLastVersion                       = "lastVersion"
+}
+
+/**
+ Indicates whether Xcode is running SwiftUI previews.
+ */
+var isXcodeRunningForPreviews: Bool {
+    return ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 }

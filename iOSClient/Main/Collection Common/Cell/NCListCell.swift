@@ -1,29 +1,16 @@
-//
-//  NCListCell.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 24/10/2018.
-//  Copyright © 2018 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2018 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import Combine
+
+protocol NCListCellDelegate: AnyObject {
+    func onMenuIntent(with metadata: tableMetadata?)
+    func openContextMenu(with metadata: tableMetadata?, button: UIButton, sender: Any)
+    func tapShareListItem(with metadata: tableMetadata?, button: UIButton, sender: Any)
+}
 
 class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProtocol {
     @IBOutlet weak var imageItem: UIImageView!
@@ -49,11 +36,18 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     @IBOutlet weak var titleTrailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var subInfoTrailingConstraint: NSLayoutConstraint!
 
+    weak var delegate: NCListCellDelegate?
+
+    var metadata: tableMetadata? {
+        didSet {
+            delegate?.openContextMenu(with: metadata, button: buttonMore, sender: self) /* preconfigure UIMenu with each metadata */
+        }
+    }
+
     var ocId = ""
     var ocIdTransfer = ""
     var user = ""
 
-    weak var listCellDelegate: NCListCellDelegate?
     var namedButtonMore = ""
 
     #if !EXTENSION
@@ -64,60 +58,44 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
        UIColor(named: "ListCell/Separator")
     }
 
-    var fileAvatarImageView: UIImageView? {
+    var avatarImageView: UIImageView? {
         return imageShared
     }
-    var fileOcId: String? {
-        get { return ocId }
-        set { ocId = newValue ?? "" }
-    }
-    var fileOcIdTransfer: String? {
-        get { return ocIdTransfer }
-        set { ocIdTransfer = newValue ?? "" }
-    }
-    var filePreviewImageView: UIImageView? {
+    var previewImageView: UIImageView? {
         get { return imageItem }
         set { imageItem = newValue }
     }
-    var fileUser: String? {
-        get { return user }
-        set { user = newValue ?? "" }
-    }
-    var fileTitleLabel: UILabel? {
+    var title: UILabel? {
         get { return labelTitle }
         set { labelTitle = newValue }
     }
-    var fileInfoLabel: UILabel? {
+    var info: UILabel? {
         get { return labelInfo }
         set { labelInfo = newValue }
     }
-    var fileSubinfoLabel: UILabel? {
+    var subInfo: UILabel? {
         get { return labelSubinfo }
         set { labelSubinfo = newValue }
     }
-    var fileStatusImage: UIImageView? {
+    var statusImageView: UIImageView? {
         get { return imageStatus }
         set { imageStatus = newValue }
     }
-    var fileLocalImage: UIImageView? {
+    var localImageView: UIImageView? {
         get { return imageLocal }
         set { imageLocal = newValue }
     }
-    var fileFavoriteImage: UIImageView? {
+    var favoriteImageView: UIImageView? {
         get { return imageFavorite }
         set { imageFavorite = newValue }
     }
-    var fileSharedImage: UIImageView? {
+    var shareImageView: UIImageView? {
         get { return imageShared }
 		set {
 			imageShared = newValue
 		}
     }
-    var fileMoreImage: UIImageView? {
-        get { return imageMore }
-        set { imageMore = newValue }
-    }
-    var cellSeparatorView: UIView? {
+    var separatorView: UIView? {
         get { return separator }
         set { separator = newValue }
     }
@@ -137,6 +115,12 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
 
     override func awakeFromNib() {
         super.awakeFromNib()
+
+        let tapObserver = UITapGestureRecognizer(target: self, action: #selector(handleTapObserver(_:)))
+        tapObserver.cancelsTouchesInView = false
+        tapObserver.delegate = self
+        contentView.addGestureRecognizer(tapObserver)
+
         initCell()
     }
 
@@ -166,6 +150,8 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         separatorHeightConstraint.constant = 0.5
         tag0.text = ""
         tag1.text = ""
+        titleTrailingConstraint.constant = 90
+
         titleInfoTrailingDefault()
 
         let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(longPress(gestureRecognizer:)))
@@ -196,6 +182,9 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
             ])
         }
         #endif
+        contentView.bringSubviewToFront(buttonMore)
+        buttonMore.menu = nil
+        buttonMore.showsMenuAsPrimaryAction = true
     }
 
     override func snapshotView(afterScreenUpdates afterUpdates: Bool) -> UIView? {
@@ -203,41 +192,29 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
     }
 
     @IBAction func touchUpInsideShare(_ sender: Any) {
-        listCellDelegate?.tapShareListItem(with: ocId, ocIdTransfer: ocIdTransfer, sender: sender)
+        delegate?.tapShareListItem(with: metadata, button: buttonShared, sender: sender)
     }
 
-    @IBAction func touchUpInsideMore(_ sender: Any) {
-        listCellDelegate?.tapMoreListItem(with: ocId, ocIdTransfer: ocIdTransfer, image: imageItem.image, sender: sender)
+    @objc private func handleTapObserver(_ g: UITapGestureRecognizer) {
+        let location = g.location(in: contentView)
+
+        if buttonMore.frame.contains(location) {
+            delegate?.onMenuIntent(with: metadata)
+        }
     }
 
-    @objc func longPress(gestureRecognizer: UILongPressGestureRecognizer) {
-        listCellDelegate?.longPressListItem(with: ocId, ocIdTransfer: ocIdTransfer, gestureRecognizer: gestureRecognizer)
-    }
-
-    fileprivate func setA11yActions() {
-        self.accessibilityCustomActions = [
-            UIAccessibilityCustomAction(
-                name: NSLocalizedString("_share_", comment: ""),
-                target: self,
-                selector: #selector(touchUpInsideShare(_:))),
-            UIAccessibilityCustomAction(
-                name: NSLocalizedString("_more_", comment: ""),
-                target: self,
-                selector: #selector(touchUpInsideMore(_:)))
-        ]
+    // Allow the button to receive taps even with the long press gesture
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        let location = touch.location(in: contentView)
+        return buttonMore.frame.contains(location)
     }
 
     func titleInfoTrailingFull() {
         titleTrailingConstraint.constant = 10
     }
 
-    func titleInfoTrailingDefault() {
-        titleTrailingConstraint.constant = 90
-    }
-
     func setButtonMore(image: UIImage) {
         imageMore.image = image
-        setA11yActions()
     }
 
     func hideButtonMore(_ status: Bool) {
@@ -271,7 +248,6 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
             buttonShared.isHidden = false
             buttonMore.isHidden = false
             backgroundView = nil
-            setA11yActions()
         }
         if isSelected {
             imageSelect.image = NCImageCache.shared.getImageCheckedYes().withTintColor(NCBrandColor.shared.brandElement)
@@ -297,11 +273,13 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
             tag1.isHidden = true
             labelInfo.isHidden = false
             labelSubinfo.isHidden = false
+            labelInfoSeparator.isHidden = false
         } else {
             tag0.isHidden = false
             tag1.isHidden = true
             labelInfo.isHidden = true
             labelSubinfo.isHidden = true
+            labelInfoSeparator.isHidden = true
 
             if let tag = tags.first {
                 tag0.text = tag
@@ -318,6 +296,17 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
             imageStatus.makeCircularBackground(withColor: .systemBackground)
         } else {
             imageStatus.backgroundColor = .clear
+        }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Keep the shadow path in sync with current bounds
+        imageStatus.layer.shadowPath = UIBezierPath(ovalIn: imageStatus.bounds).cgPath
+
+        // Ensure the circular background remains correct after Auto Layout
+        if imageStatus.layer.cornerRadius != imageStatus.bounds.width / 2 {
+            imageStatus.layer.cornerRadius = imageStatus.bounds.width / 2
         }
     }
 }

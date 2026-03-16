@@ -44,7 +44,7 @@ class NCViewerMediaPage: UIViewController {
         primaryAction: nil,
         menu: UIMenu(title: "", children: [
             UIDeferredMenuElement.uncached { [self] completion in
-                if let menu = NCViewerContextMenu.makeContextMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: currentViewController.metadata, webView: false, sender: self) {
+                if let menu = NCViewerContextMenu(metadata: currentViewController.metadata, controller: self.tabBarController as? NCMainTabBarController, webView: false, sender: self).viewMenu() {
                     completion(menu.children)
                 }
             }
@@ -462,8 +462,19 @@ extension NCViewerMediaPage: UIScrollViewDelegate {
 }
 
 extension NCViewerMediaPage: NCTransferDelegate {
-    func transferChange(status: String, metadata: tableMetadata, error: NKError) {
-        DispatchQueue.main.async {
+    func transferReloadData(serverUrl: String?) { }
+
+    func transferReloadDataSource(serverUrl: String?, requestData: Bool, status: Int?) { }
+
+    func transferChange(status: String,
+                        account: String,
+                        fileName: String,
+                        serverUrl: String,
+                        selector: String?,
+                        ocId: String,
+                        destination: String?,
+                        error: NKError) {
+        Task {@MainActor in
             switch status {
                 // DOWNLOAD
             case self.global.networkingStatusDownloaded:

@@ -84,7 +84,7 @@ enum NCUserPermission: CaseIterable, NCPermission {
 
     static func forDirectoryE2EE(account: String) -> [NCPermission] {
         let capabilities = NCNetworking.shared.capabilities[account] ?? NKCapabilities.Capabilities()
-        if capabilities.e2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
+        if NCGlobal.shared.isE2eeVersion2(capabilities.e2EEApiVersion) {
             return NCUserPermission.allCases
         }
         return []
@@ -108,7 +108,7 @@ enum NCUserPermission: CaseIterable, NCPermission {
 enum NCLinkEmailPermission: CaseIterable, NCPermission {
     static func forDirectoryE2EE(account: String) -> [any NCPermission] {
         let capabilities = NCNetworking.shared.capabilities[account] ?? NKCapabilities.Capabilities()
-        if capabilities.e2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
+        if NCGlobal.shared.isE2eeVersion2(capabilities.e2EEApiVersion) {
             return NCUserPermission.allCases
         }
         return []
@@ -279,4 +279,3 @@ struct NCShareConfig {
         } else { return nil }
     }
 }
-

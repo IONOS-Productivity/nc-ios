@@ -34,6 +34,14 @@ class NCMainTabBarController: UITabBarController {
         return SceneManager.shared.getWindow(controller: self)
     }
 
+    var barHeightBottom: CGFloat {
+        return tabBar.frame.height - tabBar.safeAreaInsets.bottom
+    }
+
+    var barHeightTop: CGFloat {
+        return tabBar.frame.height - tabBar.safeAreaInsets.top
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         delegate = self
@@ -41,10 +49,7 @@ class NCMainTabBarController: UITabBarController {
 			traitOverrides.horizontalSizeClass = .compact
 		}
 
-        NCNetworking.shared.controller = self
-        NCImageCache.shared.controller = self
-
-        NCDownloadAction.shared.setup(sceneIdentifier: sceneIdentifier)
+        NCNetworking.shared.setupScene(sceneIdentifier: sceneIdentifier, controller: self)
 
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterCheckUserDelaultErrorDone), object: nil, queue: nil) { notification in
             if let userInfo = notification.userInfo,
@@ -88,10 +93,8 @@ class NCMainTabBarController: UITabBarController {
 
     @MainActor
     private func timerCheck() async {
-        let nanoseconds: UInt64 = 3_000_000_000
-
         while !Task.isCancelled {
-            try? await Task.sleep(nanoseconds: nanoseconds)
+            try? await Task.sleep(for: .seconds(3))
 
             guard isViewLoaded, view.window != nil else {
                 continue

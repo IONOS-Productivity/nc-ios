@@ -35,7 +35,7 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
                 primaryAction: nil,
                 menu: UIMenu(title: "", children: [
                     UIDeferredMenuElement.uncached { [self] completion in
-                        if let menu = NCViewerContextMenu.makeContextMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: self.metadata, webView: true, sender: self) {
+                        if let menu = NCViewerContextMenu(metadata: self.metadata, controller: self.tabBarController as? NCMainTabBarController, webView: true, sender: self).viewMenu() {
                             completion(menu.children)
                         }
                     }
@@ -161,7 +161,7 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
             }
 
             if message.body as? String == "share" {
-                NCDownloadAction.shared.openShare(viewController: self, metadata: metadata, page: .sharing)
+                NCCreate().createShare(viewController: self, metadata: metadata, page: .sharing)
             }
 
             if message.body as? String == "loading" {
@@ -219,7 +219,7 @@ extension NCViewerNextcloudText: UINavigationControllerDelegate {
         Task {
             if parent == nil {
                 await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
-                    delegate.transferReloadData(serverUrl: self.metadata.serverUrl, requestData: true, status: nil)
+                    delegate.transferReloadDataSource(serverUrl: self.metadata.serverUrl, requestData: true, status: nil)
                 }
             }
         }
@@ -227,6 +227,12 @@ extension NCViewerNextcloudText: UINavigationControllerDelegate {
 }
 
 extension NCViewerNextcloudText: NCTransferDelegate {
+    func transferReloadData(serverUrl: String?) { }
+
+    func transferReloadDataSource(serverUrl: String?, requestData: Bool, status: Int?) { }
+
+    func transferProgressDidUpdate(progress: Float, totalBytes: Int64, totalBytesExpected: Int64, fileName: String, serverUrl: String) { }
+
     func transferChange(status: String,
                         account: String,
                         fileName: String,

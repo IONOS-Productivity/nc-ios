@@ -100,7 +100,7 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
                file["type"] as? String == "file" {
                 if let id = file["id"] {
                     Task {
-                        await NCDownloadAction.shared.viewerFile(account: session.account, fileId: ("\(id)"), viewController: self)
+                        await NCNetworking.shared.viewerFile(account: session.account, fileId: ("\(id)"), viewController: self)
                     }
                 }
             }
@@ -142,9 +142,9 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
             let results = NCManageDatabase.shared.getImageAvatarLoaded(fileName: fileName)
 
             if results.image == nil {
-                cell.fileAvatarImageView?.image = utility.loadUserImage(for: user, displayName: json["user"]?["name"].string, urlBase: session.urlBase)
+                cell.avatarImageView?.image = utility.loadUserImage(for: user, displayName: json["user"]?["name"].string, urlBase: session.urlBase)
             } else {
-                cell.fileAvatarImageView?.image = results.image
+                cell.avatarImageView?.image = results.image
             }
 
             if !(results.tblAvatar?.loaded ?? false),
@@ -224,6 +224,13 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
                 cell.more.isEnabled = true
                 cell.more.isHidden = false
                 cell.more.setTitle("…", for: .normal)
+
+                let contextMenu = NCContextMenuNotification(
+                    notification: notification,
+                    delegate: self
+                )
+                cell.more.menu = contextMenu.viewMenu()
+                cell.more.showsMenuAsPrimaryAction = true
             }
 
             var buttonWidth = max(cell.primary.intrinsicContentSize.width, cell.secondary.intrinsicContentSize.width)
@@ -253,7 +260,9 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
                 }
                 self.tableView.reloadData()
             } else if error != .success {
-                NCContentPresenter().showError(error: error)
+                Task {
+                    await showErrorBanner(controller: self.controller, text: error.errorDescription, errorCode: error.errorCode)
+                }
             } else {
                 print("[Error] The user has been changed during networking process.")
             }
@@ -298,15 +307,13 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
                     self.dismiss(animated: true)
                 }
             } else if error != .success {
-                NCContentPresenter().showError(error: error)
+                Task {
+                    await showErrorBanner(controller: self.controller, text: error.errorDescription, errorCode: error.errorCode)
+                }
             } else {
                 print("[Error] The user has been changed during networking process.")
             }
         }
-    }
-
-    func tapMore(with notification: NKNotifications, sender: Any?) {
-       toggleMenu(notification: notification, sender: sender)
     }
 
     // MARK: - Load notification networking
@@ -371,7 +378,7 @@ class NCNotificationCell: UITableViewCell, NCCellProtocol {
         get { return index }
         set { index = newValue }
     }
-    var fileAvatarImageView: UIImageView? {
+    var avatarImageView: UIImageView? {
         return avatar
     }
     var fileUser: String? {
@@ -399,15 +406,9 @@ class NCNotificationCell: UITableViewCell, NCCellProtocol {
         else { return }
         delegate?.tapAction(with: notification, label: label, sender: sender)
     }
-
-    @IBAction func touchUpInsideMore(_ sender: Any) {
-        guard let notification = notification else { return }
-        delegate?.tapMore(with: notification, sender: sender)
-    }
 }
 
 protocol NCNotificationCellDelegate: AnyObject {
     func tapRemove(with notification: NKNotifications, sender: Any?)
     func tapAction(with notification: NKNotifications, label: String, sender: Any?)
-    func tapMore(with notification: NKNotifications, sender: Any?)
 }

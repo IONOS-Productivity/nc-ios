@@ -88,7 +88,7 @@ class NCRecent: NCCollectionViewCommon {
 
     override func getServerData(forced: Bool = false) async {
         defer {
-            restoreDefaultTitle()
+            stopGUIGetServerData()
         }
 
         // If is already in-flight, do nothing
@@ -165,7 +165,7 @@ class NCRecent: NCCollectionViewCommon {
         let requestBody = String(format: requestBodyRecent, "/files/" + session.userId, lessDateString)
         let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: session.account)
 
-        showLoadingTitle()
+        startGUIGetServerData()
 
         let resultsSearch = await NextcloudKit.shared.searchBodyRequestAsync(serverUrl: session.urlBase,
                                                                              requestBody: requestBody,

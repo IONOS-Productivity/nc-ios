@@ -70,7 +70,11 @@ extension NCNetworking {
                 groupDefaults.set(unavailableArray, forKey: NextcloudKit.shared.nkCommonInstance.groupDefaultsUnavailable)
 
                 if serverInfo.maintenance {
-                    NCContentPresenter().showInfo(title: "_warning_", description: "_maintenance_mode_")
+                    Task {
+                        await showInfoBanner(controller: controller,
+                                             title: "_warning_",
+                                             text: "_maintenance_mode_")
+                    }
                 }
             case .failure:
                 break
@@ -79,7 +83,7 @@ extension NCNetworking {
         } else if unauthorizedArray.contains(account) {
             nkLog(error: "Unauthorized for \(account)")
 
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            try? await Task.sleep(for: .seconds(0.5))
             await NCAccount().checkRemoteUser(account: account, controller: controller)
         /// ToS
         } else if tosArray.contains(account) {

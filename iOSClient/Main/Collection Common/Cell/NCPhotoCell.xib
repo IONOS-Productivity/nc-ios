@@ -43,9 +43,6 @@
                         <fontDescription key="fontDescription" type="system" pointSize="10"/>
                         <color key="tintColor" systemColor="systemGray2Color"/>
                         <state key="normal" image="ellipsis" catalog="system"/>
-                        <connections>
-                            <action selector="touchUpInsideMore:" destination="vf1-Kf-9uL" eventType="touchUpInside" id="0z7-Kz-G9B"/>
-                        </connections>
                     </button>
                 </subviews>
             </view>

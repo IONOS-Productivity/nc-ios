@@ -30,7 +30,7 @@ protocol NCSelectDelegate: AnyObject {
     func dismissSelect(serverUrl: String?, metadata: tableMetadata?, type: String, items: [Any], overwrite: Bool, copy: Bool, move: Bool, session: NCSession.Session)
 }
 
-class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresentationControllerDelegate, NCListCellDelegate, NCSectionFirstHeaderDelegate, NCTransferDelegate {
+class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresentationControllerDelegate, NCSectionFirstHeaderDelegate, NCTransferDelegate {
     @IBOutlet private var collectionView: UICollectionView!
     @IBOutlet private var buttonCancel: UIBarButtonItem!
     @IBOutlet private var bottomContraint: NSLayoutConstraint?
@@ -62,6 +62,7 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
     var titleCurrentFolder = NCBrandOptions.shared.brand
     var serverUrl = ""
     var session: NCSession.Session!
+    var controller: NCMainTabBarController?
     // -------------------------------------------------------------
 
     private var dataSourceTask: URLSessionTask?
@@ -103,6 +104,7 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
         buttonCancel.title = NSLocalizedString("_cancel_", comment: "")
 		buttonCancel.tintColor = UIColor(named: "SelectToolbar/CancelTint")
         bottomContraint?.constant = UIApplication.shared.firstWindow?.rootViewController?.view.safeAreaInsets.bottom ?? 0
+        bottomContraint?.constant = UIApplication.shared.mainAppWindow?.rootViewController?.view.safeAreaInsets.bottom ?? 0
 
         // Type of command view
         if typeOfCommandView == .select || typeOfCommandView == .selectCreateFolder {
@@ -147,7 +149,7 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
         super.viewWillAppear(animated)
 
         Task { @MainActor in
-            let folderPath = utilityFileSystem.getFileNamePath("", serverUrl: serverUrl, session: session)
+            let folderPath = utilityFileSystem.getRelativeFilePath("", serverUrl: serverUrl, session: session)
             let capabilities = await NKCapabilities.shared.getCapabilities(for: session.account)
 
             if serverUrl.isEmpty || !FileNameValidator.checkFolderPath(folderPath, account: session.account, capabilities: capabilities) {
@@ -204,7 +206,13 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
         // Dismission
     }
 
-    // MARK: - NotificationCenter
+    // MARK: -
+
+    func transferReloadData(serverUrl: String?) { }
+
+    func transferReloadDataSource(serverUrl: String?, requestData: Bool, status: Int?) { }
+
+    func transferProgressDidUpdate(progress: Float, totalBytes: Int64, totalBytesExpected: Int64, fileName: String, serverUrl: String) { }
 
     func transferChange(status: String,
                         account: String,
@@ -215,14 +223,16 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
                         destination: String?,
                         error: NKError) {
         if error != .success {
-            NCContentPresenter().showError(error: error)
+            Task {
+                await showErrorBanner(sceneIdentifier: sceneIdentifier, text: error.errorDescription, errorCode: error.errorCode)
+            }
         }
 
         Task { @MainActor in
             guard session.account == account,
                   status == self.global.networkingStatusCreateFolder,
                   self.serverUrl == serverUrl,
-                  let metadata = await NCManageDatabase.shared.getMetadataFromOcIdAsync(ocId)
+                  let metadata = await NCManageDatabase.shared.getMetadataAsync(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@ AND fileName == %@", account, serverUrl, fileName))
             else {
                 return
             }
@@ -264,16 +274,7 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
         overwrite = sender.isOn
     }
 
-    func tapShareListItem(with ocId: String, ocIdTransfer: String, sender: Any) { }
-
-    func tapMoreListItem(with ocId: String, ocIdTransfer: String, image: UIImage?, sender: Any) { }
-
-    func longPressListItem(with odId: String, ocIdTransfer: String, gestureRecognizer: UILongPressGestureRecognizer) { }
-
     func tapRichWorkspace(_ sender: Any) { }
-
-    func tapRecommendationsButtonMenu(with metadata: tableMetadata, image: UIImage?, sender: Any?) { }
-
     func tapRecommendations(with metadata: tableMetadata) { }
 
     // MARK: - Push metadata
@@ -339,12 +340,12 @@ extension NCSelect: UICollectionViewDataSource {
         // Thumbnail
         if !metadata.directory {
             if let image = self.utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: NCGlobal.shared.previewExt512, userId: metadata.userId, urlBase: metadata.urlBase) {
-                (cell as? NCCellProtocol)?.filePreviewImageView?.image = image
+                (cell as? NCCellProtocol)?.previewImageView?.image = image
             } else {
                 if metadata.iconName.isEmpty {
-                    (cell as? NCCellProtocol)?.filePreviewImageView?.image = NCImageCache.shared.getImageFile()
+                    (cell as? NCCellProtocol)?.previewImageView?.image = NCImageCache.shared.getImageFile()
                 } else {
-                    (cell as? NCCellProtocol)?.filePreviewImageView?.image = self.utility.loadImage(named: metadata.iconName, useTypeIconFile: true, account: metadata.account)
+                    (cell as? NCCellProtocol)?.previewImageView?.image = self.utility.loadImage(named: metadata.iconName, useTypeIconFile: true, account: metadata.account)
                 }
                 if metadata.hasPreview,
                    metadata.status == NCGlobal.shared.metadataStatusNormal {
@@ -378,11 +379,9 @@ extension NCSelect: UICollectionViewDataSource {
         isShare = metadata.permissions.contains(NCMetadataPermissions.permissionShared) && !metadataFolder.permissions.contains(NCMetadataPermissions.permissionShared)
         isMounted = metadata.permissions.contains(NCMetadataPermissions.permissionMounted) && !metadataFolder.permissions.contains(NCMetadataPermissions.permissionMounted)
 
-        cell.listCellDelegate = self
+//        cell.listCellDelegate = self
 
-        cell.fileOcId = metadata.ocId
-        cell.fileOcIdTransfer = metadata.ocIdTransfer
-        cell.fileUser = metadata.ownerId
+        cell.metadata = metadata
         cell.labelTitle.text = metadata.fileNameView
         cell.labelTitle.textColor = NCBrandColor.shared.textColor
 

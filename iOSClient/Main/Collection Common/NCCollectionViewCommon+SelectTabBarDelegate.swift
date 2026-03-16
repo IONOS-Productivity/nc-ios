@@ -27,8 +27,8 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
 
         if canDeleteServer {
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_yes_", comment: ""), style: .destructive) { _ in
-                self.setEditMode(false)
                 Task {
+                    await self.setEditMode(false)
                     await self.networking.setStatusWaitDelete(metadatas: metadatas, sceneIdentifier: self.controller?.sceneIdentifier)
                     await self.reloadDataSource()
                 }
@@ -43,8 +43,8 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
                 for metadata in copyMetadatas where error == .success {
                     error = await self.networking.deleteCache(metadata, sceneIdentifier: self.controller?.sceneIdentifier)
                 }
+                await self.setEditMode(false)
             }
-            self.setEditMode(false)
         })
 
         alertController.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel) { (_: UIAlertAction) in })
@@ -52,16 +52,24 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
     }
 
     func move() {
-        let metadatas = getSelectedMetadatas()
+        Task {
+            let metadatas = getSelectedMetadatas()
+            await setEditMode(false)
 
-        NCDownloadAction.shared.openSelectView(items: metadatas, controller: self.controller)
-        setEditMode(false)
+            NCSelectOpen.shared.openView(items: metadatas, controller: self.controller)
+        }
+
     }
 
     func share() {
-        let metadatas = getSelectedMetadatas()
-        NCDownloadAction.shared.openActivityViewController(selectedMetadata: metadatas, controller: self.controller, sender: nil)
-        setEditMode(false)
+        Task {
+            let metadatas = getSelectedMetadatas()
+            await setEditMode(false)
+            await NCCreate().createActivityViewController(
+                selectedMetadata: metadatas,
+                controller: self.controller,
+                sender: nil)
+        }
     }
 
     func saveAsAvailableOffline(isAnyOffline: Bool) {
@@ -74,29 +82,32 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
             alert.addAction(UIAlertAction(title: NSLocalizedString("_continue_", comment: ""), style: .default, handler: { _ in
                 Task {
                     for metadata in metadatas {
-                        await NCDownloadAction.shared.setMetadataAvalableOffline(metadata, isOffline: isAnyOffline)
+                        await NCNetworking.shared.setMetadataAvalableOffline(metadata, isOffline: isAnyOffline)
                     }
+                    await  self.setEditMode(false)
                 }
-                self.setEditMode(false)
+
             }))
             alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel))
             self.present(alert, animated: true)
         } else {
             Task {
                 for metadata in metadatas {
-                    await NCDownloadAction.shared.setMetadataAvalableOffline(metadata, isOffline: isAnyOffline)
+                    await NCNetworking.shared.setMetadataAvalableOffline(metadata, isOffline: isAnyOffline)
                 }
+                await setEditMode(false)
             }
-            setEditMode(false)
         }
     }
 
     func lock(isAnyLocked: Bool) {
-        let metadatas = getSelectedMetadatas()
-        for metadata in metadatas where metadata.lock == isAnyLocked {
-            self.networking.lockUnlockFile(metadata, shoulLock: !isAnyLocked)
+        Task {
+            let metadatas = getSelectedMetadatas()
+            for metadata in metadatas where metadata.lock == isAnyLocked {
+                self.networking.lockUnlockFile(metadata, shouldLock: !isAnyLocked)
+            }
+            await setEditMode(false)
         }
-        setEditMode(false)
     }
 
     func getSelectedMetadatas() -> [tableMetadata] {
@@ -123,10 +134,10 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
             } else {
                 (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
             }
-            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
-
-            self.collectionView.reloadData()
         }
+        await (self.navigationController as? NCMainNavigationController)?.setNavigationRightItems()
+
+        self.collectionView.reloadData()
     }
 
     func toolbarWillAppear() {

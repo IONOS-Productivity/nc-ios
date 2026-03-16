@@ -24,9 +24,10 @@
 
 import Foundation
 import UIKit
+import MessageUI
+import NextcloudKit
 
 extension UIViewController {
-
     // https://stackoverflow.com/questions/6131205/how-to-find-topmost-view-controller-on-ios
     @objc func topMostViewController() -> UIViewController {
         // Handling Modal views
@@ -89,5 +90,11 @@ extension UIViewController {
 
     func isCurrentScreenInMainTabBar() -> Bool {
         return self.tabBarController is NCMainTabBarController
+    }
+}
+
+extension UIViewController: @retroactive MFMailComposeViewControllerDelegate {
+    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true)
     }
 }
