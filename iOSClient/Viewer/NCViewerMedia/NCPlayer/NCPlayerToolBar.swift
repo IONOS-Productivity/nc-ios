@@ -12,7 +12,6 @@ import MediaPlayer
 import MobileVLCKit
 import Alamofire
 import LucidBanner
-import FloatingPanel
 import Combine
 
 class NCPlayerToolBar: UIView {
@@ -244,31 +243,30 @@ class NCPlayerToolBar: UIView {
     }
 
     private func setupSubtitleButton() {
-        guard let player = ncplayer?.player else { return }
+          guard let player = ncplayer else { return }
 
-        var currentIndex: Int?
-        if let data = database.getVideo(metadata: metadata), let idx = data.currentVideoSubTitleIndex {
-            currentIndex = idx
-        } else {
-            currentIndex = Int(player.currentVideoSubTitleIndex)
-        }
+          var currentIndex: Int?
+          if let data = database.getVideoOrAudio(metadata: metadata), let idx = data.currentVideoSubTitleIndex {
+              currentIndex = idx
+          } else {
+              currentIndex = Int(player.currentVideoSubTitleIndex)
+          }
 
-        subtitleButton.menu = NCContextMenuPlayerTracks(
-            trackType: .subtitle,
-            tracks: player.videoSubTitlesNames,
-            trackIndexes: player.videoSubTitlesIndexes,
-            currentIndex: currentIndex,
-            ncplayer: ncplayer,
-            metadata: metadata,
-            viewerMediaPage: viewerMediaPage
-        ).viewMenu()
-    }
-
+          subtitleButton.menu = NCContextMenuPlayerTracks(
+              trackType: .subtitle,
+              tracks: player.videoSubTitlesNames,
+              trackIndexes: player.videoSubTitlesIndexes,
+              currentIndex: currentIndex,
+              ncplayer: ncplayer,
+              metadata: metadata,
+              viewerMediaPage: viewerMediaPage
+          ).viewMenu()
+      }
     private func setupAudioButton() {
-        guard let player = ncplayer?.player else { return }
+        guard let player = ncplayer else { return }
 
         var currentIndex: Int?
-        if let data = database.getVideo(metadata: metadata), let idx = data.currentAudioTrackIndex {
+        if let data = database.getVideoOrAudio(metadata: metadata), let idx = data.currentAudioTrackIndex {
             currentIndex = idx
         } else {
             currentIndex = Int(player.currentAudioTrackIndex)

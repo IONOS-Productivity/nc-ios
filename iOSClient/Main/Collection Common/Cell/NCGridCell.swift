@@ -99,12 +99,6 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         labelInfo.text = ""
         labelSubinfo.text = ""
 
-        let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(longPress(gestureRecognizer:)))
-        longPressedGesture.minimumPressDuration = 0.5
-        longPressedGesture.delegate = self
-        longPressedGesture.delaysTouchesBegan = true
-        self.addGestureRecognizer(longPressedGesture)
-
         #if !EXTENSION
         if playbackProgressView.superview == nil {
             addSubview(playbackProgressView)
@@ -195,15 +189,11 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
 #if !EXTENSION
 extension NCGridCell: NCCellMedia {
     func setupPlaybackProgress(visible: Bool) {
+        guard let ocId = metadata?.ocId else { return }
         playbackProgressView.setupPlaybackProgress(ocId: ocId, visible: visible)
     }
 }
 #endif
-
-protocol NCGridCellDelegate: AnyObject {
-    func tapMoreGridItem(with ocId: String, ocIdTransfer: String, image: UIImage?, sender: Any)
-    func longPressGridItem(with ocId: String, ocIdTransfer: String, gestureRecognizer: UILongPressGestureRecognizer)
-}
 
 // MARK: - Grid Layout
 

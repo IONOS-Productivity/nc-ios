@@ -152,14 +152,6 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProto
         tag1.text = ""
         titleTrailingConstraint.constant = 90
 
-        titleInfoTrailingDefault()
-
-        let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(longPress(gestureRecognizer:)))
-        longPressedGesture.minimumPressDuration = 0.5
-        longPressedGesture.delegate = self
-        longPressedGesture.delaysTouchesBegan = true
-        self.addGestureRecognizer(longPressedGesture)
-
         separator.backgroundColor = separatorBackground
         separatorHeightConstraint.constant = 1
 
@@ -318,12 +310,6 @@ extension NCListCell: NCCellMedia {
     }
 }
 #endif
-
-protocol NCListCellDelegate: AnyObject {
-    func tapShareListItem(with ocId: String, ocIdTransfer: String, sender: Any)
-    func tapMoreListItem(with ocId: String, ocIdTransfer: String, image: UIImage?, sender: Any)
-    func longPressListItem(with ocId: String, ocIdTransfer: String, gestureRecognizer: UILongPressGestureRecognizer)
-}
 
 // MARK: - List Layout
 

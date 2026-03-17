@@ -113,15 +113,15 @@ extension AppDelegate {
                     icon: utility.loadImage(named: "doc.text", colors: [NCBrandColor.shared.documentIconColor]),
                     sender: sender,
                     action: { _ in
-                        let createDocument = NCCreateDocument()
-
-                        Task {
-                            let templates = await createDocument.getTemplate(editorId: "onlyoffice", templateId: "document", account: session.account)
-                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
-                            let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
-
-                            await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "onlyoffice", creatorId: creator.identifier, templateId: templates.selectedTemplate.identifier, account: session.account)
-                        }
+//                        let createDocument = NCCreateDocument()
+//
+//                        Task {
+//                            let templates = await createDocument.getTemplate(editorId: "onlyoffice", templateId: "document", account: session.account)
+//                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+//                            let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
+//
+//                            await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "onlyoffice", creatorId: creator.identifier, templateId: templates.selectedTemplate.identifier, account: session.account)
+//                        }
                     }
                 )
             )
@@ -136,15 +136,15 @@ extension AppDelegate {
                     icon: utility.loadImage(named: "tablecells", colors: [NCBrandColor.shared.spreadsheetIconColor]),
                     sender: sender,
                     action: { _ in
-                        let createDocument = NCCreateDocument()
-
-                        Task {
-                            let templates = await createDocument.getTemplate(editorId: "onlyoffice", templateId: "spreadsheet", account: session.account)
-                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
-                            let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
-
-                            await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "onlyoffice", creatorId: creator.identifier, templateId: templates.selectedTemplate.identifier, account: session.account)
-                        }
+//                        let createDocument = NCCreateDocument()
+//
+//                        Task {
+//                            let templates = await createDocument.getTemplate(editorId: "onlyoffice", templateId: "spreadsheet", account: session.account)
+//                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+//                            let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
+//
+//                            await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "onlyoffice", creatorId: creator.identifier, templateId: templates.selectedTemplate.identifier, account: session.account)
+//                        }
                     }
                 )
             )
@@ -159,15 +159,15 @@ extension AppDelegate {
                     icon: utility.loadImage(named: "play.rectangle", colors: [NCBrandColor.shared.presentationIconColor]),
                     sender: sender,
                     action: { _ in
-                        let createDocument = NCCreateDocument()
-
-                        Task {
-                            let templates = await createDocument.getTemplate(editorId: "onlyoffice", templateId: "presentation", account: session.account)
-                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
-                            let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
-
-                            await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "onlyoffice", creatorId: creator.identifier, templateId: templates.selectedTemplate.identifier, account: session.account)
-                        }
+//                        let createDocument = NCCreateDocument()
+//
+//                        Task {
+//                            let templates = await createDocument.getTemplate(editorId: "onlyoffice", templateId: "presentation", account: session.account)
+//                            let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+//                            let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
+//
+//                            await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "onlyoffice", creatorId: creator.identifier, templateId: templates.selectedTemplate.identifier, account: session.account)
+//                        }
                     }
                 )
             )
@@ -181,15 +181,15 @@ extension AppDelegate {
                         icon: utility.loadImage(named: "doc.richtext", colors: [NCBrandColor.shared.documentIconColor]),
                         sender: sender,
                         action: { _ in
-                            let createDocument = NCCreateDocument()
-
-                            Task {
-                                let templates = await createDocument.getTemplate(editorId: "collabora", templateId: "document", account: session.account)
-                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
-                                let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
-
-                                await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "collabora", templateId: templates.selectedTemplate.identifier, account: session.account)
-                            }
+//                            let createDocument = NCCreateDocument()
+//
+//                            Task {
+//                                let templates = await createDocument.getTemplate(editorId: "collabora", templateId: "document", account: session.account)
+//                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+//                                let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
+//
+//                                await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "collabora", templateId: templates.selectedTemplate.identifier, account: session.account)
+//                            }
                         }
                     )
                 )
@@ -200,15 +200,15 @@ extension AppDelegate {
                         icon: utility.loadImage(named: "tablecells", colors: [NCBrandColor.shared.spreadsheetIconColor]),
                         sender: sender,
                         action: { _ in
-                            let createDocument = NCCreateDocument()
-
-                            Task {
-                                let templates = await createDocument.getTemplate(editorId: "collabora", templateId: "spreadsheet", account: session.account)
-                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
-                                let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
-
-                                await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "collabora", templateId: templates.selectedTemplate.identifier, account: session.account)
-                            }
+//                            let createDocument = NCCreateDocument()
+//
+//                            Task {
+//                                let templates = await createDocument.getTemplate(editorId: "collabora", templateId: "spreadsheet", account: session.account)
+//                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+//                                let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
+//
+//                                await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "collabora", templateId: templates.selectedTemplate.identifier, account: session.account)
+//                            }
                         }
                     )
                 )
@@ -219,15 +219,15 @@ extension AppDelegate {
                         icon: utility.loadImage(named: "play.rectangle", colors: [NCBrandColor.shared.presentationIconColor]),
                         sender: sender,
                         action: { _ in
-                            let createDocument = NCCreateDocument()
-
-                            Task {
-                                let templates = await createDocument.getTemplate(editorId: "collabora", templateId: "presentation", account: session.account)
-                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
-                                let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
-
-                                await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "collabora", templateId: templates.selectedTemplate.identifier, account: session.account)
-                            }
+//                            let createDocument = NCCreateDocument()
+//
+//                            Task {
+//                                let templates = await createDocument.getTemplate(editorId: "collabora", templateId: "presentation", account: session.account)
+//                                let fileName = await NCNetworking.shared.createFileName(fileNameBase: NSLocalizedString("_untitled_", comment: "") + "." + templates.ext, account: session.account, serverUrl: serverUrl)
+//                                let fileNamePath = utilityFileSystem.getFileNamePath(String(describing: fileName), serverUrl: serverUrl, session: session)
+//
+//                                await createDocument.createDocument(controller: controller, fileNamePath: fileNamePath, fileName: String(describing: fileName), editorId: "collabora", templateId: templates.selectedTemplate.identifier, account: session.account)
+//                            }
                         }
                     )
                 )

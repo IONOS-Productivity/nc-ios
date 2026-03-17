@@ -47,7 +47,7 @@ extension NCViewer {
                     icon: NCImagesRepository.menuIconDetails,
                     sender: sender,
                     action: { _ in
-                        NCDownloadAction.shared.openShare(viewController: controller, metadata: metadata, page: .activity)
+//                        NCDownloadAction.shared.openShare(viewController: controller, metadata: metadata, page: .activity)
                     }
                 )
             )
@@ -63,7 +63,7 @@ extension NCViewer {
                     icon: NCImagesRepository.menuIconViewInFolder,
                     sender: sender,
                     action: { _ in
-                        NCDownloadAction.shared.openFileViewInFolder(serverUrl: metadata.serverUrl, fileNameBlink: metadata.fileName, fileNameOpen: nil, sceneIdentifier: controller.sceneIdentifier)
+//                        NCDownloadAction.shared.openFileViewInFolder(serverUrl: metadata.serverUrl, fileNameBlink: metadata.fileName, fileNameOpen: nil, sceneIdentifier: controller.sceneIdentifier)
                     }
                 )
             )
@@ -78,13 +78,15 @@ extension NCViewer {
                 NCMenuAction(
                     title: metadata.favorite ? NSLocalizedString("_remove_favorites_", comment: "") : NSLocalizedString("_add_favorites_", comment: ""),
                     icon: metadata.favorite ? NCImagesRepository.menuIconRemoveFromFavorite : NCImagesRepository.menuIconAddToFavorite,
-					sender: sender, action: { _ in
-						NCNetworking.shared.favoriteMetadata(metadata) { error in
-							if error != .success {
-								NCContentPresenter().showError(error: error)
-							}
-						}
-					}
+					sender: sender,
+                    action: { _ in
+                        Task {
+                            let error = await NCNetworking.shared.setFavorite(metadata: metadata)
+                            if error != .success {
+                                NCContentPresenter().showError(error: error)
+                            }
+                        }
+                    }
                 )
             )
         }
@@ -115,7 +117,7 @@ extension NCViewer {
                     title: NSLocalizedString("_livephoto_save_", comment: ""),
                     icon: NCImagesRepository.menuIconLivePhoto,
 					sender: sender, action: { _ in
-						NCNetworking.shared.saveLivePhotoQueue.addOperation(NCOperationSaveLivePhoto(metadata: metadata, metadataMOV: metadataMOV, hudView: hudView))
+                        NCNetworking.shared.saveLivePhotoQueue.addOperation(NCOperationSaveLivePhoto(metadata: metadata, metadataMOV: metadataMOV, controller: controller))
 					}
                 )
             )
@@ -136,9 +138,9 @@ extension NCViewer {
                                 await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
                                     let metadata = metadata.detachedCopy()
                                     metadata.sessionSelector = NCGlobal.shared.selectorSaveAsScan
-                                    delegate.transferChange(status: NCGlobal.shared.networkingStatusDownloaded,
-                                                            metadata: metadata,
-                                                            error: .success)
+//                                    delegate.transferChange(status: NCGlobal.shared.networkingStatusDownloaded,
+//                                                            metadata: metadata,
+//                                                            error: .success)
                                 }
                             } else {
                                 if let metadata = await self.database.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,
@@ -227,9 +229,9 @@ extension NCViewer {
                                 await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
                                     let metadata = metadata.detachedCopy()
                                     metadata.sessionSelector = NCGlobal.shared.selectorLoadFileQuickLook
-                                    delegate.transferChange(status: NCGlobal.shared.networkingStatusDownloaded,
-                                                            metadata: metadata,
-                                                            error: .success)
+//                                    delegate.transferChange(status: NCGlobal.shared.networkingStatusDownloaded,
+//                                                            metadata: metadata,
+//                                                            error: .success)
                                 }
                             } else {
                                 if let metadata = await self.database.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,

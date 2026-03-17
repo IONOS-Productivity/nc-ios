@@ -34,10 +34,16 @@
 		2C33C48623E2C475005F963B /* Notification Service Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2C33C47F23E2C475005F963B /* Notification Service Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2F96A1BAFB10ACFEAC68EF1C /* NCContextMenuPlayerTracks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C7A5B36D1ED178FB6B76CB /* NCContextMenuPlayerTracks.swift */; };
 		370D26AF248A3D7A00121797 /* NCCellProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370D26AE248A3D7A00121797 /* NCCellProtocol.swift */; };
-		371B5A2E23D0B04500FAFAE9 /* NCMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B5A2D23D0B04500FAFAE9 /* NCMenu.swift */; };
 		3CEA5F122BFBBCAF0097E536 /* (null) in Frameworks */ = {isa = PBXBuildFile; };
 		420274712F11558400ECB06B /* NCCellMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4202746F2F11557500ECB06B /* NCCellMedia.swift */; };
 		421657AB2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421657AA2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift */; };
+		422579CF2F684E7D00117A7C /* FloatingPanel in Frameworks */ = {isa = PBXBuildFile; productRef = 422579CE2F684E7D00117A7C /* FloatingPanel */; };
+		422579D22F68508600117A7C /* NCMenuAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D02F68508600117A7C /* NCMenuAction.swift */; };
+		422579D32F68508600117A7C /* NCViewer+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D12F68508600117A7C /* NCViewer+Menu.swift */; };
+		422579D62F68553C00117A7C /* UIViewController+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D52F68553A00117A7C /* UIViewController+Menu.swift */; };
+		422579D82F68562700117A7C /* NCMenu+FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D72F68562700117A7C /* NCMenu+FloatingPanel.swift */; };
+		422579DB2F68564B00117A7C /* NCMenu.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 422579D92F68564B00117A7C /* NCMenu.storyboard */; };
+		422579DC2F68564B00117A7C /* NCMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579DA2F68564B00117A7C /* NCMenu.swift */; };
 		4232DC0A2C9D7C44008D546D /* UIView+GridSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4232DC092C9D7C44008D546D /* UIView+GridSelection.swift */; };
 		4232DC0B2C9D7C44008D546D /* UIView+GridSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4232DC092C9D7C44008D546D /* UIView+GridSelection.swift */; };
 		4240DB4E2C5646B400E72FC0 /* BurgerMenuAttachController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4240DB4D2C5646B400E72FC0 /* BurgerMenuAttachController.swift */; };
@@ -68,7 +74,6 @@
 		625EC2712C6CAABD006411D1 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 625EC2702C6CAABD006411D1 /* GoogleService-Info.plist */; };
 		62A63F2E2C8AF5320048653E /* View+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7E8A390295DC5E0006CB2D0 /* View+Extension.swift */; };
 		62A63F302C8AF7730048653E /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
-		8491B1CD273BBA82001C8C5B /* UIViewController+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8491B1CC273BBA82001C8C5B /* UIViewController+Menu.swift */; };
 		A5A87F9E4B0E4441A6A4BC20 /* NCContextMenuProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7697C94BA14450A0867940 /* NCContextMenuProfile.swift */; };
 		AA3C85E82D36B08C00F74F12 /* UITestBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3C85E72D36B08C00F74F12 /* UITestBackend.swift */; };
 		AA3C85EB2D36BBFB00F74F12 /* OCSResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3C85EA2D36BBF400F74F12 /* OCSResponse.swift */; };
@@ -138,6 +143,7 @@
 		AFCE353527E4ED5900FEA6C2 /* DateFormatter+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCE353427E4ED5900FEA6C2 /* DateFormatter+Extension.swift */; };
 		AFCE353727E4ED7B00FEA6C2 /* NCShareCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCE353627E4ED7B00FEA6C2 /* NCShareCells.swift */; };
 		AFCE353927E5DE0500FEA6C2 /* Shareable.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCE353827E5DE0400FEA6C2 /* Shareable.swift */; };
+		CB3666201AF7550816B5CD6A /* NCContextMenuComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8932E90EC4278026D86CCCC9 /* NCContextMenuComment.swift */; };
 		D52D53EF2F0DCD1600D824BF /* NCMediaSelectTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420113DB2D1303E00063BF54 /* NCMediaSelectTabBar.swift */; };
 		D52D53F32F0DD53300D824BF /* AccountButtonFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52D53F22F0DD53300D824BF /* AccountButtonFactory.swift */; };
 		D52D54022F0DE1BE00D824BF /* NCManageDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76340EB2EBDE7420056F538 /* NCManageDatabase.swift */; };
@@ -146,7 +152,6 @@
 		D59D37CE2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37CD2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift */; };
 		D59D37D02F0EE97C0072C824 /* TransfersListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37CF2F0EE97C0072C824 /* TransfersListener.swift */; };
 		D59D37D72F1082F60072C824 /* NCBackgroundLocationUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37D22F1082F50072C824 /* NCBackgroundLocationUploadManager.swift */; };
-		CB3666201AF7550816B5CD6A /* NCContextMenuComment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8932E90EC4278026D86CCCC9 /* NCContextMenuComment.swift */; };
 		D5B6AA7827200C7200D49C24 /* NCActivityTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B6AA7727200C7200D49C24 /* NCActivityTableViewCell.swift */; };
 		D5C2D21F2C9DC0EF00E7579D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C2D21E2C9DC0EF00E7579D /* PrimaryButton.swift */; };
 		D5C5133B2C91970B00AE35CA /* NCImagesRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C5133A2C91970B00AE35CA /* NCImagesRepository.swift */; };
@@ -157,7 +162,6 @@
 		D5E1D5042CF665C100813AB6 /* DataProtectionHostingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E1D5032CF665C100813AB6 /* DataProtectionHostingController.swift */; };
 		F310B1EF2BA862F1001C42F5 /* NCViewerMedia+VisionKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = F310B1EE2BA862F1001C42F5 /* NCViewerMedia+VisionKit.swift */; };
 		F317C82E2E844C5300761AEA /* ClientIntegrationUIViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F317C82D2E844C5300761AEA /* ClientIntegrationUIViewer.swift */; };
-		F321DA8A2B71205A00DDA0E6 /* NCTrashSelectTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F321DA892B71205A00DDA0E6 /* NCTrashSelectTabBar.swift */; };
 		F32FADA92D1176E3007035E2 /* UIButton+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F32FADA82D1176DE007035E2 /* UIButton+Extension.swift */; };
 		F3374A812D64AB9F002A38F9 /* StatusInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3374A802D64AB9E002A38F9 /* StatusInfo.swift */; };
 		F3374A842D64AC31002A38F9 /* AssistantLabelStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3374A832D64AC2C002A38F9 /* AssistantLabelStyle.swift */; };
@@ -1187,7 +1191,6 @@
 		2C33C48123E2C475005F963B /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		2C33C48A23E2CC26005F963B /* Notification_Service_Extension-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Notification_Service_Extension-Bridging-Header.h"; sourceTree = "<group>"; };
 		370D26AE248A3D7A00121797 /* NCCellProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCCellProtocol.swift; sourceTree = "<group>"; };
-		371B5A2D23D0B04500FAFAE9 /* NCMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMenu.swift; sourceTree = "<group>"; };
 		420113DB2D1303E00063BF54 /* NCMediaSelectTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMediaSelectTabBar.swift; sourceTree = "<group>"; };
 		4202746F2F11557500ECB06B /* NCCellMedia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCCellMedia.swift; sourceTree = "<group>"; };
 		4216512A2E28F654002E19D6 /* NextcloudDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NextcloudDebug.entitlements; sourceTree = "<group>"; };
@@ -1198,6 +1201,12 @@
 		4216512F2E28F6DC002E19D6 /* File Provider Extension UIDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "File Provider Extension UIDebug.entitlements"; sourceTree = "<group>"; };
 		421651302E28F6ED002E19D6 /* Notification Service ExtensionDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Notification Service ExtensionDebug.entitlements"; sourceTree = "<group>"; };
 		421657AA2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiDriveCollectionViewCommonSelectToolbarDelegate.swift; sourceTree = "<group>"; };
+		422579D02F68508600117A7C /* NCMenuAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMenuAction.swift; sourceTree = "<group>"; };
+		422579D12F68508600117A7C /* NCViewer+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCViewer+Menu.swift"; sourceTree = "<group>"; };
+		422579D52F68553A00117A7C /* UIViewController+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Menu.swift"; sourceTree = "<group>"; };
+		422579D72F68562700117A7C /* NCMenu+FloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCMenu+FloatingPanel.swift"; sourceTree = "<group>"; };
+		422579D92F68564B00117A7C /* NCMenu.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = NCMenu.storyboard; sourceTree = "<group>"; };
+		422579DA2F68564B00117A7C /* NCMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMenu.swift; sourceTree = "<group>"; };
 		422CA3EE2C932F7200241F29 /* AccountButtonFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountButtonFactory.swift; sourceTree = "<group>"; };
 		4232DC092C9D7C44008D546D /* UIView+GridSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+GridSelection.swift"; sourceTree = "<group>"; };
 		4240DB4D2C5646B400E72FC0 /* BurgerMenuAttachController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurgerMenuAttachController.swift; sourceTree = "<group>"; };
@@ -1224,7 +1233,6 @@
 		42F89EB02D71F30C00550A07 /* NCCollectionViewCommon+FileActionsHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCCollectionViewCommon+FileActionsHeader.swift"; sourceTree = "<group>"; };
 		42F907DD2D2C424100BCDC36 /* View+Design.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Design.swift"; sourceTree = "<group>"; };
 		625EC2702C6CAABD006411D1 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = SOURCE_ROOT; };
-		8491B1CC273BBA82001C8C5B /* UIViewController+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Menu.swift"; sourceTree = "<group>"; };
 		8932E90EC4278026D86CCCC9 /* NCContextMenuComment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCContextMenuComment.swift; sourceTree = "<group>"; };
 		AA3C85E72D36B08C00F74F12 /* UITestBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestBackend.swift; sourceTree = "<group>"; };
 		AA3C85EA2D36BBF400F74F12 /* OCSResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCSResponse.swift; sourceTree = "<group>"; };
@@ -1301,7 +1309,6 @@
 		D5E1D5032CF665C100813AB6 /* DataProtectionHostingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataProtectionHostingController.swift; sourceTree = "<group>"; };
 		F310B1EE2BA862F1001C42F5 /* NCViewerMedia+VisionKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCViewerMedia+VisionKit.swift"; sourceTree = "<group>"; };
 		F317C82D2E844C5300761AEA /* ClientIntegrationUIViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientIntegrationUIViewer.swift; sourceTree = "<group>"; };
-		F321DA892B71205A00DDA0E6 /* NCTrashSelectTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCTrashSelectTabBar.swift; sourceTree = "<group>"; };
 		F32FADA82D1176DE007035E2 /* UIButton+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIButton+Extension.swift"; sourceTree = "<group>"; };
 		F3374A802D64AB9E002A38F9 /* StatusInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusInfo.swift; sourceTree = "<group>"; };
 		F3374A832D64AC2C002A38F9 /* AssistantLabelStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantLabelStyle.swift; sourceTree = "<group>"; };
@@ -1575,11 +1582,7 @@
 		F78ACD53219047D40088454D /* NCSectionFooter.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NCSectionFooter.xib; sourceTree = "<group>"; };
 		F78B87E62B62527100C65ADC /* NCMediaDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMediaDataSource.swift; sourceTree = "<group>"; };
 		F78B87E82B62550800C65ADC /* NCMediaDownloadThumbnail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMediaDownloadThumbnail.swift; sourceTree = "<group>"; };
-		F78C6FDD296D677300C952C3 /* NCContextMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCContextMenu.swift; sourceTree = "<group>"; };
 		F78C6FDD296D677300C952C3 /* NCContextMenuMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCContextMenuMain.swift; sourceTree = "<group>"; };
-		F78D6F461F0B7CB9002F9619 /* es-MX */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es-MX"; path = "es-MX.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		F78D6F4D1F0B7CE4002F9619 /* nb-NO */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "nb-NO"; path = "nb-NO.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		F78D6F541F0B7D47002F9619 /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/Localizable.strings; sourceTree = "<group>"; };
 		F78E2D6429AF02DB0024D4F3 /* Database.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Database.swift; sourceTree = "<group>"; };
 		F78F74332163757000C2ADAD /* NCTrash.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = NCTrash.storyboard; sourceTree = "<group>"; };
 		F78F74352163781100C2ADAD /* NCTrash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCTrash.swift; sourceTree = "<group>"; };
@@ -1704,7 +1707,6 @@
 		F7D68FCB28CB9051009139F3 /* NCManageDatabase+DashboardWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCManageDatabase+DashboardWidget.swift"; sourceTree = "<group>"; };
 		F7D7A76B2DCDD437003D2007 /* NCManageDatabase+AutoUpload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCManageDatabase+AutoUpload.swift"; sourceTree = "<group>"; };
 		F7D890742BD25C570050B8A6 /* NCCollectionViewCommon+DragDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCCollectionViewCommon+DragDrop.swift"; sourceTree = "<group>"; };
-		F7DE9AB01F482FA5008DFE10 /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sv; path = sv.lproj/Localizable.strings; sourceTree = "<group>"; };
 		F7DF7B3E2F1A2EE400514020 /* BannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerView.swift; sourceTree = "<group>"; };
 		F7DF7B412F1A36B600514020 /* HelperBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperBanner.swift; sourceTree = "<group>"; };
 		F7E0710028B13BB00001B882 /* DashboardData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardData.swift; sourceTree = "<group>"; };
@@ -1901,6 +1903,7 @@
 				F76DA963277B760E0082465B /* Queuer in Frameworks */,
 				F3374AF22D78B01B002A38F9 /* Collections in Frameworks */,
 				F72AD70D28C24B93006CB92D /* NextcloudKit in Frameworks */,
+				422579CF2F684E7D00117A7C /* FloatingPanel in Frameworks */,
 				F70B86752642CE3B00ED5349 /* FirebaseCrashlytics in Frameworks */,
 				F7A1050E29E587AF00FFD92B /* TagListView in Frameworks */,
 				F76DA969277B77EA0082465B /* DropDown in Frameworks */,
@@ -1976,6 +1979,12 @@
 		371B5A2F23D0B04B00FAFAE9 /* Menu */ = {
 			isa = PBXGroup;
 			children = (
+				422579D92F68564B00117A7C /* NCMenu.storyboard */,
+				422579DA2F68564B00117A7C /* NCMenu.swift */,
+				422579D72F68562700117A7C /* NCMenu+FloatingPanel.swift */,
+				422579D52F68553A00117A7C /* UIViewController+Menu.swift */,
+				422579D02F68508600117A7C /* NCMenuAction.swift */,
+				422579D12F68508600117A7C /* NCViewer+Menu.swift */,
 				42E14EB72E96616000FBC8C3 /* AppDelegate+Menu.swift */,
 				F376A3732E5CC5FF0067EE25 /* ContextMenuActions.swift */,
 				F78C6FDD296D677300C952C3 /* NCContextMenuMain.swift */,
@@ -3233,15 +3242,10 @@
 				F71CFA662F2A07C6007A3AE9 /* NCMedia+Netwoking.swift */,
 				F7E2B64E2DDCC5C30075B4D0 /* NCMedia+TransferDelegate.swift */,
 				F78B87E62B62527100C65ADC /* NCMediaDataSource.swift */,
-				F7D60CAE2C941ACB008FBFDD /* NCMediaPinchGesture.swift */,
-				F78B87E82B62550800C65ADC /* NCMediaDownloadThumbnail.swift */,
-				F755CB3F2B8CB13C00CE27E9 /* NCMediaLayout.swift */,
 				420113DB2D1303E00063BF54 /* NCMediaSelectTabBar.swift */,
 				F78B87E82B62550800C65ADC /* NCMediaDownloadThumbnail.swift */,
 				F755CB3F2B8CB13C00CE27E9 /* NCMediaLayout.swift */,
-				F79699E62E689F68000EC82A /* NCMediaNavigationController.swift */,
 				F7D60CAE2C941ACB008FBFDD /* NCMediaPinchGesture.swift */,
-				F741C2232B6B9FD600E849BB /* NCMediaSelectTabBar.swift */,
 			);
 			path = Media;
 			sourceTree = "<group>";
@@ -3721,6 +3725,7 @@
 				F3374AF72D78B01B002A38F9 /* HeapModule */,
 				F7B8F6132EAB64AD006A70D6 /* JDStatusBarNotification */,
 				F70557B62ED44E2700135623 /* LucidBanner */,
+				422579CE2F684E7D00117A7C /* FloatingPanel */,
 			);
 			productName = "Crypto Cloud";
 			productReference = F7CE8AFA1DC1F8D8009CAE48 /* Nextcloud.app */;
@@ -3858,6 +3863,7 @@
 				F3374AEE2D78B01B002A38F9 /* XCRemoteSwiftPackageReference "swift-collections" */,
 				F7B8F6122EAB64AD006A70D6 /* XCRemoteSwiftPackageReference "JDStatusBarNotification" */,
 				F70557B52ED44E2700135623 /* XCRemoteSwiftPackageReference "LucidBanner" */,
+				422579CD2F684E6800117A7C /* XCRemoteSwiftPackageReference "FloatingPanel" */,
 			);
 			productRefGroup = F7F67B9F1A24D27800EE80DA;
 			projectDirPath = "";
@@ -4038,6 +4044,7 @@
 				F7EDE509262DA9D600414FE6 /* NCSelectCommandViewSelect.xib in Resources */,
 				F732D23327CF8AED000B0F1B /* NCPlayerToolBar.xib in Resources */,
 				F73D11FA253C5F4800DF9BEC /* NCViewerNextcloudText.storyboard in Resources */,
+				422579DB2F68564B00117A7C /* NCMenu.storyboard in Resources */,
 				F7EDE51B262DD0C400414FE6 /* NCSelectCommandViewCopyMove.xib in Resources */,
 				F7FF2CB12842159500EBB7A1 /* NCSectionHeader.xib in Resources */,
 				F7D1612023CF19E30039EBBF /* NCViewerRichWorkspace.storyboard in Resources */,
@@ -4528,10 +4535,7 @@
 				F7BD0A042C4689E9003A4A6D /* NCMedia+MediaLayout.swift in Sources */,
 				F761856B29E98543006EB3B0 /* NCIntroViewController.swift in Sources */,
 				F7743A142C33F13A0034F670 /* NCCollectionViewCommon+CollectionViewDataSource.swift in Sources */,
-				F75B0ABD244C4DBB00E58DCA /* NCDownloadAction.swift in Sources */,
 				4240DB4E2C5646B400E72FC0 /* BurgerMenuAttachController.swift in Sources */,
-				AF935067276B84E700BD078F /* NCMenu+FloatingPanel.swift in Sources */,
-				F321DA8A2B71205A00DDA0E6 /* NCTrashSelectTabBar.swift in Sources */,
 				F76882282C0DD1E7001CF441 /* NCEndToEndInitialize.swift in Sources */,
 				F702F2CD25EE5B4F008F8E80 /* AppDelegate.swift in Sources */,
 				F769454022E9F077000A798A /* NCSharePaging.swift in Sources */,
@@ -4579,7 +4583,6 @@
 				AFA2AC8527849604008E1EA7 /* NCActivityCommentView.swift in Sources */,
 				AFCE353727E4ED7B00FEA6C2 /* NCShareCells.swift in Sources */,
 				0F5090CE2C786F04009348D9 /* FileActionsHeader.swift in Sources */,
-				AF36077127BFA4E8001A243D /* ParallelWorker.swift in Sources */,
 				F75A9EE623796C6F0044CFCE /* NCNetworking.swift in Sources */,
 				AA8D31552D41052300FE2775 /* NCManageDatabase+DownloadLimit.swift in Sources */,
 				F758B460212C56A400515F55 /* NCScan.swift in Sources */,
@@ -4591,8 +4594,6 @@
 				F710D2022405826100A6033D /* NCViewerContextMenu.swift in Sources */,
 				428915312F226C1500B41486 /* PlaybackProgressView.swift in Sources */,
 				F765E9CD295C585800A09ED8 /* NCUploadScanDocument.swift in Sources */,
-				F77A697D250A0FBC00FF1708 /* NCCollectionViewCommon+Menu.swift in Sources */,
-				F741C2242B6B9FD600E849BB /* NCMediaSelectTabBar.swift in Sources */,
 				F7BF9D822934CA21009EE9A6 /* NCManageDatabase+LayoutForView.swift in Sources */,
 				AA8D31662D411FA100FE2775 /* NCShareDateCell.swift in Sources */,
 				F3F442EE2DDE292D00FD701F /* NCMetadataPermissions.swift in Sources */,
@@ -4603,6 +4604,7 @@
 				F799DF852C4B7E56003410B5 /* NCSectionHeader.swift in Sources */,
 				F78A10BF29322E8A008499B8 /* NCManageDatabase+Directory.swift in Sources */,
 				F7743A122C33F0A20034F670 /* NCCollectionViewCommon+CollectionViewDelegate.swift in Sources */,
+				422579D62F68553C00117A7C /* UIViewController+Menu.swift in Sources */,
 				F7D60CAF2C941ACB008FBFDD /* NCMediaPinchGesture.swift in Sources */,
 				0F08D6B92C94270600136502 /* ButtonStyleGuide.swift in Sources */,
 				F71916142E2901FB00E13E96 /* NCNetworking+Upload.swift in Sources */,
@@ -4719,7 +4721,7 @@
 				F76882312C0DD1E7001CF441 /* NCFileNameView.swift in Sources */,
 				F7381EE1218218C9000B1560 /* NCOffline.swift in Sources */,
 				F751247C2C42919C00E63DB8 /* NCPhotoCell.swift in Sources */,
-				F7A509252C26BD5D00326106 /* NCCreateDocument.swift in Sources */,
+				F7A509252C26BD5D00326106 /* NCCreate.swift in Sources */,
 				0F8615AC2CBE6AC20056B4F2 /* UITabBarGuideline.swift in Sources */,
 				F7A509252C26BD5D00326106 /* NCCreate.swift in Sources */,
 				F7FA80002C0F4F3B0072FC60 /* NCUploadAssetsModel.swift in Sources */,
@@ -4754,11 +4756,13 @@
 				F3A047982BD2668800658E7B /* NCAssistantCreateNewTask.swift in Sources */,
 				AF93471227E2341B002537EE /* NCContextMenuShare.swift in Sources */,
 				F7EFA47825ADBA500083159A /* NCViewerProviderContextMenu.swift in Sources */,
+				422579DC2F68564B00117A7C /* NCMenu.swift in Sources */,
 				42E5D36B2D678F9C007150DE /* HiDriveMainNavigationController.swift in Sources */,
 				F755BD9B20594AC7008C5FBB /* NCService.swift in Sources */,
 				F376A3742E5CC6030067EE25 /* ContextMenuActions.swift in Sources */,
 				F7E8A391295DC5E0006CB2D0 /* View+Extension.swift in Sources */,
 				F79B869B265E19D40085C0E0 /* NSMutableAttributedString+Extension.swift in Sources */,
+				422579D82F68562700117A7C /* NCMenu+FloatingPanel.swift in Sources */,
 				F7B7504B2397D38F004E13EC /* UIImage+Extension.swift in Sources */,
 				AF3FDCC22796ECC300710F60 /* NCTrash+CollectionView.swift in Sources */,
 				F70D7C3725FFBF82002B9E34 /* NCCollectionViewCommon.swift in Sources */,
@@ -4768,7 +4772,7 @@
 				F36E64F72B9245210085ABB5 /* NCCollectionViewCommon+SelectTabBarDelegate.swift in Sources */,
 				F79A65C62191D95E00FF6DCC /* NCSelect.swift in Sources */,
 				42F907DE2D2C424900BCDC36 /* View+Design.swift in Sources */,
-				F75D19E325EFE09000D74598 /* NCTrash+Menu.swift in Sources */,
+				F75D19E325EFE09000D74598 /* NCContextMenuTrash.swift in Sources */,
 				F75D19E325EFE09000D74598 /* NCContextMenuTrash.swift in Sources */,
 				F34E1ADB2ECC842B00FA10C3 /* NCStatusMessageModel.swift in Sources */,
 				F70CAE3A1F8CF31A008125FD /* NCEndToEndEncryption.m in Sources */,
@@ -4790,6 +4794,8 @@
 				F749B651297B0F2400087535 /* NCManageDatabase+Avatar.swift in Sources */,
 				F7FAFD3A28BFA948000777FE /* NCContextMenuNotification.swift in Sources */,
 				F74C0436253F1CDC009762AB /* NCShares.swift in Sources */,
+				422579D22F68508600117A7C /* NCMenuAction.swift in Sources */,
+				422579D32F68508600117A7C /* NCViewer+Menu.swift in Sources */,
 				F7AC1CB028AB94490032D99F /* Array+Extension.swift in Sources */,
 				F7AE00F5230D5F9E007ACF8A /* NCLoginProvider.swift in Sources */,
 				F707C26521A2DC5200F6181E /* NCStoreReview.swift in Sources */,
@@ -7144,6 +7150,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		422579CD2F684E6800117A7C /* XCRemoteSwiftPackageReference "FloatingPanel" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scenee/FloatingPanel";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.2.2;
+			};
+		};
 		F3374AEE2D78B01B002A38F9 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-collections.git";
@@ -7371,6 +7385,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		422579CE2F684E7D00117A7C /* FloatingPanel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 422579CD2F684E6800117A7C /* XCRemoteSwiftPackageReference "FloatingPanel" */;
+			productName = FloatingPanel;
+		};
 		625EC26D2C6CA285006411D1 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F70B86732642CE3B00ED5349 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

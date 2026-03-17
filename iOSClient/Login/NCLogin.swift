@@ -294,7 +294,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
                     self.loginButton.isEnabled = true
                     self.qrCode.isEnabled = true
                     if error == .success {
-                        self.createAccount(urlBase: urlBase, user: user, password: password)
+//                        self.createAccount(urlBase: urlBase, user: user, password: password)
                     } else {
                         let alertController = UIAlertController(title: NSLocalizedString("_error_", comment: ""), message: error.errorDescription, preferredStyle: .alert)
                         alertController.addAction(UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default, handler: { _ in }))
@@ -316,7 +316,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
     private func getAppPassword(urlBase: String, user: String, password: String) {
         NextcloudKit.shared.getAppPassword(url: urlBase, user: user, password: password) { token, _, error in
             if error == .success, let password = token {
-                self.createAccount(urlBase: urlBase, user: user, password: password)
+//                self.createAccount(urlBase: urlBase, user: user, password: password)
             } else {
                 NCContentPresenter().showError(error: error)
                 self.dismiss(animated: true, completion: nil)

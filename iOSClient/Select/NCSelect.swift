@@ -103,7 +103,6 @@ class NCSelect: UIViewController, UIGestureRecognizerDelegate, UIAdaptivePresent
 
         buttonCancel.title = NSLocalizedString("_cancel_", comment: "")
 		buttonCancel.tintColor = UIColor(named: "SelectToolbar/CancelTint")
-        bottomContraint?.constant = UIApplication.shared.firstWindow?.rootViewController?.view.safeAreaInsets.bottom ?? 0
         bottomContraint?.constant = UIApplication.shared.mainAppWindow?.rootViewController?.view.safeAreaInsets.bottom ?? 0
 
         // Type of command view

@@ -13,7 +13,7 @@ import Alamofire
 import LucidBanner
 import Combine
 
-public protocol NCViewerMediaViewDelegate: AnyObject {
+protocol NCViewerMediaViewDelegate: AnyObject {
 	func movedToAnotherItem(oldItem: tableMetadata, newItem: tableMetadata)
     func didOpenDetail()
     func didCloseDetail()
@@ -53,7 +53,7 @@ class NCViewerMedia: UIViewController {
     var imageViewConstraint: CGFloat = 0
     var isDetailViewInitializze: Bool = false
     weak var delegate: NCViewerMediaViewDelegate?
-    private var hud: NCHud?
+    private var hudToken: Int?
 
     private var allowOpeningDetails = true
     private var tipView: EasyTipView?
@@ -222,6 +222,7 @@ class NCViewerMedia: UIViewController {
 
     // MARK: - Image
 
+    @MainActor
     func loadImage() {
         guard let metadata = self.database.getMetadataFromOcId(metadata.ocId) else { return }
         self.metadata = metadata
@@ -563,25 +564,28 @@ extension NCViewerMedia {
             #endif
         case .downloading(let progress):
             addDownloadHudIfNeeded()
-            hud?.progress(progress)
+            LucidBanner.shared.update(
+                payload: LucidBannerPayload.Update(progress: progress),
+                for: hudToken
+            )
             #if DEBUG
             print("Played mode: DOWNLOADING")
             #endif
         case .error(let error):
             addDownloadHudIfNeeded()
             if let nkError = error {
-                hud?.error(text: nkError.errorDescription)
+                completeHudBannerError(subtitle: nkError.errorDescription, token: hudToken)
             } else {
-                hud?.dismiss()
+                completeHudBannerError(token: hudToken)
             }
-            hud = nil
+            hudToken = nil
             #if DEBUG
             print("Played mode: ERROR")
             #endif
         case .downloaded:
             addDownloadHudIfNeeded()
-            hud?.success()
-            hud = nil
+            completeHudBannerSuccess(token: hudToken)
+            hudToken = nil
             #if DEBUG
             print("Played mode: DOWNLOADED")
             #endif
@@ -630,12 +634,15 @@ extension NCViewerMedia {
     }
 
     private func addDownloadHudIfNeeded() {
-        if hud == nil {
-            hud = NCHud(self.tabBarController?.view)
-            hud?.ringProgress(text: NSLocalizedString("_downloading_", comment: ""), tapToCancelDetailText: true) { [weak self] in
+        if hudToken != nil { return }
+
+        let scene = SceneManager.shared.getWindow(controller: self.tabBarController)?.windowScene
+        hudToken = showHudBanner(
+            scene: scene,
+            title: NSLocalizedString("_downloading_", comment: ""),
+            stage: .button) { [weak self] in
                 self?.mediaCoordinator.cancelDownload()
             }
-        }
     }
 }
 

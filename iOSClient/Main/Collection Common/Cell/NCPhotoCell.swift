@@ -20,7 +20,7 @@ class NCPhotoCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProt
 
     var metadata: tableMetadata? {
         didSet {
-            delegate?.openContextMenu(with: metadata, button: buttonMore, sender: self) /* preconfigure UIMenu with each metadata */
+//            delegate?.openContextMenu(with: metadata, button: buttonMore, sender: self) /* preconfigure UIMenu with each metadata */
         }
     }
 
@@ -56,11 +56,6 @@ class NCPhotoCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProt
 
         imageSelect.isHidden = true
         imageSelect.image = UIImage(resource: .FileSelection.gridItemSelected)
-
-        buttonMore.isHidden = true
-        buttonMore.menu = nil
-        buttonMore.showsMenuAsPrimaryAction = true
-        contentView.bringSubviewToFront(buttonMore)
     }
 
     override func snapshotView(afterScreenUpdates afterUpdates: Bool) -> UIView? {
@@ -70,14 +65,14 @@ class NCPhotoCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellProt
     @objc private func handleTapObserver(_ g: UITapGestureRecognizer) {
         let location = g.location(in: contentView)
 
-        if buttonMore.frame.contains(location) {
-            delegate?.onMenuIntent(with: metadata)
-        }
+//        if buttonMore.frame.contains(location) {
+//            delegate?.onMenuIntent(with: metadata)
+//        }
     }
 
     func setButtonMore(image: UIImage) {
 //        buttonMore.setImage(image, for: .normal)
-        setA11yActions()
+//        setA11yActions()
     }
 
     func hideButtonMore(_ status: Bool) {

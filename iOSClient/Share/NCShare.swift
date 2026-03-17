@@ -124,8 +124,8 @@ class NCShare: UIViewController, NCSharePagingContent {
             networking = NCShareNetworking(metadata: metadata, view: self.view, delegate: self, session: session)
             let isVisible = (self.navigationController?.topViewController as? NCSharePaging)?.page == .sharing
             networking?.readShare(showLoadingIndicator: isVisible)
-            searchField.searchTextField.font = .systemFont(ofSize: 14)
-            searchField.delegate = self
+//            searchField.searchTextField.font = .systemFont(ofSize: 14)
+//            searchField.delegate = self
         }
     }
 
@@ -485,7 +485,7 @@ extension NCShare: UITableViewDataSource {
 
                 let fileName = NCSession.shared.getFileName(urlBase: session.urlBase, user: tableShare.shareWith)
                 
-                cell.fileAvatarImageView?.image = utility.loadUserImage(for: tableShare.shareWith, displayName: tableShare.shareWithDisplayname, urlBase: metadata.urlBase)
+//                cell.fileAvatarImageView?.image = utility.loadUserImage(for: tableShare.shareWith, displayName: tableShare.shareWithDisplayname, urlBase: metadata.urlBase)
                 cell.buttonMenu.menu = NCContextMenuShare(share: tableShare, isDirectory: metadata.isDirectory, canReshare: canReshare, shareController: self).viewMenu()
                 cell.buttonMenu.showsMenuAsPrimaryAction = true
 
@@ -514,7 +514,7 @@ extension NCShare: CNContactPickerDelegate {
 
         for email in arrEmail {
             alert.addAction(UIAlertAction(title: email, style: .default) { _ in
-                self.searchField?.text = email
+//                self.searchField?.text = email
                 self.networking?.getSharees(searchString: email)
             })
         }
@@ -552,7 +552,7 @@ extension NCShare: UISearchBarDelegate {
     }
 
     @objc private func searchSharees(_ sender: Any?) {
-        guard let searchString = searchField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !searchString.isEmpty else { return }
+//        guard let searchString = searchField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !searchString.isEmpty else { return }
         // https://stackoverflow.com/questions/25471114/how-to-validate-an-e-mail-address-in-swift
         func isValidEmail(_ email: String) -> Bool {
 

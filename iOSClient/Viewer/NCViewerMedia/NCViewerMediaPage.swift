@@ -476,23 +476,33 @@ extension NCViewerMediaPage: NCTransferDelegate {
                         error: NKError) {
         Task {@MainActor in
             switch status {
-                // DOWNLOAD
+            // DELETE
+            case NCGlobal.shared.networkingStatusDelete:
+                if error == .success,
+                   ocId == self.currentViewController.metadata.ocId {
+                    if let ncplayer = self.currentViewController.ncplayer, ncplayer.isPlaying() {
+                        ncplayer.playerPause()
+                    }
+                    self.navigationController?.popViewController(animated: true)
+                }
+            // DOWNLOAD
             case self.global.networkingStatusDownloaded:
-                guard metadata.ocId == self.currentViewController.metadata.ocId else {
+                guard ocId == self.currentViewController.metadata.ocId,
+                      let metadata = await NCManageDatabase.shared.getMetadataFromOcIdAsync(ocId) else {
                     return
                 }
                 self.progressView.progress = 0
 
                 if metadata.isImage {
-                    self.currentViewController.loadImage()
+                    await self.currentViewController.loadImage()
                 }
-                // UPLOAD
+            // UPLOAD
             case self.global.networkingStatusUploaded:
                 guard error == .success else { return }
-                if self.currentViewController.metadata.ocId == metadata.ocId {
-                    self.currentViewController.loadImage()
+                if self.currentViewController.metadata.ocId == ocId {
+                    await self.currentViewController.loadImage()
                 } else {
-                    self.modifiedOcId.append(metadata.ocId)
+                    self.modifiedOcId.append(ocId)
                 }
             default:
                 break

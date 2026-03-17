@@ -249,9 +249,9 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             let tblDirectory = database.getTableDirectory(ocId: metadata.ocId)
 
             if metadata.e2eEncrypted {
-                cell.filePreviewImageView?.image = imageCache.getFolderEncrypted(account: metadata.account)
+                cell.previewImageView?.image = imageCache.getFolderEncrypted(account: metadata.account)
             } else if canHaveShareIcon {
-                cell.filePreviewImageView?.image = ItemShareState.state(by: metadata, isShare: isShare).folderImage
+                cell.previewImageView?.image = ItemShareState.state(by: metadata, isShare: isShare).folderImage
             } else if metadata.mountType == "group" {
                 cell.previewImageView?.image = imageCache.getFolderGroup(account: metadata.account)
             } else if isMounted {
@@ -352,13 +352,13 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         }
 
         // image Favorite
-		cell.fileFavoriteImage?.image = metadata.favorite ? imageCache.getImageFavorite() : nil
+//		cell.fileFavoriteImage?.image = metadata.favorite ? imageCache.getImageFavorite() : nil
         if metadata.favorite {
             a11yValues.append(NSLocalizedString("_favorite_short_", comment: ""))
         }
 
         // Share image
-		cell.fileSharedImage?.image = ItemShareState.state(by: metadata, isShare: isShare).iconImage
+//		cell.fileSharedImage?.image = ItemShareState.state(by: metadata, isShare: isShare).iconImage
 
         // Button More
         if metadata.lock == true {
@@ -369,13 +369,13 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         }
 
 		// Status
-		cell.fileStatusImage?.image = nil
+//		cell.fileStatusImage?.image = nil
 
         if metadata.isLivePhoto {
             cell.statusImageView?.image = utility.loadImage(named: "livephoto", colors: [NCBrandColor.shared.iconImageColor])
             a11yValues.append(NSLocalizedString("_upload_mov_livephoto_", comment: ""))
         } else if metadata.isVideo {
-            cell.fileStatusImage?.image = utility.loadImage(named: "play.circle.fill", colors: [.init(named: "SystemBackgroundInverted")!, .systemGray5])
+//            cell.fileStatusImage?.image = utility.loadImage(named: "play.circle.fill", colors: [.init(named: "SystemBackgroundInverted")!, .systemGray5])
         }
 
         switch metadata.status {
@@ -430,8 +430,8 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         cell.setAccessibility(label: metadata.fileNameView + ", " + (cell.info?.text ?? "") + (cell.subInfo?.text ?? ""), value: a11yValues.joined(separator: ", "))
 
         // Color string find in search
-        cell.fileTitleLabel?.textColor = UIColor(resource: .ListCell.title)
-        cell.fileTitleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+//        cell.fileTitleLabel?.textColor = UIColor(resource: .ListCell.title)
+//        cell.fileTitleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
 
         if isSearchingMode, let literalSearch = self.literalSearch, let title = cell.title?.text {
             let longestWordRange = (title.lowercased() as NSString).range(of: literalSearch)
@@ -441,7 +441,7 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
         }
 
         // TAGS
-        cell.setTags(tags: Array(metadata.tags))
+//        cell.setTags(tags: Array(metadata.tags))
 
         // Layout photo
         if isLayoutPhoto {

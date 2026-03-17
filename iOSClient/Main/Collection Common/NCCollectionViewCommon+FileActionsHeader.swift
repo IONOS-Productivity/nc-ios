@@ -82,7 +82,7 @@ extension NCCollectionViewCommon {
             Task {
                 NCPreferences().setDirectoryOnTop(account: self.session.account, value: !directoryOnTop)
                 await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
-                    delegate.transferReloadData(serverUrl: self.serverUrl, requestData: true, status: nil)
+//                    delegate.transferReloadData(serverUrl: self.serverUrl, requestData: true, status: nil)
                 }
             }
         }

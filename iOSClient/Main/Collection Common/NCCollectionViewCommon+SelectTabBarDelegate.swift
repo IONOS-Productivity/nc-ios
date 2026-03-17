@@ -135,7 +135,7 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
                 (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
             }
         }
-        await (self.navigationController as? NCMainNavigationController)?.setNavigationRightItems()
+        (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 
         self.collectionView.reloadData()
     }

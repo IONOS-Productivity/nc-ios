@@ -211,7 +211,7 @@ class NCMainTabBar: UITabBar {
                     }
                 }
 
-                let fileFolderPath = NCUtilityFileSystem().getFileNamePath("", serverUrl: serverUrl, session: NCSession.shared.getSession(controller: controller))
+                let fileFolderPath = NCUtilityFileSystem().getRelativeFilePath("", serverUrl: serverUrl, session: NCSession.shared.getSession(controller: controller))
                 let fileFolderName = (serverUrl as NSString).lastPathComponent
                 Task {
                     if let capabilities = await NCManageDatabase.shared.getCapabilities(account: controller.account) {

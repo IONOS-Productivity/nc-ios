@@ -9,6 +9,7 @@ struct NCAccountSettingsView: View {
     @ObservedObject var model: NCAccountSettingsModel
 
     @State private var isExpanded: Bool = false
+    @State private var showUserStatus = false
     @State private var showServerCertificate = false
     @State private var showPushCertificate = false
     @State private var showDeleteAccountAlert: Bool = false
@@ -114,7 +115,7 @@ extension NCAccountSettingsView {
 		})
 		.sheet(isPresented: $showUserStatus) {
 			if let account = model.tblAccount?.account {
-				UserStatusView(showUserStatus: $showUserStatus, account: account)
+                NCUserStatusView(account: account)
 			}
 		}
 		.onChange(of: showUserStatus) { _ in }

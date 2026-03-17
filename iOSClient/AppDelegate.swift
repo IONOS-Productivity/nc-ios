@@ -453,7 +453,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             navigationController.navigationBar.barTintColor = NCBrandColor.shared.customer
             navigationController.navigationBar.isTranslucent = false
 
-            if let controller = UIApplication.shared.firstWindow?.rootViewController {
+            if let controller = UIApplication.shared.mainAppWindow?.rootViewController {
                 if let presentedVC = controller.presentedViewController, !(presentedVC is NCLoginNavigationController) {
                     presentedVC.dismiss(animated: false) {
                         controller.present(navigationController, animated: true)
