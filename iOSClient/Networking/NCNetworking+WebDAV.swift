@@ -832,242 +832,6 @@ extension NCNetworking {
             }
         }
     }
-
-    // MARK: - Search
-
-    /// WebDAV search
-    func searchFiles(literal: String,
-                     account: String,
-                     taskHandler: @escaping (_ task: URLSessionTask) -> Void = { _ in },
-                     completion: @escaping (_ metadatas: [tableMetadata]?, _ error: NKError) -> Void) {
-        let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: account)
-        let serverUrl = NCSession.shared.getSession(account: account).urlBase
-        NextcloudKit.shared.searchLiteral(serverUrl: serverUrl,
-                                          depth: "infinity",
-                                          literal: literal,
-                                          showHiddenFiles: showHiddenFiles,
-                                          account: account,
-                                          options: NKRequestOptions(queue: NextcloudKit.shared.nkCommonInstance.backgroundQueue)) { task in
-            Task {
-                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: account,
-                                                                                            path: serverUrl,
-                                                                                            name: "searchLiteral")
-                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
-            }
-            taskHandler(task)
-        } completion: { _, files, _, error in
-            guard error == .success, let files else { return completion(nil, error) }
-
-            Task {
-                let (_, metadatas) = await NCManageDatabaseCreateMetadata().convertFilesToMetadatasAsync(files)
-                NCManageDatabase.shared.addMetadatas(metadatas)
-                completion(metadatas, error)
-            }
-        }
-    }
-
-    /// Unified Search (NC>=20)
-    ///
-    func unifiedSearchFiles(literal: String,
-                            account: String,
-                            taskHandler: @escaping (_ task: URLSessionTask) -> Void = { _ in },
-                            providers: @escaping (_ accout: String, _ searchProviders: [NKSearchProvider]?) -> Void,
-                            update: @escaping (_ account: String, _ id: String, NKSearchResult?, [tableMetadata]?) -> Void,
-                            completion: @escaping (_ account: String, _ error: NKError) -> Void) {
-        let dispatchGroup = DispatchGroup()
-        let session = NCSession.shared.getSession(account: account)
-        dispatchGroup.enter()
-        dispatchGroup.notify(queue: .main) {
-            completion(session.account, NKError())
-        }
-
-        NextcloudKit.shared.unifiedSearch(term: literal, timeout: 30, timeoutProvider: 90, account: session.account) { _ in
-            // example filter
-            // ["calendar", "files", "fulltextsearch"].contains(provider.id)
-            return true
-        } request: { request in
-            if let request = request {
-                self.requestsUnifiedSearch.append(request)
-            }
-        } taskHandler: { task in
-            Task {
-                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: account,
-                                                                                            path: literal,
-                                                                                            name: "unifiedSearch")
-                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
-            }
-            taskHandler(task)
-        } providers: { account, searchProviders in
-            providers(account, searchProviders)
-        } update: { account, partialResult, provider, _ in
-            guard let partialResult = partialResult else {
-                return
-            }
-            var metadatas: [tableMetadata] = []
-
-            switch provider.id {
-            case "files":
-                partialResult.entries.forEach({ entry in
-                    if let filePath = entry.filePath {
-                        let semaphore = DispatchSemaphore(value: 0)
-                        self.loadMetadata(session: session, filePath: filePath, dispatchGroup: dispatchGroup) { _, metadata, _ in
-                            metadatas.append(metadata)
-                            semaphore.signal()
-                        }
-                        semaphore.wait()
-                    } else {
-                        print(#function, "[ERROR]: File search entry has no path: \(entry)")
-                    }
-                })
-                update(account, provider.id, partialResult, metadatas)
-            case "fulltextsearch":
-                // NOTE: FTS could also return attributes like files
-                // https://github.com/nextcloud/files_fulltextsearch/issues/143
-                partialResult.entries.forEach({ entry in
-                    let url = URLComponents(string: entry.resourceURL)
-                    guard let dir = url?.queryItems?["dir"]?.value, let filename = url?.queryItems?["scrollto"]?.value else { return }
-                    if let metadata = NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "account == %@ && path == %@ && fileName == %@",
-                                                                                                 session.account,
-                                                                                                 "/remote.php/dav/files/" + session.user + dir,
-                                                                                                 filename)) {
-                        metadatas.append(metadata)
-                    } else {
-                        let semaphore = DispatchSemaphore(value: 0)
-                        self.loadMetadata(session: session, filePath: dir + filename, dispatchGroup: dispatchGroup) { _, metadata, _ in
-                            metadatas.append(metadata)
-                            semaphore.signal()
-                        }
-                        semaphore.wait()
-                    }
-                })
-                update(account, provider.id, partialResult, metadatas)
-            default:
-                Task {
-                    for entry in partialResult.entries {
-                        let metadata = await NCManageDatabaseCreateMetadata().createMetadataAsync(
-                            fileName: entry.title,
-                            ocId: NSUUID().uuidString,
-                            serverUrl: session.urlBase,
-                            url: entry.resourceURL,
-                            isUrl: true,
-                            name: partialResult.id,
-                            subline: entry.subline,
-                            iconUrl: entry.thumbnailURL,
-                            session: session,
-                            sceneIdentifier: nil)
-                        metadatas.append(metadata)
-                    }
-                    update(account, provider.id, partialResult, metadatas)
-                }
-            }
-        } completion: { _, _, _ in
-            self.requestsUnifiedSearch.removeAll()
-            dispatchGroup.leave()
-        }
-    }
-
-    func unifiedSearchFilesProvider(id: String, term: String,
-                                    limit: Int, cursor: Int,
-                                    account: String,
-                                    taskHandler: @escaping (_ task: URLSessionTask) -> Void = { _ in },
-                                    completion: @escaping (_ account: String, _ searchResult: NKSearchResult?, _ metadatas: [tableMetadata]?, _ error: NKError) -> Void) {
-        var metadatas: [tableMetadata] = []
-        let session = NCSession.shared.getSession(account: account)
-        let request = NextcloudKit.shared.searchProvider(id, term: term, limit: limit, cursor: cursor, timeout: 60, account: session.account) { task in
-            Task {
-                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: account,
-                                                                                            path: term,
-                                                                                            name: "searchProvider")
-                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
-            }
-            taskHandler(task)
-        } completion: { account, searchResult, _, error in
-            guard let searchResult = searchResult else {
-                return completion(account, nil, metadatas, error)
-            }
-
-            switch id {
-            case "files":
-                searchResult.entries.forEach({ entry in
-                    if let fileId = entry.fileId, let metadata = NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "account == %@ && fileId == %@", session.account, String(fileId))) {
-                        metadatas.append(metadata)
-                    } else if let filePath = entry.filePath {
-                        let semaphore = DispatchSemaphore(value: 0)
-                        self.loadMetadata(session: session, filePath: filePath, dispatchGroup: nil) { _, metadata, _ in
-                            metadatas.append(metadata)
-                            semaphore.signal()
-                        }
-                        semaphore.wait()
-                    } else { print(#function, "[ERROR]: File search entry has no path: \(entry)") }
-                })
-                completion(account, searchResult, metadatas, error)
-            case "fulltextsearch":
-                // NOTE: FTS could also return attributes like files
-                // https://github.com/nextcloud/files_fulltextsearch/issues/143
-                searchResult.entries.forEach({ entry in
-                    let url = URLComponents(string: entry.resourceURL)
-                    guard let dir = url?.queryItems?["dir"]?.value, let filename = url?.queryItems?["scrollto"]?.value else { return }
-                    if let metadata = NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "account == %@ && path == %@ && fileName == %@",
-                                                                                                 session.account,
-                                                                                                 "/remote.php/dav/files/" + session.user + dir, filename)) {
-                        metadatas.append(metadata)
-                    } else {
-                        let semaphore = DispatchSemaphore(value: 0)
-                        self.loadMetadata(session: session, filePath: dir + filename, dispatchGroup: nil) { _, metadata, _ in
-                            metadatas.append(metadata)
-                            semaphore.signal()
-                        }
-                        semaphore.wait()
-                    }
-                })
-                completion(account, searchResult, metadatas, error)
-            default:
-                Task {
-                    for entry in searchResult.entries {
-                        let metadata = await NCManageDatabaseCreateMetadata().createMetadataAsync(
-                            fileName: entry.title,
-                            ocId: NSUUID().uuidString,
-                            serverUrl: session.urlBase,
-                            url: entry.resourceURL,
-                            isUrl: true,
-                            name: searchResult.name.lowercased(),
-                            subline: entry.subline,
-                            iconUrl: entry.thumbnailURL,
-                            session: session,
-                            sceneIdentifier: nil)
-                        metadatas.append(metadata)
-                    }
-                    completion(account, searchResult, metadatas, error)
-                }
-            }
-        }
-        if let request = request {
-            requestsUnifiedSearch.append(request)
-        }
-    }
-
-    func cancelUnifiedSearchFiles() {
-        for request in requestsUnifiedSearch {
-            request.cancel()
-        }
-        requestsUnifiedSearch.removeAll()
-    }
-
-    private func loadMetadata(session: NCSession.Session,
-                              filePath: String,
-                              dispatchGroup: DispatchGroup? = nil,
-                              completion: @escaping (String, tableMetadata, NKError) -> Void) {
-        let urlPath = session.urlBase + "/remote.php/dav/files/" + session.user + filePath
-
-        dispatchGroup?.enter()
-        self.readFile(serverUrlFileName: urlPath, account: session.account) { account, metadata, _, error in
-            defer { dispatchGroup?.leave() }
-            guard let metadata else { return }
-            let returnMetadata = tableMetadata.init(value: metadata)
-            NCManageDatabase.shared.addMetadata(metadata)
-            completion(account, returnMetadata, error)
-        }
-    }
 }
 
 class NCOperationDownloadAvatar: ConcurrentOperation, @unchecked Sendable {
@@ -1077,14 +841,14 @@ class NCOperationDownloadAvatar: ConcurrentOperation, @unchecked Sendable {
     var etag: String?
     var view: UIView?
     var account: String
-    var isPreviewImageView: Bool
+    var isPreviewImage: Bool
 
-    init(user: String, fileName: String, account: String, view: UIView?, isPreviewImageView: Bool = false) {
+    init(user: String, fileName: String, account: String, view: UIView?, isPreviewImage: Bool = false) {
         self.user = user
         self.fileName = fileName
         self.account = account
         self.view = view
-        self.isPreviewImageView = isPreviewImageView
+        self.isPreviewImage = isPreviewImage
         self.etag = NCManageDatabase.shared.getTableAvatar(fileName: fileName)?.etag
     }
 
@@ -1116,12 +880,12 @@ class NCOperationDownloadAvatar: ConcurrentOperation, @unchecked Sendable {
 
                 DispatchQueue.main.async {
                     let visibleCells: [UIView] = (self.view as? UICollectionView)?.visibleCells ?? (self.view as? UITableView)?.visibleCells ?? []
-                    for case let cell as NCCellProtocol in visibleCells {
+                    for case let cell as NCCellMainProtocol in visibleCells {
                         if self.user == cell.metadata?.ownerId {
-                            if self.isPreviewImageView, let previewImageView = cell.previewImageView {
-                                UIView.transition(with: previewImageView, duration: 0.75, options: .transitionCrossDissolve, animations: { previewImageView.image = image}, completion: nil)
-                            } else if let avatarImageView = cell.avatarImageView {
-                                UIView.transition(with: avatarImageView, duration: 0.75, options: .transitionCrossDissolve, animations: { avatarImageView.image = image}, completion: nil)
+                            if self.isPreviewImage, let previewImage = cell.previewImg {
+                                UIView.transition(with: previewImage, duration: 0.75, options: .transitionCrossDissolve, animations: { previewImage.image = image}, completion: nil)
+                            } else if let avatarImage = cell.avatarImg {
+                                UIView.transition(with: avatarImage, duration: 0.75, options: .transitionCrossDissolve, animations: { avatarImage.image = image}, completion: nil)
                             }
                             break
                         }

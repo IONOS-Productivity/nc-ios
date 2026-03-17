@@ -7,7 +7,6 @@ import UIKit
 import SwiftUI
 import Alamofire
 import NextcloudKit
-import SVGKit
 import LucidBanner
 
 /// A context menu used in ``NCCollectionViewCommon`` and ``NCMedia``
@@ -47,10 +46,6 @@ class NCContextMenuMain: NSObject {
         )
 
         let deleteMenu = buildDeleteMenu(metadata: metadata)
-
-        if !NCNetworking.shared.isOnline {
-            return UIMenu()
-        }
 
         // Assemble final menu
         let baseChildren = [
@@ -503,24 +498,19 @@ class NCContextMenuMain: NSObject {
                 if shouldShowMenu {
                     let deferredElement = UIDeferredMenuElement { completion in
                         Task {
-                            func resizedRasterImage(_ image: UIImage, to size: CGSize) -> UIImage {
-                                let format = UIGraphicsImageRendererFormat.default()
-                                format.scale = image.scale
-                                let renderer = UIGraphicsImageRenderer(size: size, format: format)
-                                return renderer.image { _ in
-                                    image.draw(in: CGRect(origin: .zero, size: size))
-                                }.withRenderingMode(image.renderingMode)
-                            }
+                            var iconImage = UIImage(systemName: "exclamationmark.triangle.fill")
 
-                            var iconImage: UIImage
-
-                            if let iconUrl = item.icon,
-                               let url = URL(string: metadata.urlBase + iconUrl) {
-                                let (data, _) = try await URLSession.shared.data(from: url)
-                                let svgkImage = SVGKImage(data: data)?.uiImage.withRenderingMode(.alwaysTemplate)
-                                iconImage = resizedRasterImage(svgkImage ?? UIImage(), to: .init(width: 23, height: 23))
-                            } else {
-                                iconImage = UIImage()
+                            if let iconUrl = item.icon {
+                                let results = await NextcloudKit.shared.downloadContentAsync(serverUrl: metadata.urlBase + iconUrl, account: metadata.account)
+                                if results.error == .success, let data = results.responseData?.data,
+                                   let image = try? await NCSVGRenderer().renderSVGToUIImage(
+                                    svgData: data,
+                                    size: CGSize(width: UIScreen.main.scale * 20,
+                                                 height: UIScreen.main.scale * 20),
+                                    tintColor: NCBrandColor.shared.iconImageColor,
+                                    trimTransparentPixels: false) {
+                                    iconImage = image
+                                }
                             }
 
                             let action = await UIAction(
@@ -528,13 +518,14 @@ class NCContextMenuMain: NSObject {
                                 image: iconImage
                             ) { _ in
                                 Task {
-                                    let results = await NextcloudKit.shared.sendRequestAsync(account: metadata.account,
-                                                                                             fileId: metadata.fileId,
-                                                                                             filePath: self.utilityFileSystem.getRelativeFilePath(metadata.fileName, serverUrl: metadata.serverUrl, urlBase: metadata.urlBase, userId: metadata.userId),
-                                                                                             url: item.url,
-                                                                                             method: item.method,
-                                                                                             params: item.params)
-
+                                    let results = await NextcloudKit.shared.sendRequestAsync(
+                                        account: metadata.account,
+                                        fileId: metadata.fileId,
+                                        filePath: self.utilityFileSystem.getRelativeFilePath(metadata.fileName, serverUrl: metadata.serverUrl, urlBase: metadata.urlBase, userId: metadata.userId),
+                                        url: item.url,
+                                        method: item.method,
+                                        params: item.params
+                                    )
                                     if results.error != .success {
                                         await showErrorBanner(sceneIdentifier: self.sceneIdentifier, text: results.error.errorDescription, errorCode: results.error.errorCode)
                                     } else {

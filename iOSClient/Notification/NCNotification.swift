@@ -114,7 +114,7 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
         guard let cell = self.tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as? NCNotificationCell else { return UITableViewCell() }
         cell.delegate = self
         cell.selectionStyle = .none
-        cell.indexPath = indexPath
+        cell.index = indexPath
 
         let notification = notifications[indexPath.row]
         let urlIcon = URL(string: notification.icon)
@@ -142,9 +142,9 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
             let results = NCManageDatabase.shared.getImageAvatarLoaded(fileName: fileName)
 
             if results.image == nil {
-                cell.avatarImageView?.image = utility.loadUserImage(for: user, displayName: json["user"]?["name"].string, urlBase: session.urlBase)
+                cell.avatar?.image = utility.loadUserImage(for: user, displayName: json["user"]?["name"].string, urlBase: session.urlBase)
             } else {
-                cell.avatarImageView?.image = results.image
+                cell.avatar?.image = results.image
             }
 
             if !(results.tblAvatar?.loaded ?? false),
@@ -340,7 +340,7 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
         let sortedNotifications = notifications.sorted { $0.date > $1.date }
         for notification in sortedNotifications {
             if let icon = notification.icon {
-                self.utility.convertSVGtoPNGWriteToUserData(svgUrlString: icon, width: 25, rewrite: false, account: session.account) { _, _ in
+                if await self.utility.convertSVGtoPNGWriteToUserData(serverUrl: icon, rewrite: false, account: session.account).image != nil {
                     self.tableView.reloadData()
                 }
             }
@@ -353,7 +353,7 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
 
 // MARK: -
 
-class NCNotificationCell: UITableViewCell, NCCellProtocol {
+class NCNotificationCell: UITableViewCell {
 
     @IBOutlet weak var icon: UIImageView!
     @IBOutlet weak var avatar: UIImageView!
@@ -368,23 +368,11 @@ class NCNotificationCell: UITableViewCell, NCCellProtocol {
     @IBOutlet weak var primaryWidth: NSLayoutConstraint!
     @IBOutlet weak var secondaryWidth: NSLayoutConstraint!
 
-    private var user = ""
-    private var index = IndexPath()
+    var user = ""
+    var index = IndexPath()
 
     weak var delegate: NCNotificationCellDelegate?
     var notification: NKNotifications?
-
-    var indexPath: IndexPath {
-        get { return index }
-        set { index = newValue }
-    }
-    var avatarImageView: UIImageView? {
-        return avatar
-    }
-    var fileUser: String? {
-        get { return user }
-        set { user = newValue ?? "" }
-    }
 
     @IBAction func touchUpInsideRemove(_ sender: Any) {
         guard let notification = notification else { return }

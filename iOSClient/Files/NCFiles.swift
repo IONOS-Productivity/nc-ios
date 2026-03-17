@@ -10,8 +10,6 @@ import SwiftUI
 
 class NCFiles: NCCollectionViewCommon {
     internal var fileNameBlink: String?
-    internal var fileNameOpen: String?
-
     internal var lastOffsetY: CGFloat = 0
     internal var lastScrollTime: TimeInterval = 0
     internal var accumulatedScrollDown: CGFloat = 0
@@ -45,7 +43,10 @@ class NCFiles: NCCollectionViewCommon {
         }
 
         NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
-            self.stopSyncMetadata()
+            Task {
+                await self.stopSyncMetadata()
+                await self.searchOperationHandle.cancel()
+            }
         }
 
         if self.serverUrl.isEmpty {
@@ -106,10 +107,8 @@ class NCFiles: NCCollectionViewCommon {
         super.viewDidAppear(animated)
 
         if !self.dataSource.isEmpty() {
-            self.blinkCell(fileName: self.fileNameBlink)
-            self.openFile(fileName: self.fileNameOpen)
-            self.fileNameBlink = nil
-            self.fileNameOpen = nil
+            blinkCell(fileName: self.fileNameBlink)
+            fileNameBlink = nil
         }
 
         Task {
@@ -125,8 +124,8 @@ class NCFiles: NCCollectionViewCommon {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        stopSyncMetadata()
         Task {
+            await stopSyncMetadata()
             await NCNetworking.shared.networkingTasks.cancel(identifier: "\(self.serverUrl)_NCFiles")
         }
     }
@@ -135,7 +134,6 @@ class NCFiles: NCCollectionViewCommon {
         super.viewDidDisappear(animated)
 
         fileNameBlink = nil
-        fileNameOpen = nil
     }
 
     // MARK: - DataSource
@@ -173,27 +171,11 @@ class NCFiles: NCCollectionViewCommon {
             startSyncMetadata(metadatas: self.dataSource.getMetadatas())
         }
 
-        Task {
-            await networking.networkingTasks.cancel(identifier: "\(self.serverUrl)_NCFiles")
-        }
+        await networking.networkingTasks.cancel(identifier: "\(self.serverUrl)_NCFiles")
 
         guard !isSearchingMode else {
-            return networkSearch()
-        }
-
-        func downloadMetadata(_ metadata: tableMetadata) async -> Bool {
-            let fileSize = utilityFileSystem.fileProviderStorageSize(metadata.ocId,
-                                                                     fileName: metadata.fileNameView,
-                                                                     userId: metadata.userId,
-                                                                     urlBase: metadata.urlBase)
-            guard fileSize > 0 else { return false }
-
-            if let tblLocalFile = await database.getTableLocalFileAsync(predicate: NSPredicate(format: "ocId == %@", metadata.ocId)) {
-                if tblLocalFile.etag != metadata.etag {
-                    return true
-                }
-            }
-            return false
+            await self.search()
+            return
         }
 
         let resultsReadFolder = await networkReadFolderAsync(serverUrl: self.serverUrl, forced: forced)
@@ -204,7 +186,7 @@ class NCFiles: NCCollectionViewCommon {
         let metadatasForDownload: [tableMetadata] = resultsReadFolder.metadatas ?? self.dataSource.getMetadatas()
         Task.detached(priority: .utility) {
             for metadata in metadatasForDownload where !metadata.directory {
-                if await downloadMetadata(metadata) {
+                if await self.downloadMetadata(metadata) {
                     if let metadata = await self.database.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,
                                                                                                 session: NCNetworking.shared.sessionDownload,
                                                                                                 selector: NCGlobal.shared.selectorDownloadFile,
@@ -216,6 +198,23 @@ class NCFiles: NCCollectionViewCommon {
         }
 
         await self.reloadDataSource()
+    }
+
+    private func downloadMetadata(_ metadata: tableMetadata) async -> Bool {
+        let fileSize = utilityFileSystem.fileProviderStorageSize(metadata.ocId,
+                                                                 fileName: metadata.fileNameView,
+                                                                 userId: metadata.userId,
+                                                                 urlBase: metadata.urlBase)
+        guard fileSize > 0 else {
+            return false
+        }
+
+        if let tblLocalFile = await database.getTableLocalFileAsync(predicate: NSPredicate(format: "ocId == %@", metadata.ocId)) {
+            if tblLocalFile.etag != metadata.etag {
+                return true
+            }
+        }
+        return false
     }
 
     private func networkReadFolderAsync(serverUrl: String, forced: Bool) async -> (metadatas: [tableMetadata]?, error: NKError, reloadRequired: Bool) {
@@ -364,15 +363,11 @@ class NCFiles: NCCollectionViewCommon {
         }
     }
 
-    func openFile(fileName: String?) {
-        if let fileName = fileName, let metadata = database.getMetadata(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@ AND fileName == %@", session.account, self.serverUrl, fileName)) {
-            let indexPath = self.dataSource.getIndexPathMetadata(ocId: metadata.ocId)
-            if let indexPath = indexPath {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.collectionView(self.collectionView, didSelectItemAt: indexPath)
-                }
-            }
+    func open(metadata: tableMetadata?) async {
+        guard let metadata else {
+            return
         }
+        await didSelectMetadata(metadata, withOcIds: false)
     }
     
     private func isOpenedFromSearchResults() -> Bool {

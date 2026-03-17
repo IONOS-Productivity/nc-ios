@@ -34,21 +34,10 @@
                             <constraint firstAttribute="width" constant="20" id="cZG-gx-gwt"/>
                         </constraints>
                     </imageView>
-                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="PfR-89-FqQ" userLabel="buttonMoreGrid">
-                        <rect key="frame" x="375" y="372" width="20" height="20"/>
-                        <constraints>
-                            <constraint firstAttribute="width" constant="20" id="4ML-gf-tiB"/>
-                            <constraint firstAttribute="height" constant="20" id="uCW-jb-xJu"/>
-                        </constraints>
-                        <fontDescription key="fontDescription" type="system" pointSize="10"/>
-                        <color key="tintColor" systemColor="systemGray2Color"/>
-                        <state key="normal" image="ellipsis" catalog="system"/>
-                    </button>
                 </subviews>
             </view>
             <color key="backgroundColor" systemColor="secondarySystemBackgroundColor"/>
             <constraints>
-                <constraint firstAttribute="bottom" secondItem="PfR-89-FqQ" secondAttribute="bottom" constant="8" id="0XY-5K-ZuW"/>
                 <constraint firstItem="DHy-Up-3Bh" firstAttribute="leading" secondItem="vf1-Kf-9uL" secondAttribute="leading" constant="5" id="1T3-8p-uIW"/>
                 <constraint firstAttribute="trailing" secondItem="PfR-89-FqQ" secondAttribute="trailing" constant="5" id="7x9-fU-P0E"/>
                 <constraint firstAttribute="bottom" secondItem="a0p-rj-jnV" secondAttribute="bottom" constant="5" id="9Qc-jT-y8N"/>
@@ -69,12 +58,8 @@
         </collectionViewCell>
     </objects>
     <resources>
-        <image name="ellipsis" catalog="system" width="128" height="37"/>
         <systemColor name="secondarySystemBackgroundColor">
             <color red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
-        <systemColor name="systemGray2Color">
-            <color red="0.68235294120000001" green="0.68235294120000001" blue="0.69803921570000005" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

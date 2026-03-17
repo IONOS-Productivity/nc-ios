@@ -477,7 +477,7 @@ extension NCShare: UITableViewDataSource {
         } else {
         // USER / GROUP etc.
             if let cell = tableView.dequeueReusableCell(withIdentifier: "cellUser", for: indexPath) as? NCShareUserCell {
-                cell.indexPath = indexPath
+                cell.index = indexPath
                 cell.tableShare = tableShare
                 cell.isDirectory = metadata.directory
                 cell.delegate = self
