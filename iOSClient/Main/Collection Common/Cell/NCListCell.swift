@@ -23,17 +23,12 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     @IBOutlet weak var imageLocal: UIImageView!
     @IBOutlet weak var imageShared: UIImageView!
     @IBOutlet weak var imageMore: UIImageView!
+    @IBOutlet weak var progressView: UIProgressView!
 
     @IBOutlet weak var labelTitle: UILabel!
     @IBOutlet weak var labelInfo: UILabel!
     @IBOutlet weak var labelSubinfo: UILabel!
     @IBOutlet weak var labelInfoSeparator: UILabel!
-    @IBOutlet weak var imageShared: UIImageView!
-    @IBOutlet weak var buttonShared: UIButton!
-    @IBOutlet weak var imageMore: UIImageView!
-    @IBOutlet weak var buttonMore: UIButton!
-    @IBOutlet weak var progressView: UIProgressView!
-    @IBOutlet weak var separator: UIView!
     @IBOutlet weak var tag0: UILabel!
     @IBOutlet weak var tag1: UILabel!
 
@@ -44,7 +39,14 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     @IBOutlet weak var imageItemLeftConstraint: NSLayoutConstraint!
     @IBOutlet weak var separatorHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var titleTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var subInfoTrailingConstraint: NSLayoutConstraint!
+
+    #if !EXTENSION
+        private var playbackProgressView = PlaybackProgressView()
+    #endif
+
+    var separatorBackground: UIColor? {
+        UIColor(named: "ListCell/Separator")
+    }
 
     weak var delegate: NCListCellDelegate?
 
@@ -289,6 +291,9 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
 #if !EXTENSION
 extension NCListCell: NCCellMedia {
     func setupPlaybackProgress(visible: Bool) {
+        guard let ocId = metadata?.ocId else {
+            return
+        }
         playbackProgressView.setupPlaybackProgress(ocId: ocId, visible: visible)
     }
 }

@@ -142,7 +142,7 @@ struct DashboardWidgetView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
-        .containerBackground(.background, for: .widget)
+        .containerBackground(Color(.AppBackground.main), for: .widget)
     }
 }
 

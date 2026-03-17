@@ -63,7 +63,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 		}
 	}
 
-    internal var tabBarSelect: NCCollectionViewCommonSelectTabBar?
+    internal var tabBarSelect: HiDriveCollectionViewCommonSelectToolbar?
 
     internal var attributesZoomIn: UIMenuElement.Attributes = []
     internal var attributesZoomOut: UIMenuElement.Attributes = []
@@ -152,8 +152,8 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         self.tabBarController as? NCMainTabBarController
     }
 
-    internal var mainNavigationController: NCMainNavigationController? {
-        self.navigationController as? NCMainNavigationController
+    internal var mainNavigationController: HiDriveMainNavigationController? {
+        self.navigationController as? HiDriveMainNavigationController
     }
 
     internal var sceneIdentifier: String {
@@ -556,9 +556,6 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     }
 
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        // (+)
-        mainNavigationController?.hiddenPlusButton(false)
-
         self.isSearchingMode = false
         self.networkSearchInProgress = false
         self.searchResultText = nil

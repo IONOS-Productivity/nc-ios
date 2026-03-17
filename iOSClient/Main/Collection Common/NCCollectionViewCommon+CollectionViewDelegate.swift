@@ -74,7 +74,7 @@ extension NCCollectionViewCommon: UICollectionViewDelegate {
         } else if metadata.isURL,
                   let url = URL(string: metadata.serverUrl)?.appendingPathComponent(metadata.url),
                   UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
+            UIApplication.shared.open(url, completionHandler: nil)
         } else {
             let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: self.global.previewExt1024, userId: metadata.userId, urlBase: metadata.urlBase)
             let fileExists = utilityFileSystem.fileProviderStorageExists(metadata)
