@@ -64,8 +64,8 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
         self.tabBarController as? NCMainTabBarController
     }
 
-    var mainNavigationController: NCMainNavigationController? {
-        self.navigationController as? NCMainNavigationController
+    var mainNavigationController: HiDriveMainNavigationController? {
+        self.navigationController as? HiDriveMainNavigationController
     }
 
     // MARK: - View Life Cycle
