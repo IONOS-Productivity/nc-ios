@@ -100,8 +100,6 @@ class NCMainTabBarController: UITabBarController {
                 continue
             }
 
-            let capabilities = await NKCapabilities.shared.getCapabilities(for: self.account)
-
             // Check error
             await NCNetworking.shared.checkServerError(account: self.account, controller: self)
         }
