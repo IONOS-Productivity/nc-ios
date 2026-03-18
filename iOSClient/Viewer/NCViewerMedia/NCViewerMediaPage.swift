@@ -19,7 +19,6 @@ class NCViewerMediaPage: UIViewController {
     // Parameters
     var ocIds: [String] = []
     var currentIndex: Int = 0
-    var delegateViewController: UIViewController?
 
     var modifiedOcId: [String] = []
     private var nextIndex: Int?
@@ -150,12 +149,12 @@ class NCViewerMediaPage: UIViewController {
 
         changeScreenMode(mode: viewerMediaScreenMode)
         tabBarController?.tabBar.isHidden = true
-
-        FloatingPlayerViewPresenter.shared.isMediaScreenVisible = true
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
+        changeScreenMode(mode: viewerMediaScreenMode)
         startTimerAutoHide()
     }
 
@@ -164,8 +163,6 @@ class NCViewerMediaPage: UIViewController {
 
         changeScreenMode(mode: .normal)
         tabBarController?.tabBar.isHidden = false
-
-        FloatingPlayerViewPresenter.shared.isMediaScreenVisible = false
     }
 
     override func viewDidDisappear(_ animated: Bool) {

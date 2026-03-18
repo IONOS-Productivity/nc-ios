@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2020 Marino Faggiana
 // SPDX-FileCopyrightText: 2025 Serhii Kaliberda
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -165,7 +166,9 @@ class NCViewerMedia: UIViewController {
                 self?.playerMovedToAnotherItem(oldItem: old, newItem: new)
             }.store(in: &cancellables)
             mediaCoordinator.statePublisher.sink { [weak self] state in
-                self?.mediaCoordinator(changedPlaybackState: state)
+                DispatchQueue.main.async {
+                    self?.mediaCoordinator(changedPlaybackState: state)
+                }
             }.store(in: &cancellables)
             mediaCoordinator.positionPublisher.sink { [weak self] position in
                 self?.mediaCoordinator(didChangePosition: position)
@@ -551,31 +554,12 @@ extension NCViewerMedia {
         switch state {
         case .stopped:
             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterPlayerStoppedPlaying)
-            #if DEBUG
-            print("Played mode: STOPPED")
-            #endif
-        case .opening:
-            #if DEBUG
-            print("Played mode: OPENING")
-            #endif
-        case .buffering:
-            #if DEBUG
-            print("Played mode: BUFFERING")
-            #endif
-        case .ended:
-            database.addVideoOrAudio(metadata: metadata, position: 0)
-            #if DEBUG
-            print("Played mode: ENDED")
-            #endif
         case .downloading(let progress):
             addDownloadHudIfNeeded()
             LucidBanner.shared.update(
                 payload: LucidBannerPayload.Update(progress: progress),
                 for: hudToken
             )
-            #if DEBUG
-            print("Played mode: DOWNLOADING")
-            #endif
         case .error(let error):
             addDownloadHudIfNeeded()
             if let nkError = error {
@@ -584,16 +568,10 @@ extension NCViewerMedia {
                 completeHudBannerError(token: hudToken)
             }
             hudToken = nil
-            #if DEBUG
-            print("Played mode: ERROR")
-            #endif
         case .downloaded:
             addDownloadHudIfNeeded()
             completeHudBannerSuccess(token: hudToken)
             hudToken = nil
-            #if DEBUG
-            print("Played mode: DOWNLOADED")
-            #endif
         case .playing:
             guard let playerToolBar = playerToolBar else { return }
             if playerToolBar.playerButtonView.isHidden {
@@ -612,19 +590,11 @@ extension NCViewerMedia {
             ncplayer?.length = Int(mediaCoordinator.length)
             ncplayer?.width = Int(size.width)
             ncplayer?.height = Int(size.height)
-            playerToolBar.updateTopToolBar()
             database.addVideoOrAudio(metadata: metadata, width: ncplayer?.width, height: ncplayer?.height, length: ncplayer?.length)
 
             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterPlayerIsPlaying)
-
-            #if DEBUG
-            print("Played mode: PLAYING")
-            #endif
         case .paused:
             NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterPlayerStoppedPlaying)
-            #if DEBUG
-            print("Played mode: PAUSED")
-            #endif
         default: break
         }
     }
@@ -634,8 +604,8 @@ extension NCViewerMedia {
         guard metadata.ocId == mediaCoordinator.item?.ocId else { return }
         playerToolBar?.update(position: position,
                               length: Float(mediaCoordinator.length / 1000),
-                              playedTime: mediaCoordinator.time.stringValue,
-                              remainingTime: mediaCoordinator.remainingTime?.stringValue)
+                              playedTime: mediaCoordinator.playedTime,
+                              remainingTime: mediaCoordinator.remainingTime)
     }
 
     private func addDownloadHudIfNeeded() {
@@ -749,7 +719,7 @@ extension NCViewerMedia: NCTransferDelegate {
 
 // MARK: - NCMediaCoordinatorDelegate
 
-extension NCViewerMedia: NCMediaCoordinatorDelegate {
+extension NCViewerMedia: NCMediaCoordinatorVLCStrategyDelegate {
     func showError(withTitle title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
 

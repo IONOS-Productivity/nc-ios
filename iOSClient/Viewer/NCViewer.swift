@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
 // SPDX-FileCopyrightText: 2020 Marino Faggiana
 // SPDX-FileCopyrightText: 2025 STRATO GmbH
+// SPDX-FileCopyrightText: 2025 Serhii Kaliberda
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
@@ -45,13 +46,13 @@ class NCViewer: NSObject {
             let viewerMediaPageContainer = UIStoryboard(name: "NCViewerMediaPage", bundle: nil).instantiateInitialViewController() as? NCViewerMediaPage {
                 if metadata.isAudioOrVideo {
                     let mediaCoordinator = NCMediaCoordinator.shared
-                    if mediaCoordinator.item?.ocId != metadata.ocId {
-                        mediaCoordinator.finishMediaSession()
+                    mediaCoordinator.finishMediaSession()
+                    if metadata.isAudio {
+                        mediaCoordinator.items = siblingMedia
+                    } else {
+                        mediaCoordinator.items = [metadata]
                     }
-                    mediaCoordinator.items = siblingMedia
                 }
-
-                viewerMediaPageContainer.delegateViewController = delegate
 
                 if let ocIds {
                     viewerMediaPageContainer.currentIndex = ocIds.firstIndex(where: { $0 == metadata.ocId }) ?? 0

@@ -166,6 +166,7 @@
                 <outlet property="fullscreenButton" destination="oOw-fT-A3E" id="D9a-Tf-vzm"/>
                 <outlet property="labelCurrentTime" destination="OHB-2J-Gqb" id="pFy-CJ-x2A"/>
                 <outlet property="labelLeftTime" destination="svM-TQ-AyQ" id="UDV-Lh-12z"/>
+                <outlet property="pictureInPictureButton" destination="A0u-7d-WVF" id="lV4-tI-nHj"/>
                 <outlet property="playButton" destination="qo0-x8-OfL" id="m4a-gb-D0J"/>
                 <outlet property="playbackSlider" destination="MY0-FC-j88" id="bVe-Kc-80k"/>
                 <outlet property="playbackSliderView" destination="85m-50-8yp" id="SOs-XA-Mgh"/>
