@@ -421,55 +421,50 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         let homeServer = utilityFileSystem.getHomeServer(urlBase: session.urlBase, userId: session.userId)
         let numFoldersLayoutsForView = self.database.getLayoutsForView(keyStore: layoutForView.keyStore)?.count ?? 1
 
-        func changeLayout(withSubFolders: Bool) {
-        	defer {
-            	(self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
-            	self.updateHeadersView()
-       		}
-            if self.layoutForView?.layout == layoutForView.layout {
-                self.layoutForView = self.database.setLayoutForView(layoutForView: layoutForView, withSubFolders: withSubFolders)
-                Task {
-                    await self.reloadDataSource()
-                }
-                return
-            }
-
-            self.layoutForView = self.database.setLayoutForView(layoutForView: layoutForView, withSubFolders: withSubFolders)
-            layoutForView.layout = layoutForView.layout
-            self.layoutType = layoutForView.layout
-
-            collectionView.reloadData()
-
-            switch layoutForView.layout {
-            case global.layoutList:
-                self.collectionView.setCollectionViewLayout(self.listLayout, animated: true)
-            case global.layoutGrid:
-                self.collectionView.setCollectionViewLayout(self.gridLayout, animated: true)
-            case global.layoutPhotoSquare, global.layoutPhotoRatio:
-                self.collectionView.setCollectionViewLayout(self.mediaLayout, animated: true)
-            default:
-                break
-            }
-
-            self.collectionView.collectionViewLayout.invalidateLayout()
-
-        	(self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
-        }
-
         if serverUrl == homeServer || numFoldersLayoutsForView == 1 {
-            changeLayout(withSubFolders: false)
+            Task {
+                await setLayout(layoutForView: layoutForView)
+                await self.reloadDataSource()
+            }
         } else {
             let alertController = UIAlertController(title: NSLocalizedString("_propagate_layout_", comment: ""), message: nil, preferredStyle: .alert)
 
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_yes_", comment: ""), style: .default, handler: { _ in
-                changeLayout(withSubFolders: true)
+                Task {
+                    await self.setLayout(layoutForView: layoutForView, withSubFolders: true)
+                    await self.reloadDataSource()
+                }
             }))
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_no_", comment: ""), style: .default, handler: { _ in
-                changeLayout(withSubFolders: false)
+                Task {
+                    await self.setLayout(layoutForView: layoutForView)
+                    await self.reloadDataSource()
+                }
             }))
 
             self.present(alertController, animated: true)
         }
+    }
+
+    internal func setLayout(layoutForView: NCDBLayoutForView, withSubFolders: Bool = false) async {
+        self.layoutForView = self.database.setLayoutForView(layoutForView: layoutForView, withSubFolders: withSubFolders)
+        layoutForView.layout = layoutForView.layout
+        self.layoutType = layoutForView.layout
+
+        collectionView.reloadData()
+
+        switch layoutForView.layout {
+        case global.layoutList:
+            self.collectionView.setCollectionViewLayout(self.listLayout, animated: true)
+        case global.layoutGrid:
+            self.collectionView.setCollectionViewLayout(self.gridLayout, animated: true)
+        case global.layoutPhotoSquare, global.layoutPhotoRatio:
+            self.collectionView.setCollectionViewLayout(self.mediaLayout, animated: true)
+        default:
+            break
+        }
+
+        collectionView.collectionViewLayout.invalidateLayout()
     }
 
     func getNavigationTitle() -> String {
@@ -563,15 +558,18 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 
         Task {
             await searchOperationHandle.cancel()
-            self.dataSource.removeAll()
-            await self.reloadDataSource()
+            await reloadDataSource()
 
             // Restore Layout
             if let layoutForViewLayoutStore {
                 let layoutForView = database.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
                 layoutForView.layout = layoutForViewLayoutStore
-                changeLayout(layoutForView: layoutForView)
+                await setLayout(layoutForView: layoutForView)
             }
+            layoutForViewLayoutStore = nil
+
+            // update Option menu
+            await mainNavigationController?.updateMenuOption()
         }
     }
 

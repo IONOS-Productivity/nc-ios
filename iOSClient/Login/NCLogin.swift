@@ -42,6 +42,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
     private var p12Data: Data?
     private var p12Password: String?
     private var QRCodeCheck: Bool = false
+    private var activeLoginProvider: NCLoginProvider?
 
     // MARK: - View Life Cycle
 
@@ -395,5 +396,7 @@ extension NCLogin: NCLoginProviderDelegate {
     func onBack() {
         loginButton.isEnabled = true
         loginButton.hideSpinnerAndShowButton()
+        activeLoginProvider?.cancel()
+        activeLoginProvider = nil
     }
 }
