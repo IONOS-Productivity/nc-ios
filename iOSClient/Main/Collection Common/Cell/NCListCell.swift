@@ -39,6 +39,7 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     @IBOutlet weak var imageItemLeftConstraint: NSLayoutConstraint!
     @IBOutlet weak var separatorHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var titleTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var subInfoTrailingConstraint: NSLayoutConstraint!
 
     #if !EXTENSION
         private var playbackProgressView = PlaybackProgressView()
