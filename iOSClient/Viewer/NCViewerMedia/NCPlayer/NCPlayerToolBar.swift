@@ -60,8 +60,6 @@ class NCPlayerToolBar: UIView {
     private let database = NCManageDatabase.shared
     private weak var viewerMediaPage: NCViewerMediaPage?
 
-    private var cancellables = Set<AnyCancellable>()
-
     // MARK: - View Life Cycle
 
     override func awakeFromNib() {
@@ -222,12 +220,12 @@ class NCPlayerToolBar: UIView {
     }
 
     private func showPauseButton() {
-        buttonImage = UIImage(systemName: "pause.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
+        let buttonImage = UIImage(systemName: "pause.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
         playButton.setImage(buttonImage, for: .normal)
     }
 
     private func showPlayButton() {
-        buttonImage = UIImage(systemName: "play.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
+        let buttonImage = UIImage(systemName: "play.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
         playButton.setImage(buttonImage, for: .normal)
     }
 

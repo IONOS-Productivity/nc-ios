@@ -691,7 +691,7 @@ extension NCMediaCoordinator: NCMediaCoordinatorVLCStrategyContext, NCMediaCoord
             }
 
             guard let tabBarController = controller,
-                  let navigationController = tabBarController.currentNavigationController() else { return }
+                  let navigationController = tabBarController.currentViewController() as? UINavigationController else { return }
 
             if let existingViewer = navigationController.viewControllers.last as? NCViewerMediaPage,
                existingViewer.currentViewController.metadata.ocId == metadata.ocId {
