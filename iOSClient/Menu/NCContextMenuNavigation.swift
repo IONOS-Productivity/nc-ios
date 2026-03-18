@@ -11,7 +11,7 @@ class NCContextMenuNavigation: NSObject {
     //
     @MainActor
     func viewMenuOption(collectionViewCommon: NCCollectionViewCommon?,
-                        mainNavigationController: NCMainNavigationController,
+                        mainNavigationController: HiDriveMainNavigationController,
                         session: NCSession.Session)
     async -> (select: UIAction,
               viewStyleSubmenu: UIMenu,
@@ -212,7 +212,7 @@ class NCContextMenuNavigation: NSObject {
     //
     @MainActor
     func viewMenuOption(trashViewController: NCTrash?,
-                        mainNavigationController: NCMainNavigationController,
+                        mainNavigationController: HiDriveMainNavigationController,
                         session: NCSession.Session) async -> [UIMenuElement]? {
         guard let trashViewController else {
             return nil

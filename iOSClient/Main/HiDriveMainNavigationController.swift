@@ -141,4 +141,6 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
 		transfersButton.tintColor = UIColor(resource: .Transfers.buttonBackground)
         return transfersButton
     }
+
+    func updateMenuOption() { }
 }
