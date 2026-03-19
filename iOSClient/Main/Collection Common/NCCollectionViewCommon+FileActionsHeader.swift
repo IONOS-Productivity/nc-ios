@@ -9,13 +9,6 @@
 import Foundation
 
 extension NCCollectionViewCommon {
-    
-    func fixSearchBarPlacementForIOS16() {
-        if #available(iOS 16.0, *) {
-            navigationItem.preferredSearchBarPlacement = .stacked
-        }
-    }
-
     // MARK: - Headers view
 
     func updateHeadersView() {

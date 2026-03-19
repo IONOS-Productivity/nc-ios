@@ -195,7 +195,6 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tabBarSelect = HiDriveCollectionViewCommonSelectToolbar(controller: controller, delegate: self)
         self.navigationController?.presentationController?.delegate = self
         collectionView.alwaysBounceVertical = true
         collectionView.accessibilityIdentifier = "NCCollectionViewCommon"
@@ -218,7 +217,6 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
             searchController?.searchBar.setSearchFieldBackgroundImage(UIImage(), for: .normal)
             navigationItem.searchController = searchController
             navigationItem.hidesSearchBarWhenScrolling = true
-            fixSearchBarPlacementForIOS16()
         }
 
         // Cell
@@ -249,8 +247,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
                 self.refreshControl.endRefreshing()
 
                 // Wait 1.5 seconds before resetting the button alpha
-                try? await Task.sleep(nanoseconds: 1_500_000_000)
-               // self.mainNavigationController?.resetPlusButtonAlpha()
+                try? await Task.sleep(for: .seconds(1.5))
             }
         }
 
@@ -321,11 +318,20 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
             navigationController?.navigationBar.topItem?.title = titlePreviusFolder
         }
         navigationItem.title = titleCurrentFolder
-        
-		isEditMode = false
-		setNavigationBarLogoIfNeeded()
-        (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
-        (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+
+        if tabBarSelect == nil {
+            tabBarSelect = HiDriveCollectionViewCommonSelectToolbar(controller: controller, delegate: self)
+        }
+
+        isEditMode = false
+        setNavigationBarLogoIfNeeded()
+
+        Task {
+            await NCNetworking.shared.transferDispatcher.addDelegate(self)
+
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+        }
 
         layoutForView = database.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
         if isLayoutList {
@@ -390,6 +396,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     override var canBecomeFirstResponder: Bool {
         return true
     }
+
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
         tabBarSelect?.onViewWillLayoutSubviews()
@@ -406,7 +413,8 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     // MARK: - NotificationCenter
 
     @objc func applicationWillResignActive(_ notification: NSNotification) {
-//        mainNavigationController?.resetPlusButtonAlpha()
+// we don't use new menuPlus in HiDrive Next
+//        self.mainNavigationController?.menuPlus?.resetPlusButtonAlpha()
     }
 
     @objc func closeRichWorkspaceWebView() {
@@ -518,7 +526,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         searchController?.searchBar.isUserInteractionEnabled = enabled
 
         if enabled {
-            navigationItem.searchController = searchController
+            searchController?.searchBar.alpha = 1
         } else {
             searchController?.searchBar.alpha = 0.3
         }
@@ -531,9 +539,11 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         // TIP
         dismissTip()
-        //
-        //mainNavigationController?.hiddenPlusButton(true)
-        //
+
+// we don't use new menuPlus in HiDrive Next
+// (+)
+//        self.mainNavigationController?.menuPlus?.hiddenPlusButton(true)
+
         if !isSearchingMode {
             self.isSearchingMode = true
             self.dataSource.removeAll()
@@ -551,6 +561,10 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     }
 
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+// we don't use new menuPlus in HiDrive Next
+//        // (+)
+//        self.mainNavigationController?.menuPlus?.hiddenPlusButton(false)
+
         self.isSearchingMode = false
         self.networkSearchInProgress = false
         self.searchResultText = nil

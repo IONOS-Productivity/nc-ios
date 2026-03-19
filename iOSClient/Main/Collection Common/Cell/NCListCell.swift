@@ -7,7 +7,6 @@ import Foundation
 import UIKit
 import NextcloudKit
 import RealmSwift
-import Combine
 
 protocol NCListCellDelegate: AnyObject {
     func onMenuIntent(with metadata: tableMetadata?)
@@ -28,7 +27,6 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     @IBOutlet weak var labelTitle: UILabel!
     @IBOutlet weak var labelInfo: UILabel!
     @IBOutlet weak var labelSubinfo: UILabel!
-    @IBOutlet weak var labelInfoSeparator: UILabel!
     @IBOutlet weak var tag0: UILabel!
     @IBOutlet weak var tag1: UILabel!
 
@@ -42,7 +40,7 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     @IBOutlet weak var subInfoTrailingConstraint: NSLayoutConstraint!
 
     #if !EXTENSION
-        private var playbackProgressView = PlaybackProgressView()
+    private var playbackProgressView = PlaybackProgressView()
     #endif
 
     var separatorBackground: UIColor? {
@@ -119,7 +117,6 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
         imageItem.image = nil
         imageItem.layer.cornerRadius = 6
         imageItem.layer.masksToBounds = true
-        imageItem.backgroundColor = nil
         imageStatus.image = nil
         imageFavorite.image = nil
         imageLocal.image = nil
@@ -130,19 +127,16 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
         labelTitle.text = ""
         labelInfo.text = ""
         labelSubinfo.text = ""
-        labelInfoSeparator.text = ""
         tag0.text = ""
         tag1.text = ""
 
-        separatorHeightConstraint.constant = 0.5
+        separator.backgroundColor = separatorBackground
+        separatorHeightConstraint.constant = 1
 
         buttonMore.menu = nil
         buttonMore.showsMenuAsPrimaryAction = true
 
         titleTrailingConstraint.constant = 90
-
-        separator.backgroundColor = separatorBackground
-        separatorHeightConstraint.constant = 1
 
         labelTitle.text = ""
         labelInfo.text = ""
@@ -163,6 +157,7 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
             ])
         }
         #endif
+
         contentView.bringSubviewToFront(buttonMore)
     }
 
@@ -205,11 +200,7 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
         buttonShared.isHidden = status
     }
 
-    func hideSeparator(_ status: Bool) {
-        separator.isHidden = status
-    }
-
-    func selected(_ isSelected: Bool, isEditMode: Bool) {
+    func selected(_ status: Bool, isEditMode: Bool) {
         if isEditMode {
             imageItemLeftConstraint.constant = 45
             imageSelect.isHidden = false
@@ -227,12 +218,12 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
             buttonMore.isHidden = false
             backgroundView = nil
         }
+
         if isSelected {
             imageSelect.image = NCImageCache.shared.getImageCheckedYes().withTintColor(NCBrandColor.shared.brandElement)
         } else {
             imageSelect.image = NCImageCache.shared.getImageCheckedNo().withTintColor(UIColor(resource: .FileSelection.listItemDeselected))
         }
-
     }
 
     func writeInfoDateSize(date: NSDate, size: Int64) {
@@ -251,13 +242,11 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
             tag1.isHidden = true
             labelInfo.isHidden = false
             labelSubinfo.isHidden = false
-            labelInfoSeparator.isHidden = false
         } else {
             tag0.isHidden = false
             tag1.isHidden = true
             labelInfo.isHidden = true
             labelSubinfo.isHidden = true
-            labelInfoSeparator.isHidden = true
 
             if let tag = tags.first {
                 tag0.text = tag
@@ -566,11 +555,6 @@ extension NCCollectionViewCommon {
 
         // TAGS
         cell.setTags(tags: Array(metadata.tags))
-
-        // SearchingMode - TAG Separator Hidden
-        if isSearchingMode {
-            cell.labelInfoSeparator.isHidden = true
-        }
 
         // Hide buttons
         if metadata.name != global.appName {
