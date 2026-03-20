@@ -17,7 +17,6 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 	@IBOutlet weak var collectionViewTop: NSLayoutConstraint?
 	@IBOutlet weak var fileActionsHeader: FileActionsHeader?
 
-
     internal let database = NCManageDatabase.shared
     internal let global = NCGlobal.shared
     internal let utility = NCUtility()
@@ -455,6 +454,10 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     }
 
     internal func setLayout(layoutForView: NCDBLayoutForView, withSubFolders: Bool = false) async {
+        defer {
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+            self.updateHeadersView()
+        }
         self.layoutForView = self.database.setLayoutForView(layoutForView: layoutForView, withSubFolders: withSubFolders)
         layoutForView.layout = layoutForView.layout
         self.layoutType = layoutForView.layout

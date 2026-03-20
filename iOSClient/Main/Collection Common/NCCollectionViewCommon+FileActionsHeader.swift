@@ -75,7 +75,7 @@ extension NCCollectionViewCommon {
             Task {
                 NCPreferences().setDirectoryOnTop(account: self.session.account, value: !directoryOnTop)
                 await NCNetworking.shared.transferDispatcher.notifyAllDelegates { delegate in
-//                    delegate.transferReloadData(serverUrl: self.serverUrl, requestData: true, status: nil)
+                    delegate.transferReloadDataSource(serverUrl: self.serverUrl, requestData: true, status: nil)
                 }
             }
         }
@@ -128,40 +128,40 @@ extension NCCollectionViewCommon {
         default: return nil
         }
     }
-    
+
     private var sortDirectionImage: UIImage? {
         let layoutForView = NCManageDatabase.shared.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
         let imageName = layoutForView.ascending ? "arrow.up" : "arrow.down"
         return UIImage(systemName: imageName, withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold))
     }
-    
+
     private var viewModeImage: UIImage? {
         var imageResource: ImageResource?
-        
+
         switch layoutType {
         case NCGlobal.shared.layoutList: imageResource = .FileSelection.viewModeList
         case NCGlobal.shared.layoutGrid, NCGlobal.shared.layoutPhotoRatio, NCGlobal.shared.layoutPhotoSquare: imageResource = .FileSelection.viewModeGrid
         default: break
         }
-        
+
         if let imageResource {
             return UIImage(resource: imageResource)
         }
         return nil
     }
-    
+
     func setNavigationBarLogoIfNeeded() {
         if isCurrentScreenInMainTabBar() && self.navigationController?.viewControllers.count == 1 {
             setNavigationBarLogo()
         }
     }
-    
+
     var selectionState: FileActionsHeaderSelectionState {
         let selectedItemsCount = fileSelect.count
         if selectedItemsCount == dataSource.getMetadatas().count {
             return .all
         }
-        
+
         return selectedItemsCount == 0 ? .none : .some(selectedItemsCount)
     }
 }

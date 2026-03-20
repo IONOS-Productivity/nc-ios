@@ -127,17 +127,16 @@ extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelega
             navigationItem.hidesBackButton = editMode
             navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
             searchController(enabled: !editMode)
-           // mainNavigationController?.hiddenPlusButton(editMode)
 
             if editMode {
                 navigationItem.leftBarButtonItems = nil
             } else {
                 (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
             }
-        }
-        (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 
-        self.collectionView.reloadData()
+            self.collectionView.reloadData()
+        }
     }
 
     func toolbarWillAppear() {
