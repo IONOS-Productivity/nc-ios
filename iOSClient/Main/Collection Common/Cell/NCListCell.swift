@@ -469,15 +469,7 @@ extension NCCollectionViewCommon {
         }
 
         // Share image
-        if isShare {
-            cell.imageShared?.image = imageCache.getImageShared()
-        } else if !metadata.shareType.isEmpty {
-            metadata.shareType.contains(NKShare.ShareType.publicLink.rawValue) ?
-            (cell.imageShared?.image = imageCache.getImageShareByLink()) :
-            (cell.imageShared?.image = imageCache.getImageShared())
-        } else {
-            cell.imageShared?.image = imageCache.getImageCanShare()
-        }
+        cell.imageShared?.image = ItemShareState.state(by: metadata, isShare: isShare).iconImage
 
         // Button More
         if metadata.lock == true {
@@ -497,21 +489,22 @@ extension NCCollectionViewCommon {
                 cell.avatarImg?.contentMode = .scaleAspectFill
                 cell.avatarImg?.image = image
             } else {
-                self.database.getImageAvatarLoaded(fileName: fileName) { image, tblAvatar in
-                    if let image {
-                        cell.avatarImg?.contentMode = .scaleAspectFill
-                        cell.avatarImg?.image = image
-                        NCImageCache.shared.addImageCache(image: image, key: fileName)
-                    } else {
-                        cell.avatarImg?.contentMode = .scaleAspectFill
-                        cell.avatarImg?.image = self.utility.loadUserImage(for: metadata.ownerId, displayName: metadata.ownerDisplayName, urlBase: metadata.urlBase)
-                    }
-
-                    if !(tblAvatar?.loaded ?? false),
-                       self.networking.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
-                        self.networking.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: metadata.ownerId, fileName: fileName, account: metadata.account, view: self.collectionView))
-                    }
-                }
+// MERGE: HiDrive Next doesn't show avatar
+//                self.database.getImageAvatarLoaded(fileName: fileName) { image, tblAvatar in
+//                    if let image {
+//                        cell.avatarImg?.contentMode = .scaleAspectFill
+//                        cell.avatarImg?.image = image
+//                        NCImageCache.shared.addImageCache(image: image, key: fileName)
+//                    } else {
+//                        cell.avatarImg?.contentMode = .scaleAspectFill
+//                        cell.avatarImg?.image = self.utility.loadUserImage(for: metadata.ownerId, displayName: metadata.ownerDisplayName, urlBase: metadata.urlBase)
+//                    }
+//
+//                    if !(tblAvatar?.loaded ?? false),
+//                       self.networking.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
+//                        self.networking.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: metadata.ownerId, fileName: fileName, account: metadata.account, view: self.collectionView))
+//                    }
+//                }
             }
         }
 

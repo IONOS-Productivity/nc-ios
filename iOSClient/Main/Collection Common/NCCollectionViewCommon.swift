@@ -413,7 +413,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     // MARK: - NotificationCenter
 
     @objc func applicationWillResignActive(_ notification: NSNotification) {
-// we don't use new menuPlus in HiDrive Next
+// MERGE: HiDrive Next doesn't use new menuPlus in HiDrive Next
 //        self.mainNavigationController?.menuPlus?.resetPlusButtonAlpha()
     }
 
@@ -540,7 +540,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         // TIP
         dismissTip()
 
-// we don't use new menuPlus in HiDrive Next
+// MERGE: HiDrive Next doesn't use new menuPlus in HiDrive Next
 // (+)
 //        self.mainNavigationController?.menuPlus?.hiddenPlusButton(true)
 
@@ -561,7 +561,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     }
 
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-// we don't use new menuPlus in HiDrive Next
+// MERGE: HiDrive Next doesn't use new menuPlus in HiDrive Next
 //        // (+)
 //        self.mainNavigationController?.menuPlus?.hiddenPlusButton(false)
 

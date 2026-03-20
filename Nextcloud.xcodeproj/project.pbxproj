@@ -36,6 +36,7 @@
 		4202165D2F5586D800BBD630 /* NCMediaCoordinatorStrategy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4202165C2F5586D300BBD630 /* NCMediaCoordinatorStrategy.swift */; };
 		420274712F11558400ECB06B /* NCCellMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4202746F2F11557500ECB06B /* NCCellMedia.swift */; };
 		421657AB2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421657AA2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift */; };
+		421DC45F2F6D38F3001EE5E3 /* ItemShareState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421DC45E2F6D38F3001EE5E3 /* ItemShareState.swift */; };
 		422579CF2F684E7D00117A7C /* FloatingPanel in Frameworks */ = {isa = PBXBuildFile; productRef = 422579CE2F684E7D00117A7C /* FloatingPanel */; };
 		422579D22F68508600117A7C /* NCMenuAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D02F68508600117A7C /* NCMenuAction.swift */; };
 		422579D32F68508600117A7C /* NCViewer+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D12F68508600117A7C /* NCViewer+Menu.swift */; };
@@ -1205,6 +1206,7 @@
 		4216512F2E28F6DC002E19D6 /* File Provider Extension UIDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "File Provider Extension UIDebug.entitlements"; sourceTree = "<group>"; };
 		421651302E28F6ED002E19D6 /* Notification Service ExtensionDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Notification Service ExtensionDebug.entitlements"; sourceTree = "<group>"; };
 		421657AA2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiDriveCollectionViewCommonSelectToolbarDelegate.swift; sourceTree = "<group>"; };
+		421DC45E2F6D38F3001EE5E3 /* ItemShareState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemShareState.swift; sourceTree = "<group>"; };
 		422579D02F68508600117A7C /* NCMenuAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMenuAction.swift; sourceTree = "<group>"; };
 		422579D12F68508600117A7C /* NCViewer+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCViewer+Menu.swift"; sourceTree = "<group>"; };
 		422579D52F68553A00117A7C /* UIViewController+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Menu.swift"; sourceTree = "<group>"; };
@@ -2567,6 +2569,7 @@
 				F75D90202D2BE26C003E740B /* NCRecommendationsCell.swift */,
 				F36C514D2E89393C0097E5F7 /* UIView+BlurVibrancy.swift */,
 				428915302F226C1500B41486 /* PlaybackProgressView.swift */,
+				421DC45E2F6D38F3001EE5E3 /* ItemShareState.swift */,
 			);
 			path = Cell;
 			sourceTree = "<group>";
@@ -4623,6 +4626,7 @@
 				F704B5E92430C0B800632F5F /* NCCreateFormUploadConflictCell.swift in Sources */,
 				F72D404923D2082500A97FD0 /* NCViewerNextcloudText.swift in Sources */,
 				AFCE353927E5DE0500FEA6C2 /* Shareable.swift in Sources */,
+				421DC45F2F6D38F3001EE5E3 /* ItemShareState.swift in Sources */,
 				F77BB746289984CA0090FC19 /* UIViewController+Extension.swift in Sources */,
 				F700510522DF6A89003A3356 /* NCShare.swift in Sources */,
 				F72D1007210B6882009C96B7 /* NCPushNotificationEncryption.m in Sources */,

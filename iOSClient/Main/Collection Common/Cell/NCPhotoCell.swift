@@ -26,6 +26,7 @@ class NCPhotoCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMain
         accessibilityLabel = nil
         accessibilityValue = nil
 
+        imageItem.image = nil
         imageSelect.isHidden = true
         imageSelect.image = NCImageCache.shared.getImageCheckedYes()
         imageVisualEffect.clipsToBounds = true

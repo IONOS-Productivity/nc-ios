@@ -8,7 +8,6 @@ import NextcloudKit
 import RealmSwift
 
 extension NCCollectionViewCommon: UICollectionViewDataSource {
-
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return self.dataSource.numberOfSections()
     }
@@ -53,49 +52,6 @@ extension NCCollectionViewCommon: UICollectionViewDataSource {
             self.networking.downloadThumbnailQueue.addOperation(NCCollectionViewDownloadThumbnail(metadata: metadata, collectionView: collectionView, ext: ext))
         }
     }
-// MARK: - share state
-	enum ItemShareState {
-		case notShared
-		case sharedOnMe
-		case sharedInternally
-		case sharedByLink
-
-		static func state(by metadata: tableMetadata, isShare: Bool) -> ItemShareState {
-			if isShare {
-				return .sharedOnMe
-			}
-
-			if metadata.shareType.isEmpty {
-				return .notShared
-			}
-
-			if metadata.shareType.contains(3) {
-				return .sharedByLink
-			}
-
-			return .sharedInternally
-		}
-
-		var iconImage: UIImage {
-			let imageCache = NCImageCache.shared
-			switch self {
-			case .notShared: 		return imageCache.getImageCanShare()
-			case .sharedOnMe: 		return imageCache.getIconSharedWithMe()
-			case .sharedInternally: return imageCache.getIconSharedInternally()
-			case .sharedByLink: 	return imageCache.getIconSharedByLink()
-			}
-		}
-
-		var folderImage: UIImage {
-			let imageCache = NCImageCache.shared
-			switch self {
-			case .notShared: 		return imageCache.getFolder()
-			case .sharedOnMe: 		return imageCache.getFolderSharedWithMe()
-			case .sharedInternally: return imageCache.getFolderSharedInternally()
-			case .sharedByLink: 	return imageCache.getFolderSharedByLink()
-			}
-		}
-	}
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let metadata = self.dataSource.getMetadata(indexPath: indexPath) ?? tableMetadata()
