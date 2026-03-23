@@ -109,7 +109,7 @@ class NCShareLinkCell: UITableViewCell {
 
             if tableShare.shareType == NKShare.ShareType.email.rawValue {
                 labelTitle.text = tableShare.shareWithDisplayname
-                imageItem.image = NCUtility().loadImage(named: "envelope.circle.fill", colors: [NCBrandColor.shared.getElement(account: tableShare.account)])
+                imageItem.image = utility.userImage
             }
         }
 

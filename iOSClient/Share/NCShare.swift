@@ -37,12 +37,13 @@ class NCShare: UIViewController, NCSharePagingContent {
     @IBOutlet weak var sharedWithYouByImage: UIImageView!
     @IBOutlet weak var sharedWithYouByLabel: UILabel!
     @IBOutlet weak var searchFieldTopConstraint: NSLayoutConstraint!
-    
+
     @IBOutlet weak var searchPlaceholder: UIView!
     private var shareSearchHost: ShareSearchFieldHost?
     var textField: UIView? { shareSearchHost?.view }
 
     @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var btnContact: UIButton!
 
     weak var appDelegate = UIApplication.shared.delegate as? AppDelegate
 
@@ -76,7 +77,7 @@ class NCShare: UIViewController, NCSharePagingContent {
         super.viewDidLoad()
 
         view.backgroundColor = NCBrandColor.shared.appBackgroundColor
-        
+
         viewContainerConstraint.constant = height
         searchFieldTopConstraint.constant = 0
 
@@ -124,8 +125,6 @@ class NCShare: UIViewController, NCSharePagingContent {
             networking = NCShareNetworking(metadata: metadata, view: self.view, delegate: self, session: session)
             let isVisible = (self.navigationController?.topViewController as? NCSharePaging)?.page == .sharing
             networking?.readShare(showLoadingIndicator: isVisible)
-//            searchField.searchTextField.font = .systemFont(ofSize: 14)
-//            searchField.delegate = self
         }
     }
 
@@ -171,6 +170,37 @@ class NCShare: UIViewController, NCSharePagingContent {
         ])
         avatarButton.showsMenuAsPrimaryAction = true
         avatarButton.menu = NCContextMenuProfile(userId: metadata.ownerId, session: session, viewController: self).viewMenu()
+// MERGE: HiDrive Next doesn't display avatar
+//        let fileName = NCSession.shared.getFileName(urlBase: session.urlBase, user: metadata.ownerId)
+//        let results = NCManageDatabase.shared.getImageAvatarLoaded(fileName: fileName)
+//
+//        if results.image == nil {
+//            let etag = self.database.getTableAvatar(fileName: fileName)?.etag
+//            let fileNameLocalPath = utilityFileSystem.createServerUrl(serverUrl: utilityFileSystem.directoryUserData, fileName: fileName)
+//
+//            NextcloudKit.shared.downloadAvatar(
+//                user: metadata.ownerId,
+//                fileNameLocalPath: fileNameLocalPath,
+//                sizeImage: NCGlobal.shared.avatarSize,
+//                avatarSizeRounded: NCGlobal.shared.avatarSizeRounded,
+//                etagResource: etag,
+//                account: metadata.account) { task in
+//                    Task {
+//                        let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: self.metadata.account,
+//                                                                                                    path: self.metadata.ownerId,
+//                                                                                                    name: "downloadAvatar")
+//                        await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+//                    }
+//                } completion: { _, imageAvatar, _, etag, _, error in
+//                    if error == .success, let etag = etag, let imageAvatar = imageAvatar {
+//                        self.database.addAvatar(fileName: fileName, etag: etag)
+//                        self.sharedWithYouByImage.image = imageAvatar
+//                        self.reloadData()
+//                    } else if error.errorCode == NCGlobal.shared.errorNotModified, let imageAvatar = self.database.setAvatarLoaded(fileName: fileName) {
+//                        self.sharedWithYouByImage.image = imageAvatar
+//                    }
+//                }
+//        }
 
         reloadData()
     }
@@ -296,6 +326,7 @@ class NCShare: UIViewController, NCSharePagingContent {
 // MARK: - NCShareNetworkingDelegate
 
 extension NCShare: NCShareNetworkingDelegate {
+    
     func readShareCompleted() {
         NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterReloadDataNCShare)
         reloadData()
@@ -346,7 +377,7 @@ extension NCShare: NCShareNetworkingDelegate {
         for sharee in sharees {
             if sharee.shareWith == account?.user { continue } // do not show your own account
             if let shares = existingShares.share, shares.contains(where: {$0.shareWith == sharee.shareWith}) { continue } // do not show already existing sharees
-            if metadata.ownerDisplayName == sharee.shareWith { continue } // do not show owner of the share 
+            if metadata.ownerDisplayName == sharee.shareWith { continue } // do not show owner of the share
             var label = sharee.label
             if sharee.shareType == NKShare.ShareType.team.rawValue {
                 label += " (\(sharee.circleInfo), \(sharee.circleOwner))"
@@ -393,7 +424,7 @@ extension NCShare: NCShareNetworkingDelegate {
     func downloadLimitSet(to limit: Int, by token: String) {
         database.createDownloadLimit(account: metadata.account, count: 0, limit: limit, token: token)
     }
-    
+
     func showOKAlert(title: String?, message: String?) {
         let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default, handler: { _ in }))
@@ -483,9 +514,7 @@ extension NCShare: UITableViewDataSource {
                 cell.delegate = self
                 cell.setupCellUI(userId: session.userId, session: session, metadata: metadata)
 
-                let fileName = NCSession.shared.getFileName(urlBase: session.urlBase, user: tableShare.shareWith)
-                
-//                cell.fileAvatarImageView?.image = utility.loadUserImage(for: tableShare.shareWith, displayName: tableShare.shareWithDisplayname, urlBase: metadata.urlBase)
+                cell.imageItem.image = NCUtility().userImage
                 cell.buttonMenu.menu = NCContextMenuShare(share: tableShare, isDirectory: metadata.isDirectory, canReshare: canReshare, shareController: self).viewMenu()
                 cell.buttonMenu.showsMenuAsPrimaryAction = true
 
@@ -514,7 +543,7 @@ extension NCShare: CNContactPickerDelegate {
 
         for email in arrEmail {
             alert.addAction(UIAlertAction(title: email, style: .default) { _ in
-//                self.searchField?.text = email
+                self.shareSearchHost?.text = email
                 self.networking?.getSharees(searchString: email)
             })
         }
@@ -543,24 +572,12 @@ extension NCShare: UISearchBarDelegate {
         if searchText.isEmpty {
             dropDown.hide()
         } else {
-            perform(#selector(searchSharees(_:)), with: nil, afterDelay: 0.5)
+            perform(#selector(searchSharees(_:)), with: nil, afterDelay: 1)
         }
-    }
-
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        searchTextDidChange(searchText)
     }
 
     @objc private func searchSharees(_ sender: Any?) {
-//        guard let searchString = searchField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !searchString.isEmpty else { return }
-        // https://stackoverflow.com/questions/25471114/how-to-validate-an-e-mail-address-in-swift
-        func isValidEmail(_ email: String) -> Bool {
-
-            let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-            let emailPred = NSPredicate(format: "SELF MATCHES %@", emailRegEx)
-            return emailPred.evaluate(with: email)
-        }
-        guard let searchString = shareSearchHost?.text, !searchString.isEmpty else { return }
+        guard let searchString = shareSearchHost?.text.trimmingCharacters(in: .whitespacesAndNewlines), !searchString.isEmpty else { return }
         if searchString.contains("@"), !isValidEmail(searchString) { return }
         networking?.getSharees(searchString: searchString)
     }

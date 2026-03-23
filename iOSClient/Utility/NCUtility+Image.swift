@@ -63,8 +63,8 @@ extension NCUtility {
             return UIImage(systemName: "doc")!
         }
     }
-    
-    private var userImage: UIImage {
+
+    var userImage: UIImage {
         UIImage(resource: .userAvatar)
     }
 

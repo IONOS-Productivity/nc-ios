@@ -14,10 +14,10 @@ struct ShareSearchField: View {
         @Published var placeholder: String = ""
         @Published var text: String = ""
     }
-    
+
     @ObservedObject var model: Model
     let onContactButtonTap: () -> Void
-    
+
     var body: some View {
         HStack(spacing: 0) {
             Image(.Share.magnifyingGlass)
@@ -70,14 +70,14 @@ struct ShareSearchField: View {
 }
 
 class ShareSearchFieldHost: UIHostingController<ShareSearchField> {
-    
+
     private var cancellables: [AnyCancellable] = []
     private var model: ShareSearchField.Model!
-    
+
     override init(rootView: ShareSearchField) {
         super.init(rootView: rootView)
     }
-    
+
     var placeholder: String {
         get {
             return model.placeholder
@@ -86,7 +86,7 @@ class ShareSearchFieldHost: UIHostingController<ShareSearchField> {
             model.placeholder = newValue
         }
     }
-    
+
     var text: String {
         get {
             return model.text
@@ -95,7 +95,7 @@ class ShareSearchFieldHost: UIHostingController<ShareSearchField> {
             model.text = newValue
         }
     }
-    
+
     convenience init(onSearchTextChanged: @escaping ((_ text: String) -> Void),
                      onContactButtonTap: @escaping (() -> Void)) {
         let model = ShareSearchField.Model()
@@ -104,7 +104,7 @@ class ShareSearchFieldHost: UIHostingController<ShareSearchField> {
         self.init(rootView: shareSearch)
         self.view.backgroundColor = .clear
         self.model = model
-        
+
         self.model
             .$text
             .throttle(for: 0.5,
@@ -115,7 +115,7 @@ class ShareSearchFieldHost: UIHostingController<ShareSearchField> {
                 onSearchTextChanged(text)
             }.store(in: &cancellables)
     }
-    
+
     @MainActor @preconcurrency required dynamic init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
