@@ -27,11 +27,8 @@ class NCPlayerToolBar: UIView {
     @IBOutlet weak var playbackSlider: NCPlayerToolBarSlider!
     @IBOutlet weak var labelLeftTime: UILabel!
     @IBOutlet weak var labelCurrentTime: UILabel!
-    @IBOutlet weak var repeatButton: UIButton?
 
     private var mediaCoordinator = NCMediaCoordinator.shared
-    private var cancellables = Set<AnyCancellable>()
-    private var isPlaying: Bool = false
 
     enum sliderEventType {
         case none
@@ -42,14 +39,6 @@ class NCPlayerToolBar: UIView {
 
     var playbackSliderEvent: sliderEventType = .none
     var isFullscreen: Bool = false
-    var playRepeat: Bool {
-        get {
-            mediaCoordinator.playRepeat
-        }
-        set {
-            mediaCoordinator.playRepeat = newValue
-        }
-    }
 
     private var ncplayer: NCPlayer?
     private var metadata: tableMetadata?
@@ -59,6 +48,9 @@ class NCPlayerToolBar: UIView {
     private let global = NCGlobal.shared
     private let database = NCManageDatabase.shared
     private weak var viewerMediaPage: NCViewerMediaPage?
+    private var buttonImage = UIImage()
+
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - View Life Cycle
 
@@ -67,9 +59,9 @@ class NCPlayerToolBar: UIView {
 
         self.backgroundColor = UIColor.black.withAlphaComponent(0.1)
 
-		fullscreenButton.setImage(NCImagesRepository.mediaIconFullscreen, for: .normal)
+        fullscreenButton.setImage(NCImagesRepository.mediaIconFullscreen, for: .normal)
 
-		subtitleButton.setImage(NCImagesRepository.mediaIconMessage, for: .normal)
+        subtitleButton.setImage(NCImagesRepository.mediaIconMessage, for: .normal)
         subtitleButton.isEnabled = false
         subtitleButton.showsMenuAsPrimaryAction = true
 
@@ -91,18 +83,22 @@ class NCPlayerToolBar: UIView {
         playerButtonView.spacing = pointSize
         playerButtonView.isHidden = true
 
-		backButton.setImage(NCImagesRepository.mediaIconRewind, for: .normal)
-        playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
-        forwardButton.setImage(NCImagesRepository.mediaIconForward, for: .normal)
+        buttonImage = NCImagesRepository.mediaIconRewind
+        backButton.setImage(buttonImage, for: .normal)
+
+        buttonImage = NCImagesRepository.mediaIconRewind
+        playButton.setImage(buttonImage, for: .normal)
+
+        buttonImage = NCImagesRepository.mediaIconRewind
+        forwardButton.setImage(buttonImage, for: .normal)
 
         playbackSlider.addTapGesture()
-        playbackSlider.setThumbImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 24)), for: .normal)
+        playbackSlider.setThumbImage(UIImage(systemName: "circle.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 15)), for: .normal)
+        playbackSlider.value = 0
         playbackSlider.thumbTintColor = UIColor(resource: .MediaPlayer.sliderThumb)
         playbackSlider.minimumTrackTintColor = UIColor(resource: .MediaPlayer.sliderMin)
         playbackSlider.maximumTrackTintColor = UIColor(resource: .MediaPlayer.sliderMax)
-        playbackSlider.value = 0
         playbackSlider.addTarget(self, action: #selector(playbackValChanged(slider:event:)), for: .valueChanged)
-        updateRepeatButtonImage()
 
         utilityView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tap(gestureRecognizer:))))
         playbackSliderView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tap(gestureRecognizer:))))
@@ -157,6 +153,9 @@ class NCPlayerToolBar: UIView {
 
         playerButtonView.isHidden = true
 
+        buttonImage = UIImage(systemName: "play.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
+        playButton.setImage(buttonImage, for: .normal)
+
         playbackSlider.value = position
 
         labelCurrentTime.text = NCMediaCoordinatorConstants.emptyTime
@@ -174,21 +173,11 @@ class NCPlayerToolBar: UIView {
 
     public func update(position: Float, length: Float, playedTime: String, remainingTime: String?) {
         // SLIDER & TIME
-        if playbackSliderEvent == .ended {
+        if playbackSliderEvent != .began && playbackSliderEvent != .moved {
             playbackSlider.value = position
         }
         labelCurrentTime.text = playedTime
         labelLeftTime.text = remainingTime
-    }
-
-    private func setPlayButtonImage(isPlaying: Bool) {
-        guard self.isPlaying != isPlaying else { return }
-        self.isPlaying = isPlaying
-        if isPlaying {
-            playButton.setImage(NCImagesRepository.mediaIconPause, for: .normal)
-        } else {
-            playButton.setImage(NCImagesRepository.mediaIconPlay, for: .normal)
-        }
     }
 
     // MARK: -
@@ -220,12 +209,12 @@ class NCPlayerToolBar: UIView {
     }
 
     private func showPauseButton() {
-        let buttonImage = UIImage(systemName: "pause.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
+        buttonImage = UIImage(systemName: "pause.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
         playButton.setImage(buttonImage, for: .normal)
     }
 
     private func showPlayButton() {
-        let buttonImage = UIImage(systemName: "play.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
+        buttonImage = UIImage(systemName: "play.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))!.withTintColor(.white, renderingMode: .alwaysOriginal)
         playButton.setImage(buttonImage, for: .normal)
     }
 
@@ -265,9 +254,9 @@ class NCPlayerToolBar: UIView {
     @IBAction func tapFullscreen(_ sender: Any) {
         isFullscreen = !isFullscreen
         if isFullscreen {
-			fullscreenButton.setImage(NCImagesRepository.mediaIconCloseFullscreen, for: .normal)
+            fullscreenButton.setImage(utility.loadImage(named: "arrow.down.right.and.arrow.up.left", colors: [.white]), for: .normal)
         } else {
-			fullscreenButton.setImage(NCImagesRepository.mediaIconFullscreen, for: .normal)
+            fullscreenButton.setImage(utility.loadImage(named: "arrow.up.left.and.arrow.down.right", colors: [.white]), for: .normal)
         }
         viewerMediaPage?.changeScreenMode(mode: viewerMediaScreenMode)
     }
@@ -304,26 +293,27 @@ class NCPlayerToolBar: UIView {
               viewerMediaPage: viewerMediaPage
           ).viewMenu()
       }
-    private func setupAudioButton() {
-        guard let player = ncplayer else { return }
 
-        var currentIndex: Int?
-        if let data = database.getVideoOrAudio(metadata: metadata), let idx = data.currentAudioTrackIndex {
-            currentIndex = idx
-        } else {
-            currentIndex = Int(player.currentAudioTrackIndex)
-        }
+      private func setupAudioButton() {
+          guard let player = ncplayer else { return }
 
-        audioButton.menu = NCContextMenuPlayerTracks(
-            trackType: .audio,
-            tracks: player.audioTrackNames,
-            trackIndexes: player.audioTrackIndexes,
-            currentIndex: currentIndex,
-            ncplayer: ncplayer,
-            metadata: metadata,
-            viewerMediaPage: viewerMediaPage
-        ).viewMenu()
-    }
+          var currentIndex: Int?
+          if let data = database.getVideoOrAudio(metadata: metadata), let idx = data.currentAudioTrackIndex {
+              currentIndex = idx
+          } else {
+              currentIndex = Int(player.currentAudioTrackIndex)
+          }
+
+          audioButton.menu = NCContextMenuPlayerTracks(
+              trackType: .audio,
+              tracks: player.audioTrackNames,
+              trackIndexes: player.audioTrackIndexes,
+              currentIndex: currentIndex,
+              ncplayer: ncplayer,
+              metadata: metadata,
+              viewerMediaPage: viewerMediaPage
+          ).viewMenu()
+      }
 
     @IBAction func tapPlayerPause(_ sender: Any) {
         guard let ncplayer = ncplayer else { return }
@@ -349,19 +339,6 @@ class NCPlayerToolBar: UIView {
 
         ncplayer.jumpBackward(10)
         self.viewerMediaPage?.startTimerAutoHide()
-    }
-
-    @IBAction func tapRepeat(_ sender: Any) {
-        playRepeat.toggle()
-        updateRepeatButtonImage()
-    }
-
-    private func updateRepeatButtonImage() {
-        if playRepeat {
-            repeatButton?.setImage(utility.loadImage(named: "repeat", colors: [.white]), for: .normal)
-        } else {
-            repeatButton?.setImage(utility.loadImage(named: "repeat", colors: [NCBrandColor.shared.iconImageColor2]), for: .normal)
-        }
     }
 }
 
