@@ -485,10 +485,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
         if activeLogin?.view.window == nil {
             if selector == NCGlobal.shared.introSignUpWithProvider {
-                // Login via provider
-//                activeLoginWeb = UIStoryboard(name: "NCLogin", bundle: nil).instantiateViewController(withIdentifier: "NCLoginProvider") as? NCLoginProvider
-//                activeLoginWeb?.initialURLString = NCBrandOptions.shared.linkloginPreferredProviders
-//                showLoginViewController(activeLoginWeb)
+                // MERGE: HiDrive Next doesn't support choosing providers
             } else {
                 // Regular login
                 activeLogin = UIStoryboard(name: "NCLogin", bundle: nil).instantiateViewController(withIdentifier: "NCLogin") as? NCLogin
