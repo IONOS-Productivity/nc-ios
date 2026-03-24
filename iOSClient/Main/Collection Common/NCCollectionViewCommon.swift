@@ -148,7 +148,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 
     @MainActor
     internal var controller: NCMainTabBarController? {
-        self.tabBarController as? NCMainTabBarController
+        self.tabBarController as? NCMainTabBarController ?? mainTabBarController
     }
 
     internal var mainNavigationController: HiDriveMainNavigationController? {
@@ -356,6 +356,8 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 
         NotificationCenter.default.addObserver(self, selector: #selector(applicationWillResignActive(_:)), name: UIApplication.willResignActiveNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(closeRichWorkspaceWebView), name: NSNotification.Name(rawValue: global.notificationCenterCloseRichWorkspaceWebView), object: nil)
+
+        tabBarSelect?.controller = controller
     }
 
     override func viewWillDisappear(_ animated: Bool) {

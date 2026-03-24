@@ -43,7 +43,7 @@ class NCRecent: NCCollectionViewCommon {
 		super.viewDidLoad()
 		fileActionsHeader?.enableSorting(enable: false)
 	}
-	
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
