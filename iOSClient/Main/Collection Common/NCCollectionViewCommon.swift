@@ -520,6 +520,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         self.dataSource.setGetServerData(true)
         self.navigationItem.titleView = nil
         self.navigationItem.title = self.titleCurrentFolder
+        setNavigationBarLogoIfNeeded()
     }
 
     // MARK: - SEARCH
