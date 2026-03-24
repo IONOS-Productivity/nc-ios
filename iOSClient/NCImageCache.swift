@@ -233,7 +233,7 @@ final class NCImageCache: @unchecked Sendable {
 	func getFolder() -> UIImage {
 		return UIImage(resource: .folder)
 	}
-	
+
     func getFolder(account: String) -> UIImage {
         return UIImage(resource: .folder)
     }

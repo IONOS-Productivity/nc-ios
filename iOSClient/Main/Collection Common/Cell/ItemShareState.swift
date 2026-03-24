@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2026 Serhii Kaliberda
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import NextcloudKit
+
 enum ItemShareState {
     case notShared
     case sharedOnMe
@@ -17,7 +19,7 @@ enum ItemShareState {
             return .notShared
         }
 
-        if metadata.shareType.contains(3) {
+        if metadata.shareType.contains(NKShare.ShareType.publicLink.rawValue) {
             return .sharedByLink
         }
 
