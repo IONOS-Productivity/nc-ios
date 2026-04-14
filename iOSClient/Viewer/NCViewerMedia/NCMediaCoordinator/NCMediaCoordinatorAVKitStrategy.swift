@@ -72,7 +72,7 @@ class NCMediaCoordinatorAVKitStrategy: NSObject, NCMediaCoordinatorStrategy {
         removeObservers()
     }
 
-    func isSupported(url: URL) async -> Bool {
+    func isSupported() async -> Bool {
         let isPlayable = try? await playerItem?.asset.load(.isPlayable)
         return isPlayable == true
     }
