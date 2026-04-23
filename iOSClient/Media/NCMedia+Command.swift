@@ -169,11 +169,11 @@ extension NCMedia: HiDriveCollectionViewCommonSelectToolbarDelegate {
             present(alertController, animated: true, completion: { })
         }
     }
-    
+
     func toolbarWillAppear() {
         self.tabBarController?.tabBar.isHidden = true
     }
-    
+
     func toolbarWillDisappear() {
         self.tabBarController?.tabBar.isHidden = false
     }
