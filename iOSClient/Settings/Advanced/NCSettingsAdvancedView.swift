@@ -107,7 +107,7 @@ struct NCSettingsAdvancedView: View {
 						model.viewLogFile()
 					}, label: {
 						HStack {
-							Image(systemName: "doc.badge.gearshape")
+                            Image(.Settings.folderGear)
 								.resizable()
 								.scaledToFit()
 								.frame(width: 20, height: 20)
@@ -169,7 +169,7 @@ struct NCSettingsAdvancedView: View {
 					showCacheAlert.toggle()
 				}, label: {
 					HStack {
-						Image(systemName: "xmark")
+						Image(.Settings.xmark)
 							.resizable()
 							.scaledToFit()
 							.frame(width: 15, height: 15)
@@ -197,13 +197,13 @@ struct NCSettingsAdvancedView: View {
 					showExitAlert.toggle()
 				}, label: {
 					HStack {
-						Image(systemName: "xmark")
+						Image(.Settings.xmark)
 							.resizable()
 							.scaledToFit()
 							.frame(width: 15, height: 15)
-							.foregroundColor(Color(UIColor.systemRed))
+							.foregroundColor(Color(NCBrandColor.shared.iconImageColor))
 						Text(NSLocalizedString("_exit_", comment: ""))
-							.foregroundColor(Color(UIColor.systemRed))
+							.foregroundColor(Color(UIColor(resource: .destructiveAction)))
 					}
 				})
 				.tint(Color(UIColor.label))
