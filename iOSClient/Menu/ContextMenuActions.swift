@@ -131,7 +131,7 @@ enum ContextMenuActions {
                      let message = "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"
                      await UIAlertController.warningAsync(message: message, presenter: viewController)
                  } else {
-                     let controller = viewController.tabBarController as? NCMainTabBarController
+                     let controller = viewController.mainTabBarController
                      NCSelectOpen.shared.openView(items: selectedMetadatas, controller: controller)
                  }
                  completion?()

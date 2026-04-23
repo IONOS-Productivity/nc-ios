@@ -115,7 +115,7 @@ class NCContextMenuMain: NSObject {
             image: utility.loadImage(named: "square.and.arrow.up.fill")
         ) { _ in
             Task { @MainActor in
-                let controller = self.viewController.tabBarController as? NCMainTabBarController
+                let controller = self.viewController.mainTabBarController
                 await NCCreate().createActivityViewController(
                     selectedMetadata: [self.metadata],
                     controller: controller,
