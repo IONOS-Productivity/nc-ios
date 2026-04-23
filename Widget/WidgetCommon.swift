@@ -39,7 +39,7 @@ struct EmptyWidgetContentView: View {
 
 struct HeaderView: View {
 	let title: String
-	
+
 	var body: some View {
         Text(title.firstUppercased)
 			.font(WidgetConstants.titleTextFont)
@@ -54,7 +54,7 @@ struct FooterView: View {
 	let imageName: String
 	let text: String
 	let isPlaceholder: Bool
-	
+
 	var body: some View {
 		HStack(spacing: 8) {
 			Image(uiImage: UIImage(named: imageName) ?? UIImage())
@@ -65,7 +65,7 @@ struct FooterView: View {
 					   height: WidgetConstants.bottomImageWidthHeight)
 				.font(Font.system(.body).weight(.light))
                 .foregroundColor(isPlaceholder ? Color(.systemGray4) : Color(.bottomElementForeground))
-			
+
 			Text(text)
 				.font(WidgetConstants.bottomTextFont)
 				.lineLimit(1)
