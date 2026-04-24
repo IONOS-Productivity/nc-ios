@@ -97,6 +97,10 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
         labelInfo.text = ""
         labelSubinfo.text = ""
 
+        buttonMore.menu = nil
+        buttonMore.showsMenuAsPrimaryAction = true
+        contentView.bringSubviewToFront(buttonMore)
+
         #if !EXTENSION
         if playbackProgressView.superview == nil {
             addSubview(playbackProgressView)
