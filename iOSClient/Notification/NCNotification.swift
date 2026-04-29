@@ -33,7 +33,7 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
     var session: NCSession.Session!
 
     var controller: NCMainTabBarController? {
-        self.tabBarController as? NCMainTabBarController
+        self.mainTabBarController
     }
 
     // MARK: - View Life Cycle

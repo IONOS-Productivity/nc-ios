@@ -94,7 +94,9 @@ class NCViewer: NSObject {
                     NCActivityIndicator.shared.stop()
 
                     guard results.error == .success, let url = results.url else {
-                        await showErrorBanner(controller: delegate?.tabBarController as? NCMainTabBarController, text: results.error.errorDescription, errorCode: results.error.errorCode)
+                        await showErrorBanner(controller: delegate?.mainTabBarController,
+                                              text: results.error.errorDescription,
+                                              errorCode: results.error.errorCode)
                         return nil
                     }
 
@@ -148,7 +150,9 @@ class NCViewer: NSObject {
                     NCActivityIndicator.shared.stop()
 
                     guard results.error == .success, let url = results.url else {
-                        await showErrorBanner(controller: delegate?.tabBarController as? NCMainTabBarController, text: results.error.errorDescription, errorCode: results.error.errorCode)
+                        await showErrorBanner(controller: delegate?.mainTabBarController,
+                                              text: results.error.errorDescription,
+                                              errorCode: results.error.errorCode)
                         return nil
                     }
 
@@ -197,7 +201,7 @@ class NCViewer: NSObject {
             delegate?.present(viewerQuickLook, animated: true)
         } else {
             // Document Interaction Controller
-            if let controller = delegate?.tabBarController as? NCMainTabBarController {
+            if let controller = delegate?.mainTabBarController {
                 Task {
                     await NCCreate().createActivityViewController(selectedMetadata: [metadata], controller: controller, sender: nil)
                 }

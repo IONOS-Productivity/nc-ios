@@ -74,7 +74,7 @@ class NCMedia: UIViewController {
 	}
 
 	var controller: NCMainTabBarController? {
-		self.tabBarController as? NCMainTabBarController
+		self.mainTabBarController
 	}
 
 	var isViewActived: Bool {

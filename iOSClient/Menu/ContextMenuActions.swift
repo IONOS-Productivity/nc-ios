@@ -44,7 +44,7 @@ enum ContextMenuActions {
              ) { _ in
                  completion?()
              }
-             controller?.present(alert, animated: true)
+             controller?.currentViewController()?.present(alert, animated: true)
          }
      }
 

@@ -68,7 +68,10 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
                     UIDeferredMenuElement.uncached { [self] completion in
                         guard let metadata = self.metadata else { return }
 
-                        if let menu = NCViewerContextMenu(metadata: metadata, controller: self.tabBarController as? NCMainTabBarController, webView: false, sender: self).viewMenu() {
+                        if let menu = NCViewerContextMenu(metadata: metadata,
+                                                          controller: self.mainTabBarController,
+                                                          webView: false,
+                                                          sender: self).viewMenu() {
                             completion(menu.children)
                         }
                     }

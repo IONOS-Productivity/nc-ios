@@ -148,7 +148,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 
     @MainActor
     internal var controller: NCMainTabBarController? {
-        self.tabBarController as? NCMainTabBarController ?? mainTabBarController
+        self.mainTabBarController
     }
 
     internal var mainNavigationController: HiDriveMainNavigationController? {

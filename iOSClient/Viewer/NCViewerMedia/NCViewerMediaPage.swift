@@ -43,7 +43,10 @@ class NCViewerMediaPage: UIViewController {
         primaryAction: nil,
         menu: UIMenu(title: "", children: [
             UIDeferredMenuElement.uncached { [self] completion in
-                if let menu = NCViewerContextMenu(metadata: currentViewController.metadata, controller: self.tabBarController as? NCMainTabBarController, webView: false, sender: self).viewMenu() {
+                if let menu = NCViewerContextMenu(metadata: currentViewController.metadata,
+                                                  controller: self.mainTabBarController,
+                                                  webView: false,
+                                                  sender: self).viewMenu() {
                     completion(menu.children)
                 }
             }
@@ -154,6 +157,10 @@ class NCViewerMediaPage: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        Task {
+            await NCNetworking.shared.transferDispatcher.addDelegate(self)
+        }
+
         changeScreenMode(mode: viewerMediaScreenMode)
         startTimerAutoHide()
     }
@@ -167,6 +174,10 @@ class NCViewerMediaPage: UIViewController {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+
+        Task {
+            await NCNetworking.shared.transferDispatcher.removeDelegate(self)
+        }
 
         timerAutoHide?.invalidate()
     }
