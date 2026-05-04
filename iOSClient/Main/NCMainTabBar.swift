@@ -35,6 +35,8 @@ class NCMainTabBar: UITabBar {
     private let centerButtonY: CGFloat = -28
     public var color = NCBrandColor.shared.customer
 
+    private var menuPlus: NCContextMenuPlus?
+
 	private var centerButtonColor: UIColor {
         UIColor(resource: .Tabbar.fabButton)
 	}
@@ -222,7 +224,13 @@ class NCMainTabBar: UITabBar {
                             return
                         }
 
-                        self.appDelegate.toggleMenu(controller: controller, sender: nil)
+                        if self.menuPlus == nil {
+                            self.menuPlus = NCContextMenuPlus(menuButton: centerButton, controller: controller)
+                        } else {
+                            self.menuPlus?.menuButton = centerButton
+                        }
+                        let session = NCSession.shared.getSession(account: controller.account)
+                        await self.menuPlus?.create(session: session)
                     }
                 }
             }

@@ -37,13 +37,6 @@
 		420274712F11558400ECB06B /* NCCellMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4202746F2F11557500ECB06B /* NCCellMedia.swift */; };
 		421657AB2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421657AA2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift */; };
 		421DC45F2F6D38F3001EE5E3 /* ItemShareState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421DC45E2F6D38F3001EE5E3 /* ItemShareState.swift */; };
-		422579CF2F684E7D00117A7C /* FloatingPanel in Frameworks */ = {isa = PBXBuildFile; productRef = 422579CE2F684E7D00117A7C /* FloatingPanel */; };
-		422579D22F68508600117A7C /* NCMenuAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D02F68508600117A7C /* NCMenuAction.swift */; };
-		422579D32F68508600117A7C /* NCViewer+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D12F68508600117A7C /* NCViewer+Menu.swift */; };
-		422579D62F68553C00117A7C /* UIViewController+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D52F68553A00117A7C /* UIViewController+Menu.swift */; };
-		422579D82F68562700117A7C /* NCMenu+FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579D72F68562700117A7C /* NCMenu+FloatingPanel.swift */; };
-		422579DB2F68564B00117A7C /* NCMenu.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 422579D92F68564B00117A7C /* NCMenu.storyboard */; };
-		422579DC2F68564B00117A7C /* NCMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 422579DA2F68564B00117A7C /* NCMenu.swift */; };
 		4232DC0A2C9D7C44008D546D /* UIView+GridSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4232DC092C9D7C44008D546D /* UIView+GridSelection.swift */; };
 		4232DC0B2C9D7C44008D546D /* UIView+GridSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4232DC092C9D7C44008D546D /* UIView+GridSelection.swift */; };
 		4240DB4E2C5646B400E72FC0 /* BurgerMenuAttachController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4240DB4D2C5646B400E72FC0 /* BurgerMenuAttachController.swift */; };
@@ -65,7 +58,6 @@
 		42C684B72CA1A20100DD46F0 /* CommonButtonConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42C684B62CA1A20100DD46F0 /* CommonButtonConstants.swift */; };
 		42D34FD92D79A5B00020C106 /* ShareSearchField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42D34FD82D79A5B00020C106 /* ShareSearchField.swift */; };
 		42D3D0972C94284C008A5AD4 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
-		42E14EB82E96616000FBC8C3 /* AppDelegate+Menu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E14EB72E96616000FBC8C3 /* AppDelegate+Menu.swift */; };
 		42E5D36B2D678F9C007150DE /* HiDriveMainNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E5D36A2D678F95007150DE /* HiDriveMainNavigationController.swift */; };
 		42F504802C6F553D001AA432 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42F5047F2C6F553D001AA432 /* Colors.xcassets */; };
 		42F89EB12D71F30C00550A07 /* NCCollectionViewCommon+FileActionsHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42F89EB02D71F30C00550A07 /* NCCollectionViewCommon+FileActionsHeader.swift */; };
@@ -1207,12 +1199,6 @@
 		421651302E28F6ED002E19D6 /* Notification Service ExtensionDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Notification Service ExtensionDebug.entitlements"; sourceTree = "<group>"; };
 		421657AA2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiDriveCollectionViewCommonSelectToolbarDelegate.swift; sourceTree = "<group>"; };
 		421DC45E2F6D38F3001EE5E3 /* ItemShareState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemShareState.swift; sourceTree = "<group>"; };
-		422579D02F68508600117A7C /* NCMenuAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMenuAction.swift; sourceTree = "<group>"; };
-		422579D12F68508600117A7C /* NCViewer+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCViewer+Menu.swift"; sourceTree = "<group>"; };
-		422579D52F68553A00117A7C /* UIViewController+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Menu.swift"; sourceTree = "<group>"; };
-		422579D72F68562700117A7C /* NCMenu+FloatingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCMenu+FloatingPanel.swift"; sourceTree = "<group>"; };
-		422579D92F68564B00117A7C /* NCMenu.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = NCMenu.storyboard; sourceTree = "<group>"; };
-		422579DA2F68564B00117A7C /* NCMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCMenu.swift; sourceTree = "<group>"; };
 		4232DC092C9D7C44008D546D /* UIView+GridSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+GridSelection.swift"; sourceTree = "<group>"; };
 		4240DB4D2C5646B400E72FC0 /* BurgerMenuAttachController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurgerMenuAttachController.swift; sourceTree = "<group>"; };
 		4240DB4F2C5648E300E72FC0 /* BurgerMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurgerMenuViewController.swift; sourceTree = "<group>"; };
@@ -1229,7 +1215,6 @@
 		42C684B32CA1806000DD46F0 /* SecondaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondaryButton.swift; sourceTree = "<group>"; };
 		42C684B62CA1A20100DD46F0 /* CommonButtonConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonButtonConstants.swift; sourceTree = "<group>"; };
 		42D34FD82D79A5B00020C106 /* ShareSearchField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSearchField.swift; sourceTree = "<group>"; };
-		42E14EB72E96616000FBC8C3 /* AppDelegate+Menu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+Menu.swift"; sourceTree = "<group>"; };
 		42E5D36A2D678F95007150DE /* HiDriveMainNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiDriveMainNavigationController.swift; sourceTree = "<group>"; };
 		42F5047F2C6F553D001AA432 /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
 		42F89EB02D71F30C00550A07 /* NCCollectionViewCommon+FileActionsHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NCCollectionViewCommon+FileActionsHeader.swift"; sourceTree = "<group>"; };
@@ -1908,7 +1893,6 @@
 				F76DA963277B760E0082465B /* Queuer in Frameworks */,
 				F3374AF22D78B01B002A38F9 /* Collections in Frameworks */,
 				F72AD70D28C24B93006CB92D /* NextcloudKit in Frameworks */,
-				422579CF2F684E7D00117A7C /* FloatingPanel in Frameworks */,
 				F70B86752642CE3B00ED5349 /* FirebaseCrashlytics in Frameworks */,
 				F7A1050E29E587AF00FFD92B /* TagListView in Frameworks */,
 				F76DA969277B77EA0082465B /* DropDown in Frameworks */,
@@ -1974,13 +1958,6 @@
 		371B5A2F23D0B04B00FAFAE9 /* Menu */ = {
 			isa = PBXGroup;
 			children = (
-				422579D92F68564B00117A7C /* NCMenu.storyboard */,
-				422579DA2F68564B00117A7C /* NCMenu.swift */,
-				422579D72F68562700117A7C /* NCMenu+FloatingPanel.swift */,
-				422579D52F68553A00117A7C /* UIViewController+Menu.swift */,
-				422579D02F68508600117A7C /* NCMenuAction.swift */,
-				422579D12F68508600117A7C /* NCViewer+Menu.swift */,
-				42E14EB72E96616000FBC8C3 /* AppDelegate+Menu.swift */,
 				D5EB5DD32F490D2E009D88B1 /* NCContextMenuPlayerTracks.swift */,
 				F376A3732E5CC5FF0067EE25 /* ContextMenuActions.swift */,
 				F78C6FDD296D677300C952C3 /* NCContextMenuMain.swift */,
@@ -3739,7 +3716,6 @@
 				F3374AF72D78B01B002A38F9 /* HeapModule */,
 				F7B8F6132EAB64AD006A70D6 /* JDStatusBarNotification */,
 				F70557B62ED44E2700135623 /* LucidBanner */,
-				422579CE2F684E7D00117A7C /* FloatingPanel */,
 			);
 			productName = "Crypto Cloud";
 			productReference = F7CE8AFA1DC1F8D8009CAE48 /* Nextcloud.app */;
@@ -3876,7 +3852,6 @@
 				F3374AEE2D78B01B002A38F9 /* XCRemoteSwiftPackageReference "swift-collections" */,
 				F7B8F6122EAB64AD006A70D6 /* XCRemoteSwiftPackageReference "JDStatusBarNotification" */,
 				F70557B52ED44E2700135623 /* XCRemoteSwiftPackageReference "LucidBanner" */,
-				422579CD2F684E6800117A7C /* XCRemoteSwiftPackageReference "FloatingPanel" */,
 			);
 			productRefGroup = F7F67B9F1A24D27800EE80DA;
 			projectDirPath = "";
@@ -4057,7 +4032,6 @@
 				F7EDE509262DA9D600414FE6 /* NCSelectCommandViewSelect.xib in Resources */,
 				F732D23327CF8AED000B0F1B /* NCPlayerToolBar.xib in Resources */,
 				F73D11FA253C5F4800DF9BEC /* NCViewerNextcloudText.storyboard in Resources */,
-				422579DB2F68564B00117A7C /* NCMenu.storyboard in Resources */,
 				F7EDE51B262DD0C400414FE6 /* NCSelectCommandViewCopyMove.xib in Resources */,
 				F7FF2CB12842159500EBB7A1 /* NCSectionHeader.xib in Resources */,
 				F7D1612023CF19E30039EBBF /* NCViewerRichWorkspace.storyboard in Resources */,
@@ -4619,7 +4593,6 @@
 				F799DF852C4B7E56003410B5 /* NCSectionHeader.swift in Sources */,
 				F78A10BF29322E8A008499B8 /* NCManageDatabase+Directory.swift in Sources */,
 				F7743A122C33F0A20034F670 /* NCCollectionViewCommon+CollectionViewDelegate.swift in Sources */,
-				422579D62F68553C00117A7C /* UIViewController+Menu.swift in Sources */,
 				F7D60CAF2C941ACB008FBFDD /* NCMediaPinchGesture.swift in Sources */,
 				0F08D6B92C94270600136502 /* ButtonStyleGuide.swift in Sources */,
 				F71916142E2901FB00E13E96 /* NCNetworking+Upload.swift in Sources */,
@@ -4710,7 +4683,6 @@
 				AF93471A27E2361E002537EE /* NCShareHeader.swift in Sources */,
 				F7F878AE1FB9E3B900599E4F /* NCEndToEndMetadata.swift in Sources */,
 				F7A7FDDD2C2DBD6200E9A93A /* NCDeepLinkHandler.swift in Sources */,
-				42E14EB82E96616000FBC8C3 /* AppDelegate+Menu.swift in Sources */,
 				F778231E2C42C07C001BB94F /* NCCollectionViewCommon+MediaLayout.swift in Sources */,
 				F710D1F52405770F00A6033D /* NCViewerPDF.swift in Sources */,
 				F72EC7242F45C81600A2135C /* NotificationCenter+Extension.swift in Sources */,
@@ -4773,13 +4745,11 @@
 				F3A047982BD2668800658E7B /* NCAssistantCreateNewTask.swift in Sources */,
 				AF93471227E2341B002537EE /* NCContextMenuShare.swift in Sources */,
 				F7EFA47825ADBA500083159A /* NCViewerProviderContextMenu.swift in Sources */,
-				422579DC2F68564B00117A7C /* NCMenu.swift in Sources */,
 				42E5D36B2D678F9C007150DE /* HiDriveMainNavigationController.swift in Sources */,
 				F755BD9B20594AC7008C5FBB /* NCService.swift in Sources */,
 				F376A3742E5CC6030067EE25 /* ContextMenuActions.swift in Sources */,
 				F7E8A391295DC5E0006CB2D0 /* View+Extension.swift in Sources */,
 				F79B869B265E19D40085C0E0 /* NSMutableAttributedString+Extension.swift in Sources */,
-				422579D82F68562700117A7C /* NCMenu+FloatingPanel.swift in Sources */,
 				F7B7504B2397D38F004E13EC /* UIImage+Extension.swift in Sources */,
 				AF3FDCC22796ECC300710F60 /* NCTrash+CollectionView.swift in Sources */,
 				F70D7C3725FFBF82002B9E34 /* NCCollectionViewCommon.swift in Sources */,
@@ -4811,8 +4781,6 @@
 				F749B651297B0F2400087535 /* NCManageDatabase+Avatar.swift in Sources */,
 				F7FAFD3A28BFA948000777FE /* NCContextMenuNotification.swift in Sources */,
 				F74C0436253F1CDC009762AB /* NCShares.swift in Sources */,
-				422579D22F68508600117A7C /* NCMenuAction.swift in Sources */,
-				422579D32F68508600117A7C /* NCViewer+Menu.swift in Sources */,
 				F7AC1CB028AB94490032D99F /* Array+Extension.swift in Sources */,
 				F7AE00F5230D5F9E007ACF8A /* NCLoginProvider.swift in Sources */,
 				F707C26521A2DC5200F6181E /* NCStoreReview.swift in Sources */,
@@ -7177,14 +7145,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		422579CD2F684E6800117A7C /* XCRemoteSwiftPackageReference "FloatingPanel" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/scenee/FloatingPanel";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.2.2;
-			};
-		};
 		F3374AEE2D78B01B002A38F9 /* XCRemoteSwiftPackageReference "swift-collections" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-collections.git";
@@ -7404,11 +7364,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		422579CE2F684E7D00117A7C /* FloatingPanel */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 422579CD2F684E6800117A7C /* XCRemoteSwiftPackageReference "FloatingPanel" */;
-			productName = FloatingPanel;
-		};
 		625EC26D2C6CA285006411D1 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F70B86732642CE3B00ED5349 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
