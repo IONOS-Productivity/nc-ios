@@ -239,6 +239,10 @@ class NCMediaCoordinator: NSObject {
     }
 
     func play(restart: Bool = false) {
+        if !restart, isPlayerInErrorState(), let item {
+            play(item: item)
+            return
+        }
         strategy?.play(restart: restart)
     }
 

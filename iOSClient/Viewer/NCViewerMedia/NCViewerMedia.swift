@@ -561,11 +561,17 @@ extension NCViewerMedia {
                 for: hudToken
             )
         case .error(let error):
-            addDownloadHudIfNeeded()
-            if let nkError = error {
-                completeHudBannerError(subtitle: nkError.errorDescription, token: hudToken)
-            } else {
-                completeHudBannerError(token: hudToken)
+            let sceneIdentifier = self.sceneIdentifier
+            Task {
+                if let nkError = error {
+                    await showErrorBanner(sceneIdentifier: sceneIdentifier,
+                                          text: nkError.errorDescription,
+                                          errorCode: nkError.errorCode)
+                } else {
+                    await showErrorBanner(sceneIdentifier: sceneIdentifier,
+                                          text: "_error_something_wrong_",
+                                          errorCode: 0)
+                }
             }
             hudToken = nil
         case .downloaded:
@@ -617,6 +623,7 @@ extension NCViewerMedia {
             title: NSLocalizedString("_downloading_", comment: ""),
             stage: .button) { [weak self] in
                 self?.mediaCoordinator.cancelDownload()
+                LucidBanner.shared.dismiss()
             }
     }
 }
