@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2018 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -21,11 +22,11 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     @IBOutlet weak var imageLocal: UIImageView!
     @IBOutlet weak var imageShared: UIImageView!
     @IBOutlet weak var imageMore: UIImageView!
+    @IBOutlet weak var progressView: UIProgressView!
 
     @IBOutlet weak var labelTitle: UILabel!
     @IBOutlet weak var labelInfo: UILabel!
     @IBOutlet weak var labelSubinfo: UILabel!
-    @IBOutlet weak var labelInfoSeparator: UILabel!
     @IBOutlet weak var tag0: UILabel!
     @IBOutlet weak var tag1: UILabel!
 
@@ -36,6 +37,15 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     @IBOutlet weak var imageItemLeftConstraint: NSLayoutConstraint!
     @IBOutlet weak var separatorHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var titleTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var subInfoTrailingConstraint: NSLayoutConstraint!
+
+    #if !EXTENSION
+    private var playbackProgressView = PlaybackProgressView()
+    #endif
+
+    var separatorBackground: UIColor? {
+        UIColor(named: "ListCell/Separator")
+    }
 
     weak var delegate: NCListCellDelegate?
 
@@ -47,7 +57,9 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     }
     var avatarImg: UIImageView? {
         get { return imageShared }
-        set { imageShared = newValue }
+		set {
+			imageShared = newValue
+		}
     }
     var previewImg: UIImageView? {
         get { return imageItem }
@@ -115,16 +127,36 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
         labelTitle.text = ""
         labelInfo.text = ""
         labelSubinfo.text = ""
-        labelInfoSeparator.text = ""
         tag0.text = ""
         tag1.text = ""
 
-        separatorHeightConstraint.constant = 0.5
+        separator.backgroundColor = separatorBackground
+        separatorHeightConstraint.constant = 1
 
         buttonMore.menu = nil
         buttonMore.showsMenuAsPrimaryAction = true
 
         titleTrailingConstraint.constant = 90
+
+        labelTitle.text = ""
+        labelInfo.text = ""
+        labelSubinfo.text = ""
+        labelTitle.textColor = UIColor(resource: .ListCell.title)
+        labelInfo.textColor = UIColor(resource: .ListCell.subtitle)
+        labelSubinfo.textColor = UIColor(resource: .ListCell.subtitle)
+
+        #if !EXTENSION
+        if playbackProgressView.superview == nil {
+            addSubview(playbackProgressView)
+            playbackProgressView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                playbackProgressView.leadingAnchor.constraint(equalTo: progressView.leadingAnchor),
+                playbackProgressView.trailingAnchor.constraint(equalTo: progressView.trailingAnchor),
+                playbackProgressView.topAnchor.constraint(equalTo: progressView.topAnchor),
+                playbackProgressView.bottomAnchor.constraint(equalTo: progressView.bottomAnchor)
+            ])
+        }
+        #endif
 
         contentView.bringSubviewToFront(buttonMore)
     }
@@ -186,21 +218,12 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
             buttonMore.isHidden = false
             backgroundView = nil
         }
-        if status {
-            var blurEffectView: UIView?
-            blurEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
-            blurEffectView?.backgroundColor = .lightGray
-            blurEffectView?.frame = self.bounds
-            blurEffectView?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            imageSelect.image = NCImageCache.shared.getImageCheckedYes()
-            backgroundView = blurEffectView
-            separator.isHidden = true
-        } else {
-            imageSelect.image = NCImageCache.shared.getImageCheckedNo()
-            backgroundView = nil
-            separator.isHidden = false
-        }
 
+        if status {
+            imageSelect.image = NCImageCache.shared.getImageCheckedYes().withTintColor(NCBrandColor.shared.brandElement)
+        } else {
+            imageSelect.image = NCImageCache.shared.getImageCheckedNo().withTintColor(UIColor(resource: .FileSelection.listItemDeselected))
+        }
     }
 
     func writeInfoDateSize(date: NSDate, size: Int64) {
@@ -219,13 +242,11 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
             tag1.isHidden = true
             labelInfo.isHidden = false
             labelSubinfo.isHidden = false
-            labelInfoSeparator.isHidden = false
         } else {
             tag0.isHidden = false
             tag1.isHidden = true
             labelInfo.isHidden = true
             labelSubinfo.isHidden = true
-            labelInfoSeparator.isHidden = true
 
             if let tag = tags.first {
                 tag0.text = tag
@@ -238,29 +259,10 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     }
 
     func setIconOutlines() {
-        [imageStatus, imageLocal].forEach { imageView in
-            imageView.makeCircularBackground(withColor: imageView.image != nil ? .systemBackground : .clear)
-        }
-
-        if imageFavorite.image != nil {
-            let outlineView = UIImageView()
-            outlineView.translatesAutoresizingMaskIntoConstraints = false
-            outlineView.image = UIImage(systemName: "star")
-            outlineView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 16, weight: .thin)
-            outlineView.tintColor = .systemBackground
-
-            imageFavorite.addSubview(outlineView)
-            NSLayoutConstraint.activate([
-                outlineView.leadingAnchor.constraint(equalTo: imageFavorite.leadingAnchor, constant: -1),
-                outlineView.trailingAnchor.constraint(equalTo: imageFavorite.trailingAnchor, constant: 1),
-                outlineView.topAnchor.constraint(equalTo: imageFavorite.topAnchor, constant: -1),
-                outlineView.bottomAnchor.constraint(equalTo: imageFavorite.bottomAnchor, constant: 1)
-            ])
-            imageFavorite.sendSubviewToBack(outlineView)
+        if imageStatus.image != nil {
+            imageStatus.makeCircularBackground(withColor: .systemBackground)
         } else {
-            imageFavorite.subviews.forEach { view in
-                view.removeFromSuperview()
-            }
+            imageStatus.backgroundColor = .clear
         }
     }
 
@@ -276,10 +278,21 @@ class NCListCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
     }
 }
 
+#if !EXTENSION
+extension NCListCell: NCCellMedia {
+    func setupPlaybackProgress(visible: Bool) {
+        guard let ocId = metadata?.ocId else {
+            return
+        }
+        playbackProgressView.setupPlaybackProgress(ocId: ocId, visible: visible)
+    }
+}
+#endif
+
 // MARK: - List Layout
 
 class NCListLayout: UICollectionViewFlowLayout {
-    var itemHeight: CGFloat = 60
+    var itemHeight: CGFloat = 64
 
     override init() {
         super.init()
@@ -456,15 +469,7 @@ extension NCCollectionViewCommon {
         }
 
         // Share image
-        if isShare {
-            cell.imageShared?.image = imageCache.getImageShared()
-        } else if !metadata.shareType.isEmpty {
-            metadata.shareType.contains(NKShare.ShareType.publicLink.rawValue) ?
-            (cell.imageShared?.image = imageCache.getImageShareByLink()) :
-            (cell.imageShared?.image = imageCache.getImageShared())
-        } else {
-            cell.imageShared?.image = imageCache.getImageCanShare()
-        }
+        cell.imageShared?.image = ItemShareState.state(by: metadata, isShare: isShare).iconImage
 
         // Button More
         if metadata.lock == true {
@@ -484,21 +489,22 @@ extension NCCollectionViewCommon {
                 cell.avatarImg?.contentMode = .scaleAspectFill
                 cell.avatarImg?.image = image
             } else {
-                self.database.getImageAvatarLoaded(fileName: fileName) { image, tblAvatar in
-                    if let image {
-                        cell.avatarImg?.contentMode = .scaleAspectFill
-                        cell.avatarImg?.image = image
-                        NCImageCache.shared.addImageCache(image: image, key: fileName)
-                    } else {
-                        cell.avatarImg?.contentMode = .scaleAspectFill
-                        cell.avatarImg?.image = self.utility.loadUserImage(for: metadata.ownerId, displayName: metadata.ownerDisplayName, urlBase: metadata.urlBase)
-                    }
-
-                    if !(tblAvatar?.loaded ?? false),
-                       self.networking.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
-                        self.networking.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: metadata.ownerId, fileName: fileName, account: metadata.account, view: self.collectionView))
-                    }
-                }
+// MERGE: HiDrive Next doesn't show avatar
+//                self.database.getImageAvatarLoaded(fileName: fileName) { image, tblAvatar in
+//                    if let image {
+//                        cell.avatarImg?.contentMode = .scaleAspectFill
+//                        cell.avatarImg?.image = image
+//                        NCImageCache.shared.addImageCache(image: image, key: fileName)
+//                    } else {
+//                        cell.avatarImg?.contentMode = .scaleAspectFill
+//                        cell.avatarImg?.image = self.utility.loadUserImage(for: metadata.ownerId, displayName: metadata.ownerDisplayName, urlBase: metadata.urlBase)
+//                    }
+//
+//                    if !(tblAvatar?.loaded ?? false),
+//                       self.networking.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
+//                        self.networking.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: metadata.ownerId, fileName: fileName, account: metadata.account, view: self.collectionView))
+//                    }
+//                }
             }
         }
 
@@ -542,11 +548,6 @@ extension NCCollectionViewCommon {
 
         // TAGS
         cell.setTags(tags: Array(metadata.tags))
-
-        // SearchingMode - TAG Separator Hidden
-        if isSearchingMode {
-            cell.labelInfoSeparator.isHidden = true
-        }
 
         // Hide buttons
         if metadata.name != global.appName {

@@ -75,10 +75,10 @@ extension NCNetworking: NCTransferDelegate {
                     }
                     let navigationController = UINavigationController(rootViewController: viewerQuickLook)
                     navigationController.modalPresentationStyle = .fullScreen
-                    controller.present(navigationController, animated: true)
+                    controller.currentViewController()?.present(navigationController, animated: true)
                 } else {
                     self.utilityFileSystem.copyFile(atPath: fileNamePath, toPath: fileNameTemp)
-                    controller.present(viewerQuickLook, animated: true)
+                    controller.currentViewController()?.present(viewerQuickLook, animated: true)
                 }
 
             case NCGlobal.shared.selectorLoadFileView:

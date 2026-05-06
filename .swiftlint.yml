@@ -44,8 +44,10 @@ excluded:
   - Pods
   - Tests
   - Brand/NCBrand.swift
+  - Brand/NCBrand-IONOS.swift
   - iOSClient/NCGlobal.swift
   - iOSClient/Utility/NCLivePhoto.swift
   - DerivedData
+  - ipaDerivedData
   
 reporter: "xcode"

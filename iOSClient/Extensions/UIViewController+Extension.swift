@@ -4,6 +4,7 @@
 //
 //  Created by Marino Faggiana on 02/08/2022.
 //  Copyright © 2022 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -62,6 +63,33 @@ extension UIViewController {
         } else {
             return false
         }
+    }
+
+    var mainTabBarController: NCMainTabBarController? {
+        if let tabBarController = self.tabBarController as? NCMainTabBarController {
+            return tabBarController
+        }
+        return self.view.window?.rootViewController as? NCMainTabBarController
+    }
+
+	func setNavigationBarLogo() {
+		let logo = UIImage(resource: .ionosEasyStorageLogo)
+			.withTintColor(UIColor(resource: .NavigationBar.logoTint))
+		let imageView = UIImageView(image: logo)
+
+		let originalSize = logo.size
+		let multiplier = 0.89
+		imageView.translatesAutoresizingMaskIntoConstraints = false
+		navigationItem.titleView = imageView
+
+		NSLayoutConstraint.activate([
+			imageView.widthAnchor.constraint(equalToConstant: originalSize.width * multiplier),
+			imageView.heightAnchor.constraint(equalToConstant: originalSize.height * multiplier)
+		])
+	}
+
+    func isCurrentScreenInMainTabBar() -> Bool {
+        return self.tabBarController is NCMainTabBarController
     }
 }
 

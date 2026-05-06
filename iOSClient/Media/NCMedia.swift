@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2019 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -6,126 +7,129 @@ import Foundation
 import UIKit
 import NextcloudKit
 import RealmSwift
+import Combine
+import SwiftUI
 
 class NCMedia: UIViewController {
-    @IBOutlet weak var collectionView: UICollectionView!
-    @IBOutlet weak var titleDate: UILabel!
-    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
-    @IBOutlet weak var gradientView: UIView!
+	@IBOutlet weak var collectionView: UICollectionView!
+	@IBOutlet weak var fileActionsHeader: FileActionsHeader?
 
-    let layout = NCMediaLayout()
-    let gradientLayer = CAGradientLayer()
-    var layoutType = NCGlobal.shared.mediaLayoutRatio
-    var documentPickerViewController: NCDocumentPickerViewController?
-    var tabBarSelect: NCMediaSelectTabBar!
-    let utilityFileSystem = NCUtilityFileSystem()
-    let global = NCGlobal.shared
-    let utility = NCUtility()
-    let database = NCManageDatabase.shared
-    let imageCache = NCImageCache.shared
+	let semaphoreSearchMedia = DispatchSemaphore(value: 1)
+	let semaphoreNotificationCenter = DispatchSemaphore(value: 1)
+
+	let layout = NCMediaLayout()
+	var layoutType = NCGlobal.shared.mediaLayoutRatio
+	var documentPickerViewController: NCDocumentPickerViewController?
+	var tabBarSelect: HiDriveCollectionViewCommonSelectToolbar!
+	let utilityFileSystem = NCUtilityFileSystem()
+	let global = NCGlobal.shared
+	let utility = NCUtility()
+	let database = NCManageDatabase.shared
+	let imageCache = NCImageCache.shared
     let networking = NCNetworking.shared
-    var dataSource = NCMediaDataSource()
-    var isEditMode = false
-    var fileSelect: [String] = []
-    var searchMediaInProgress: Bool = false
-    var attributesZoomIn: UIMenuElement.Attributes = []
-    var attributesZoomOut: UIMenuElement.Attributes = []
-    var showOnlyImages = false
-    var showOnlyVideos = false
-    var timeIntervalSearchNewMedia: TimeInterval = 2.0
-    var timerSearchNewMedia: Timer?
-    let livePhotoImage = NCUtility().loadImage(named: "livephoto", colors: [.white])
-    let playImage = NCUtility().loadImage(named: "play.fill", colors: [.white])
-    var photoImage = UIImage()
-    var videoImage = UIImage()
-    var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
+	var dataSource = NCMediaDataSource()
+	let refreshControl = UIRefreshControl()
+	var isTop: Bool = true
+	var isEditMode = false
+	var fileSelect: [String] = []
+    var ocIdVerified: [String] = []
+    var ocIdDeleted: [String] = []
+	var filesExists: ThreadSafeArray<String> = ThreadSafeArray()
+	var ocIdDoNotExists: ThreadSafeArray<String> = ThreadSafeArray()
+	var searchMediaInProgress: Bool = false
+	var attributesZoomIn: UIMenuElement.Attributes = []
+	var attributesZoomOut: UIMenuElement.Attributes = []
+	let gradient: CAGradientLayer = CAGradientLayer()
+	var showOnlyImages = false
+	var showOnlyVideos = false
+	var timeIntervalSearchNewMedia: TimeInterval = 2.0
+	var timerSearchNewMedia: Timer?
+	let livePhotoImage = NCUtility().loadImage(named: "livephoto", colors: [.white])
+	let playImage = NCUtility().loadImage(named: "play.fill", colors: [.white])
+	var photoImage = UIImage()
+	var videoImage = UIImage()
+	var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
 
-    var lastScale: CGFloat = 1.0
-    var currentScale: CGFloat = 1.0
-    var maxColumns: Int {
-        let screenWidth = min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        let column = Int(screenWidth / 44)
+	private var accountButtonFactory: AccountButtonFactory!
+	var activeTransfersListener: AnyCancellable?
 
-        return column
-    }
-    var transitionColumns = false
-    var numberOfColumns: Int = 0
-    var lastNumberOfColumns: Int = 0
+	var lastScale: CGFloat = 1.0
+	var currentScale: CGFloat = 1.0
+	var maxColumns: Int {
+		let screenWidth = min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+		let column = Int(screenWidth / 44)
+
+		return column
+	}
+	var transitionColumns = false
+	var numberOfColumns: Int = 0
+	var lastNumberOfColumns: Int = 0
 
     let debouncerLoadDataSource = NCDebouncer(maxEventCount: 10)
     let debouncerSearch = NCDebouncer(maxEventCount: 10)
 
     @MainActor
-    var session: NCSession.Session {
-        NCSession.shared.getSession(controller: tabBarController)
-    }
+	var session: NCSession.Session {
+		NCSession.shared.getSession(controller: tabBarController)
+	}
 
-    var controller: NCMainTabBarController? {
-        self.tabBarController as? NCMainTabBarController
-    }
+	var controller: NCMainTabBarController? {
+		self.mainTabBarController
+	}
 
-    var isViewActived: Bool {
-        return self.isViewLoaded && self.view.window != nil
-    }
+	var isViewActived: Bool {
+		return self.isViewLoaded && self.view.window != nil
+	}
 
-    var isPinchGestureActive: Bool {
-        return pinchGesture.state == .began || pinchGesture.state == .changed
-    }
+	var isPinchGestureActive: Bool {
+		return pinchGesture.state == .began || pinchGesture.state == .changed
+	}
 
     var sceneIdentifier: String {
-        (self.tabBarController as? NCMainTabBarController)?.sceneIdentifier ?? ""
+        self.mainTabBarController?.sceneIdentifier ?? ""
     }
 
-    // MARK: - View Life Cycle
+	// MARK: - View Life Cycle
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+	override func viewDidLoad() {
+		super.viewDidLoad()
 
-        view.backgroundColor = .systemBackground
+		view.backgroundColor = NCBrandColor.shared.appBackgroundColor
 
-        collectionView.register(UINib(nibName: "NCSectionFirstHeaderEmptyData", bundle: nil), forSupplementaryViewOfKind: mediaSectionHeader, withReuseIdentifier: "sectionFirstHeaderEmptyData")
-        collectionView.register(UINib(nibName: "NCSectionFooter", bundle: nil), forSupplementaryViewOfKind: mediaSectionFooter, withReuseIdentifier: "sectionFooter")
-        collectionView.register(UINib(nibName: "NCMediaCell", bundle: nil), forCellWithReuseIdentifier: "mediaCell")
-        collectionView.alwaysBounceVertical = true
-        collectionView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-        collectionView.backgroundColor = .systemBackground
-        collectionView.prefetchDataSource = self
-        collectionView.dragInteractionEnabled = true
-        collectionView.dragDelegate = self
-        collectionView.dropDelegate = self
-        collectionView.accessibilityIdentifier = "NCMedia"
-        // collectionView.contentInsetAdjustmentBehavior = .never
+		collectionView.register(UINib(nibName: "NCSectionFirstHeaderEmptyData", bundle: nil), forSupplementaryViewOfKind: mediaSectionHeader, withReuseIdentifier: "sectionFirstHeaderEmptyData")
+		collectionView.register(UINib(nibName: "NCSectionFooter", bundle: nil), forSupplementaryViewOfKind: mediaSectionFooter, withReuseIdentifier: "sectionFooter")
+		collectionView.register(UINib(nibName: "NCMediaCell", bundle: nil), forCellWithReuseIdentifier: "mediaCell")
+		collectionView.alwaysBounceVertical = true
+		collectionView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 50, right: 0)
+		collectionView.backgroundColor = NCBrandColor.shared.appBackgroundColor
+		collectionView.prefetchDataSource = self
+		collectionView.dragInteractionEnabled = true
+		collectionView.dragDelegate = self
+		collectionView.dropDelegate = self
+		collectionView.accessibilityIdentifier = "NCMedia"
 
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
-        collectionView.collectionViewLayout = layout
-        layoutType = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "", layout: global.mediaLayoutRatio).layout
+		layout.sectionInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
+		collectionView.collectionViewLayout = layout
+        layoutType = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "").layout
 
-        // Gradient Layer
-        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
-        gradientLayer.endPoint   = CGPoint(x: 0, y: 1)
+		tabBarSelect = HiDriveCollectionViewCommonSelectToolbar(controller: controller, delegate: self, displayedButtons: [.delete])
 
-        gradientLayer.colors = [
-            UIColor.black.withAlphaComponent(0.55).cgColor,
-            UIColor.black.withAlphaComponent(0.40).cgColor,
-            UIColor.black.withAlphaComponent(0.25).cgColor,
-            UIColor.black.withAlphaComponent(0.15).cgColor,
-            UIColor.black.withAlphaComponent(0.08).cgColor,
-            UIColor.black.withAlphaComponent(0.04).cgColor,
-            UIColor.black.withAlphaComponent(0.015).cgColor,
-            UIColor.clear.cgColor
-        ]
+		gradient.startPoint = CGPoint(x: 0, y: 0.1)
+		gradient.endPoint = CGPoint(x: 0, y: 1)
+		gradient.colors = [UIColor.black.withAlphaComponent(UIAccessibility.isReduceTransparencyEnabled ? 0.8 : 0.4).cgColor, UIColor.clear.cgColor]
 
-        gradientLayer.locations = [0.0, 0.20, 0.40, 0.60, 0.75, 0.85, 0.95, 1.0]
-        gradientView.layer.insertSublayer(gradientLayer, at: 0)
+		collectionView.refreshControl = refreshControl
+		refreshControl.action(for: .valueChanged) { _ in
+            Task {
+                await self.loadDataSource()
+                await self.searchMediaUI(true)
+            }
+		}
 
-        titleDate.text = ""
-        titleDate?.textColor = .white
-        activityIndicator.color = .white
+		pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinchGesture(_:)))
+		collectionView.addGestureRecognizer(pinchGesture)
 
-        pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinchGesture(_:)))
-        collectionView.addGestureRecognizer(pinchGesture)
-
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { notification in
+		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterChangeUser), object: nil, queue: nil) { notification in
             Task { @MainActor in
                 guard let userInfo = notification.userInfo,
                    let account = userInfo["account"] as? String else {
@@ -137,55 +141,54 @@ class NCMedia: UIViewController {
                 await self.loadDataSource()
                 await self.searchMediaUI(true)
             }
-        }
+		}
 
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterClearCache), object: nil, queue: nil) { _ in
+		NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: global.notificationCenterClearCache), object: nil, queue: nil) { _ in
             Task {
                 await self.dataSource.clearMetadatas()
                 self.imageCache.removeAll()
                 await self.searchMediaUI(true)
             }
-        }
+		}
 
         NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
             Task {
                 await self.networkRemoveAll()
             }
         }
-    }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+		accountButtonFactory = AccountButtonFactory(controller: controller,
+													onAccountDetailsOpen: { [weak self] in self?.setEditMode(false) },
+													presentVC: { [weak self] vc in self?.present(vc, animated: true) })
+	}
 
-        if tabBarSelect == nil {
-            tabBarSelect = NCMediaSelectTabBar(controller: self.tabBarController, viewController: self, delegate: self)
-        }
+	override func viewWillAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
 
-        Task {
-            await (self.navigationController as? NCMediaNavigationController)?.setNavigationRightItems()
-            if #unavailable(iOS 26.0) {
-                (self.navigationController as? NCMediaNavigationController)?.updateRightBarButtonsTint(to: .white)
-            }
-        }
-
-        if dataSource.metadatas.isEmpty {
+		navigationController?.setNavigationBarAppearance()
+		navigationItem.largeTitleDisplayMode = .never
+		if dataSource.metadatas.isEmpty {
             Task {
                 await loadDataSource()
             }
-        }
-    }
+		}
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
+		setNavigationRightItems()
+		setNavigationLeftItems()
+		updateHeadersView()
+		setNavigationBarLogoIfNeeded()
 
-        Task {
-            await networking.transferDispatcher.addDelegate(self)
-        }
+		activeTransfersListener = TransfersListener
+			.shared
+			.activeTransfersListener
+            .receive(on: DispatchQueue.main)
+			.sink { [weak self] in self?.setNavigationRightItems() }
+	}
 
-        NotificationCenter.default.addObserver(self, selector: #selector(enterForeground(_:)), name: UIApplication.willEnterForegroundNotification, object: nil)
-
-        searchNewMedia()
-    }
+	override func viewWillDisappear(_ animated: Bool) {
+		super.viewWillDisappear(animated)
+		activeTransfersListener = nil
+	}
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
@@ -198,25 +201,24 @@ class NCMedia: UIViewController {
         NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
     }
 
-    override func viewWillLayoutSubviews() {
-        super.viewWillLayoutSubviews()
+	override var preferredStatusBarStyle: UIStatusBarStyle {
+		if self.traitCollection.userInterfaceStyle == .dark {
+			return .lightContent
+		} else if isTop {
+			return .darkContent
+		} else {
+			return .lightContent
+		}
+	}
 
-        gradientLayer.frame = gradientView.bounds
-    }
+	override func viewWillLayoutSubviews() {
+		super.viewWillLayoutSubviews()
+		tabBarSelect.onViewWillLayoutSubviews()
+	}
 
-    func searchNewMedia() {
-        timerSearchNewMedia?.invalidate()
-        timerSearchNewMedia = Timer.scheduledTimer(withTimeInterval: timeIntervalSearchNewMedia, repeats: false) { [weak self] _ in
-            Task { [weak self] in
-                guard let self else { return }
-                await self.searchMediaUI()
-            }
-        }
-    }
+	// MARK: - NotificationCenter
 
-    // MARK: - NotificationCenter
-
-    func networkRemoveAll() async {
+	@objc func networkRemoveAll() async {
         timerSearchNewMedia?.invalidate()
         timerSearchNewMedia = nil
 
@@ -226,58 +228,119 @@ class NCMedia: UIViewController {
         for task in tasks.filter({ $0.taskDescription == global.taskDescriptionRetrievesProperties }) {
             task.cancel()
         }
-    }
+	}
 
-    @objc func enterForeground(_ notification: NSNotification) {
-        searchNewMedia()
-    }
+	func buildMediaPhotoVideo(columnCount: Int) {
+		var pointSize: CGFloat = 0
 
-    func buildMediaPhotoVideo(columnCount: Int) {
-        var pointSize: CGFloat = 0
-
-        switch columnCount {
-        case 0...1: pointSize = 60
-        case 2...3: pointSize = 30
-        case 4...5: pointSize = 25
-        case 6...Int(maxColumns): pointSize = 20
-        default: pointSize = 20
-        }
-        if let image = UIImage(systemName: "photo.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))?.withTintColor(.systemGray4, renderingMode: .alwaysOriginal) {
-            photoImage = image
-        }
-        if let image = UIImage(systemName: "video.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))?.withTintColor(.systemGray4, renderingMode: .alwaysOriginal) {
-            videoImage = image
-        }
-    }
+		switch columnCount {
+		case 0...1: pointSize = 60
+		case 2...3: pointSize = 30
+		case 4...5: pointSize = 25
+		case 6...Int(maxColumns): pointSize = 20
+		default: pointSize = 20
+		}
+		if let image = UIImage(systemName: "photo.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))?.withTintColor(.systemGray4, renderingMode: .alwaysOriginal) {
+			photoImage = image
+		}
+		if let image = UIImage(systemName: "video.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: pointSize))?.withTintColor(.systemGray4, renderingMode: .alwaysOriginal) {
+			videoImage = image
+		}
+	}
 }
 
 // MARK: -
+extension NCMedia {
+	func setNavigationRightItems() {
+		navigationItem.rightBarButtonItems = [createAccountButton(), createTransfersButtonIfNeeded()].compactMap { $0 }
+	}
 
-extension NCMedia: UIScrollViewDelegate {
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        if !dataSource.metadatas.isEmpty {
-            setTitleDate()
-            setNeedsStatusBarAppearanceUpdate()
-        }
-        setElements()
-    }
+	private func createAccountButton() -> UIBarButtonItem {
+		accountButtonFactory.createAccountButton()
+	}
 
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-    }
+	private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
+		guard TransfersListener.shared.areActiveTransfersPresent else {
+			return nil
+		}
+		let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
+											  style: .plain) { [weak self] in
+            let rootView = TransfersView(session: self?.session, onClose: { [weak self] in
+                self?.dismiss(animated: true)
+            })
+            let hosting = UIHostingController(rootView: rootView)
+            hosting.modalPresentationStyle = .pageSheet
 
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        if !decelerate {
-            if !decelerate {
-                searchNewMedia()
-            }
-        }
-    }
+            self?.present(hosting, animated: true)
+		}
+		return transfersButton
+	}
 
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        searchNewMedia()
-    }
+	func setNavigationLeftItems() {
+		if isEditMode {
+			navigationItem.setLeftBarButtonItems(nil, animated: true)
+			return
+		}
+		let burgerMenuItem = UIBarButtonItem(image: UIImage(resource: .BurgerMenu.bars),
+											 style: .plain,
+											 action: { [weak self] in
+			self?.showBurgerMenu()
+		})
+		burgerMenuItem.tintColor = UIColor(resource: .BurgerMenu.navigationBarButton)
+		navigationItem.setLeftBarButtonItems([burgerMenuItem], animated: true)
+	}
 
-    func scrollViewDidScrollToTop(_ scrollView: UIScrollView) { }
+	func showBurgerMenu() {
+		mainTabBarController?.showBurgerMenu()
+	}
+
+	private func setNavigationBarLogoIfNeeded() {
+		if self.navigationController?.viewControllers.count == 1 {
+			setNavigationBarLogo()
+		}
+	}
+
+	func updateHeadersView() {
+		fileActionsHeader?.showViewModeButton(false)
+		fileActionsHeader?.setIsEditingMode(isEditingMode: isEditMode)
+		fileActionsHeader?.enableSelection(enable: self.dataSource.metadatas.count > 0)
+		updateHeadersMenu()
+		fileActionsHeader?.onSelectModeChange = { [weak self] isSelectionMode in
+			self?.setEditMode(isSelectionMode)
+			self?.updateHeadersView()
+			self?.fileActionsHeader?.setSelectionState(selectionState: .none)
+		}
+
+		fileActionsHeader?.onSelectAll = { [weak self] in
+			guard let self = self else { return }
+			self.selectAllOrDeselectAll()
+			tabBarSelect.update(fileSelect: fileSelect)
+			self.fileActionsHeader?.setSelectionState(selectionState: selectionState)
+		}
+	}
+
+	var selectionState: FileActionsHeaderSelectionState {
+		let selectedItemsCount = fileSelect.count
+		if selectedItemsCount == self.dataSource.metadatas.count {
+			return .all
+		}
+
+		return selectedItemsCount == 0 ? .none : .some(selectedItemsCount)
+	}
+
+	func selectAllOrDeselectAll() {
+		let metadatas = self.dataSource.metadatas
+		if !fileSelect.isEmpty, metadatas.count == fileSelect.count {
+			fileSelect = []
+		} else {
+			fileSelect = metadatas.compactMap({ $0.ocId })
+		}
+		collectionView.reloadData()
+	}
+
+	func updateHeadersMenu() {
+		fileActionsHeader?.setSortingMenu(sortingMenuElements: createMenuElements(), title: NSLocalizedString("_media_options_", tableName: nil, bundle: Bundle.main, value: "Media Options", comment: ""), image: nil)
+	}
 }
 
 // MARK: -
@@ -294,7 +357,6 @@ extension NCMedia: NCSelectDelegate {
 
             imageCache.removeAll()
             await loadDataSource()
-            searchNewMedia()
         }
     }
 }

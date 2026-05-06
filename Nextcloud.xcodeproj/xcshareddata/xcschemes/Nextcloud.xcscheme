@@ -137,26 +137,22 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "whitelist:NETWORKING TASKS"
+            argument = "-FIRDebugEnabled"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-FIRDebugDisabled"
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "blacklist:"
+            argument = "-FIRAnalyticsDebugEnabled"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-FIRAnalyticsDebugDisabled"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "CA_DEBUG_TRANSACTIONS"
-            value = "1"
-            isEnabled = "NO">
-         </EnvironmentVariable>
-         <EnvironmentVariable
-            key = "CA_ASSERT_MAIN_THREAD_TRANSACTIONS"
-            value = "1"
-            isEnabled = "NO">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
       <LocationScenarioReference
          identifier = "London, England"
          referenceType = "1">
@@ -183,7 +179,7 @@
       buildConfiguration = "Debug">
    </AnalyzeAction>
    <ArchiveAction
-      buildConfiguration = "Release"
+      buildConfiguration = "Alpha"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>

@@ -22,7 +22,7 @@
 import Foundation
 import UIKit
 
-extension NCTrash: NCTrashSelectTabBarDelegate {
+extension NCTrash: HiDriveCollectionViewCommonSelectToolbarDelegate {
     func onListSelected() {
         if layoutForView?.layout == NCGlobal.shared.layoutGrid {
             layoutForView?.layout = NCGlobal.shared.layoutList
@@ -50,7 +50,7 @@ extension NCTrash: NCTrashSelectTabBarDelegate {
         } else {
             selectOcId = datasource.compactMap({ $0.fileId })
         }
-        tabBarSelect.update(selectOcId: selectOcId)
+        selectionToolbar.update(fileSelect: selectOcId)
         collectionView.reloadData()
     }
 
@@ -80,15 +80,14 @@ extension NCTrash: NCTrashSelectTabBarDelegate {
 
     func setEditMode(_ editMode: Bool) {
         Task {
-            isEditMode = editMode
-            selectOcId.removeAll()
+        	isEditMode = editMode
+        	selectOcId.removeAll()
 
-            navigationItem.hidesBackButton = editMode
-            navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
+        	updateSelectionToolbar()
 
-            await (self.navigationController as? NCMainNavigationController)?.setNavigationRightItems()
-
-            collectionView.reloadData()
+        	navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
+        	navigationItem.hidesBackButton = editMode
+        	collectionView.reloadData()
         }
     }
 }

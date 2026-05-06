@@ -17,7 +17,7 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
     var items: [UIBarButtonItem] = []
 
     var sceneIdentifier: String {
-        (self.tabBarController as? NCMainTabBarController)?.sceneIdentifier ?? ""
+        self.mainTabBarController?.sceneIdentifier ?? ""
     }
 
     // MARK: - View Life Cycle
@@ -35,7 +35,10 @@ class NCViewerNextcloudText: UIViewController, WKNavigationDelegate, WKScriptMes
                 primaryAction: nil,
                 menu: UIMenu(title: "", children: [
                     UIDeferredMenuElement.uncached { [self] completion in
-                        if let menu = NCViewerContextMenu(metadata: self.metadata, controller: self.tabBarController as? NCMainTabBarController, webView: true, sender: self).viewMenu() {
+                        if let menu = NCViewerContextMenu(metadata: self.metadata,
+                                                          controller: self.mainTabBarController,
+                                                          webView: true,
+                                                          sender: self).viewMenu() {
                             completion(menu.children)
                         }
                     }

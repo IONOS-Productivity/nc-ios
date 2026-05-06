@@ -1,22 +1,28 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2024 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
 import UIKit
 import NextcloudKit
-import SwiftUI
 
 extension NCMedia {
-    func setEditMode(_ editMode: Bool) {
-        if dataSource.metadatas.isEmpty {
-            isEditMode = false
-        } else {
-            isEditMode = editMode
-        }
+    @IBAction func selectOrCancelButtonPressed(_ sender: UIButton) {
+        isEditMode = !isEditMode
+        setSelectcancelButton()
+    }
 
+    func setEditMode(_ editMode: Bool) {
+        isEditMode = editMode
+        setSelectcancelButton()
+        updateHeadersView()
+        setNavigationLeftItems()
+    }
+
+    func setSelectcancelButton() {
         fileSelect.removeAll()
-        tabBarSelect.selectCount = fileSelect.count
+        tabBarSelect.update(fileSelect: fileSelect)
 
         if let visibleCells = collectionView?.indexPathsForVisibleItems.compactMap({ collectionView?.cellForItem(at: $0) }) {
             for case let cell as NCMediaCell in visibleCells {
@@ -24,57 +30,115 @@ extension NCMedia {
             }
         }
 
-        self.collectionView.reloadData()
-
-        Task {
-            await (self.navigationController as? NCMainNavigationController)?.setNavigationLeftItems()
-            await (self.navigationController as? NCMainNavigationController)?.setNavigationRightItems()
-        }
-    }
-
-    func setTitleDate() {
-        if let layoutAttributes = collectionView.collectionViewLayout.layoutAttributesForElements(in: collectionView.bounds) {
-            let sortedAttributes = layoutAttributes.sorted { $0.frame.minY < $1.frame.minY || ($0.frame.minY == $1.frame.minY && $0.frame.minX < $1.frame.minX) }
-
-            if let firstAttribute = sortedAttributes.first, let metadata = dataSource.getMetadata(indexPath: firstAttribute.indexPath) {
-                titleDate?.text = utility.getTitleFromDate(metadata.date)
-                return
-            }
-        }
-
-        titleDate?.text = ""
-    }
-
-    func setElements() {
-        let highTextTitle = titleDate.frame.height
-        let isOver = self.collectionView.contentOffset.y + highTextTitle <= -view.safeAreaInsets.top && self.collectionView.contentOffset.y != -view.safeAreaInsets.top
-
-        if isOver || dataSource.metadatas.isEmpty {
-            UIView.animate(withDuration: 0.3) { [self] in
-                gradientView.isHidden = true
-                titleDate?.textColor = NCBrandColor.shared.textColor
-                activityIndicator.color = NCBrandColor.shared.textColor
-
-                if #unavailable(iOS 26.0) {
-                    (self.navigationController as? NCMediaNavigationController)?.updateRightBarButtonsTint(to: NCBrandColor.shared.textColor)
-                }
-            }
+        if isEditMode {
+            tabBarSelect.show()
         } else {
-            UIView.animate(withDuration: 0.3) { [self] in
-                gradientView.isHidden = false
-                titleDate?.textColor = .white
-                activityIndicator.color = .white
+            tabBarSelect.hide()
+        }
+    }
 
-                if #unavailable(iOS 26.0) {
-                    (self.navigationController as? NCMediaNavigationController)?.updateRightBarButtonsTint(to: .white)
+    func createMenuElements() -> [UIMenuElement] {
+        let layoutForView = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "")
+        var layout = layoutForView.layout
+        /// Overwrite default value
+        if layout == global.layoutList {
+            layout = global.mediaLayoutRatio
+        }
+        ///
+        let layoutTitle = (layout == global.mediaLayoutRatio) ? NSLocalizedString("_media_square_", comment: "") : NSLocalizedString("_media_ratio_", comment: "")
+        let layoutImage = (layout == global.mediaLayoutRatio) ? utility.loadImage(named: "square.grid.3x3") : utility.loadImage(named: "rectangle.grid.3x2")
+
+        let viewFilterMenu = UIMenu(title: "", options: .displayInline, children: [
+            UIAction(title: NSLocalizedString("_media_viewimage_show_", comment: ""), image: utility.loadImage(named: "photo")) { _ in
+                self.showOnlyImages = true
+                self.showOnlyVideos = false
+                Task {
+                    await self.loadDataSource()
+                    await self.networkRemoveAll()
+                }
+            },
+            UIAction(title: NSLocalizedString("_media_viewvideo_show_", comment: ""), image: utility.loadImage(named: "video")) { _ in
+                self.showOnlyImages = false
+                self.showOnlyVideos = true
+                Task {
+                    await self.loadDataSource()
+                    await self.networkRemoveAll()
+                }
+            },
+            UIAction(title: NSLocalizedString("_media_show_all_", comment: ""), image: utility.loadImage(named: "photo.on.rectangle")) { _ in
+                self.showOnlyImages = false
+                self.showOnlyVideos = false
+                Task {
+                    await self.loadDataSource()
+                    await self.networkRemoveAll()
                 }
             }
+        ])
+
+        let viewLayoutMenu = UIMenu(title: "", options: .displayInline, children: [
+            UIAction(title: layoutTitle, image: layoutImage) { _ in
+                if layout == self.global.mediaLayoutRatio {
+                    self.database.setLayoutForView(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "", layout: self.global.mediaLayoutSquare)
+                    self.layoutType = self.global.mediaLayoutSquare
+                } else {
+                    self.database.setLayoutForView(account: self.session.account, key: self.global.layoutViewMedia, serverUrl: "", layout: self.global.mediaLayoutRatio)
+                    self.layoutType = self.global.mediaLayoutRatio
+                }
+                self.updateHeadersMenu()
+                self.collectionViewReloadData()
+            }
+        ])
+
+        let viewFolderMedia = UIMenu(title: "", options: .displayInline, children: [
+            UIAction(title: NSLocalizedString("_select_media_folder_", comment: ""), image: utility.loadImage(named: "folder"), handler: { _ in
+                guard let navigationController = UIStoryboard(name: "NCSelect", bundle: nil).instantiateInitialViewController() as? UINavigationController,
+                      let viewController = navigationController.topViewController as? NCSelect else { return }
+                viewController.delegate = self
+                viewController.typeOfCommandView = .select
+                viewController.type = "mediaFolder"
+                viewController.session = self.session
+                self.present(navigationController, animated: true)
+            })
+        ])
+
+        let playFile = UIAction(title: NSLocalizedString("_play_from_files_", comment: ""), image: utility.loadImage(named: "play.circle")) { _ in
+            guard let controller = self.controller else { return }
+            self.documentPickerViewController = NCDocumentPickerViewController(controller: controller, isViewerMedia: true, allowsMultipleSelection: false, viewController: self)
         }
-        setTitleDate()
+
+        let playURL = UIAction(title: NSLocalizedString("_play_from_url_", comment: ""), image: utility.loadImage(named: "link")) { _ in
+            let alert = UIAlertController(title: NSLocalizedString("_valid_video_url_", comment: ""), message: nil, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel, handler: nil))
+            alert.addTextField(configurationHandler: { textField in
+                textField.placeholder = "http://myserver.com/movie.mkv"
+            })
+            alert.addAction(UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default, handler: { _ in
+                guard let stringUrl = alert.textFields?.first?.text, !stringUrl.isEmpty, let url = URL(string: stringUrl) else {
+                    return
+                }
+                let fileName = url.lastPathComponent
+                Task {
+                    let metadata = await NCManageDatabaseCreateMetadata().createMetadataAsync(fileName: fileName,
+                                                                           ocId: NSUUID().uuidString,
+                                                                           serverUrl: "",
+                                                                           url: stringUrl,
+                                                                           session: self.session,
+                                                                           sceneIdentifier: self.controller?.sceneIdentifier)
+                    await self.database.addMetadataAsync(metadata)
+
+                    if let vc = await NCViewer().getViewerController(metadata: metadata, delegate: self) {
+                        self.navigationController?.pushViewController(vc, animated: true)
+                    }
+                }
+            }))
+            self.present(alert, animated: true)
+        }
+
+        return [viewFilterMenu, viewLayoutMenu, viewFolderMedia, playFile, playURL]
     }
 }
 
-extension NCMedia: NCMediaSelectTabBarDelegate {
+extension NCMedia: HiDriveCollectionViewCommonSelectToolbarDelegate {
     func delete() {
         let ocIds = self.fileSelect.map { $0 }
         var alertStyle = UIAlertController.Style.actionSheet
@@ -87,9 +151,11 @@ extension NCMedia: NCMediaSelectTabBarDelegate {
             let alertController = UIAlertController(title: nil, message: nil, preferredStyle: alertStyle)
 
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_delete_selected_photos_", comment: ""), style: .destructive) { (_: UIAlertAction) in
-                self.isEditMode = false
+                self.setEditMode(false)
+                self.updateHeadersView()
+
                 Task {
-                    await (self.navigationController as? NCMediaNavigationController)?.setNavigationRightItems()
+                    (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 
                     for ocId in ocIds {
                         await self.deleteImage(with: ocId)
@@ -102,6 +168,14 @@ extension NCMedia: NCMediaSelectTabBarDelegate {
 
             present(alertController, animated: true, completion: { })
         }
+    }
+
+    func toolbarWillAppear() {
+        self.tabBarController?.tabBar.isHidden = true
+    }
+
+    func toolbarWillDisappear() {
+        self.tabBarController?.tabBar.isHidden = false
     }
 
     func deleteImage(with ocId: String) async {

@@ -24,15 +24,6 @@
                             <constraint firstAttribute="width" constant="34" id="GNY-Va-SIJ"/>
                         </constraints>
                         <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="large"/>
-                        <userDefinedRuntimeAttributes>
-                            <userDefinedRuntimeAttribute type="boolean" keyPath="disableAvatar" value="YES"/>
-                            <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
-                                <integer key="value" value="1"/>
-                            </userDefinedRuntimeAttribute>
-                            <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
-                                <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                            </userDefinedRuntimeAttribute>
-                        </userDefinedRuntimeAttributes>
                     </imageView>
                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="cEA-ts-Q8I">
                         <rect key="frame" x="28" y="35" width="20" height="20"/>
@@ -88,7 +79,7 @@
                         <state key="normal">
                             <imageReference key="image" image="ellipsis" catalog="system" renderingMode="hierarchical">
                                 <hierarchicalColors>
-                                    <color systemColor="labelColor"/>
+                                    <color name="Share/CommonIconTint"/>
                                     <color systemColor="secondaryLabelColor"/>
                                     <color systemColor="tertiaryLabelColor"/>
                                 </hierarchicalColors>
@@ -138,9 +129,9 @@
         <image name="arrowtriangle.down.circle" catalog="system" width="128" height="123"/>
         <image name="avatar2" width="32" height="32"/>
         <image name="ellipsis" catalog="system" width="128" height="37"/>
-        <systemColor name="labelColor">
-            <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
+        <namedColor name="Share/CommonIconTint">
+            <color red="0.078431372549019607" green="0.45490196078431372" blue="0.7686274509803922" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <systemColor name="secondaryLabelColor">
             <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
