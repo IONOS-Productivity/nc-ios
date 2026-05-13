@@ -310,6 +310,10 @@ extension NCNetworking: NCTransferDelegate {
         let session = NCSession.shared.getSession(controller: controller)
         var serverUrlPush = self.utilityFileSystem.getHomeServer(session: session)
 
+        if let presentedViewController = controller.presentedViewController {
+            presentedViewController.dismiss(animated: false)
+        }
+
         navigationController.popToRootViewController(animated: false)
         controller.selectedIndex = 0
         if serverUrlPush == serverUrl,
