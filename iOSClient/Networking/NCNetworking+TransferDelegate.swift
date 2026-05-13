@@ -180,7 +180,7 @@ extension NCNetworking: NCTransferDelegate {
                     let viewController = navigationController.presentedViewController as? NCScan
                     viewController?.serverUrl = controller.currentServerUrl()
                     viewController?.controller = controller
-                    controller.present(navigationController, animated: true, completion: nil)
+                    controller.currentViewController()?.present(navigationController, animated: true, completion: nil)
                 }
 
             case NCGlobal.shared.selectorOpenDetail:
