@@ -19,7 +19,6 @@ class NCViewerMediaPage: UIViewController {
     // Parameters
     var ocIds: [String] = []
     var currentIndex: Int = 0
-    var delegateViewController: UIViewController?
 
     var modifiedOcId: [String] = []
     private var nextIndex: Int?
@@ -44,7 +43,10 @@ class NCViewerMediaPage: UIViewController {
         primaryAction: nil,
         menu: UIMenu(title: "", children: [
             UIDeferredMenuElement.uncached { [self] completion in
-                if let menu = NCViewerContextMenu.makeContextMenu(controller: self.tabBarController as? NCMainTabBarController, metadata: currentViewController.metadata, webView: false, sender: self) {
+                if let menu = NCViewerContextMenu(metadata: currentViewController.metadata,
+                                                  controller: self.mainTabBarController,
+                                                  webView: false,
+                                                  sender: self).viewMenu() {
                     completion(menu.children)
                 }
             }
@@ -90,6 +92,7 @@ class NCViewerMediaPage: UIViewController {
         super.viewDidLoad()
 
         let metadata = database.getMetadataFromOcId(ocIds[currentIndex])!
+        var items: [UIBarButtonItem] = []
 
         singleTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(didSingleTapWith(gestureRecognizer:)))
         panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(didPanWith(gestureRecognizer:)))
@@ -117,10 +120,15 @@ class NCViewerMediaPage: UIViewController {
         NotificationCenter.default.addObserver(self, selector: #selector(applicationDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
 
         if currentViewController.metadata.isImage {
-            navigationItem.rightBarButtonItems = [moreNavigationItem, imageDetailNavigationItem]
-        } else {
-            navigationItem.rightBarButtonItems = [moreNavigationItem]
+            items.append(imageDetailNavigationItem)
         }
+        items.append(moreNavigationItem)
+
+        let group = UIBarButtonItemGroup(
+            barButtonItems: items,
+            representativeItem: nil
+        )
+        navigationItem.trailingItemGroups = [group]
 
         for view in self.pageViewController.view.subviews {
             if let scrollView = view as? UIScrollView {
@@ -144,12 +152,16 @@ class NCViewerMediaPage: UIViewController {
 
         changeScreenMode(mode: viewerMediaScreenMode)
         tabBarController?.tabBar.isHidden = true
-
-        FloatingPlayerViewPresenter.shared.isMediaScreenVisible = true
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
+        Task {
+            await NCNetworking.shared.transferDispatcher.addDelegate(self)
+        }
+
+        changeScreenMode(mode: viewerMediaScreenMode)
         startTimerAutoHide()
     }
 
@@ -158,12 +170,14 @@ class NCViewerMediaPage: UIViewController {
 
         changeScreenMode(mode: .normal)
         tabBarController?.tabBar.isHidden = false
-
-        FloatingPlayerViewPresenter.shared.isMediaScreenVisible = false
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+
+        Task {
+            await NCNetworking.shared.transferDispatcher.removeDelegate(self)
+        }
 
         timerAutoHide?.invalidate()
     }
@@ -299,14 +313,23 @@ extension NCViewerMediaPage: UIPageViewControllerDelegate, UIPageViewControllerD
     // START TRANSITION
     func pageViewController(_ pageViewController: UIPageViewController, willTransitionTo pendingViewControllers: [UIViewController]) {
 
-        guard let nextViewController = pendingViewControllers.first as? NCViewerMedia else { return }
+        guard let nextViewController = pendingViewControllers.first as? NCViewerMedia else {
+            return
+        }
+        var items: [UIBarButtonItem] = []
+
         nextIndex = nextViewController.index
 
         if nextViewController.metadata.isImage {
-            navigationItem.rightBarButtonItems = [moreNavigationItem, imageDetailNavigationItem]
-        } else {
-            navigationItem.rightBarButtonItems = [moreNavigationItem]
+            items.append(imageDetailNavigationItem)
         }
+        items.append(moreNavigationItem)
+
+        let group = UIBarButtonItemGroup(
+            barButtonItems: items,
+            representativeItem: nil
+        )
+        navigationItem.trailingItemGroups = [group]
 
         if nextViewController.detailView.isShown {
             changeScreenMode(mode: .normal)
@@ -462,26 +485,47 @@ extension NCViewerMediaPage: UIScrollViewDelegate {
 }
 
 extension NCViewerMediaPage: NCTransferDelegate {
-    func transferChange(status: String, metadata: tableMetadata, error: NKError) {
-        DispatchQueue.main.async {
+    func transferReloadData(serverUrl: String?) { }
+
+    func transferReloadDataSource(serverUrl: String?, requestData: Bool, status: Int?) { }
+
+    func transferChange(status: String,
+                        account: String,
+                        fileName: String,
+                        serverUrl: String,
+                        selector: String?,
+                        ocId: String,
+                        destination: String?,
+                        error: NKError) {
+        Task {@MainActor in
             switch status {
-                // DOWNLOAD
+            // DELETE
+            case NCGlobal.shared.networkingStatusDelete:
+                if error == .success,
+                   ocId == self.currentViewController.metadata.ocId {
+                    if let ncplayer = self.currentViewController.ncplayer, ncplayer.isPlaying() {
+                        ncplayer.playerPause()
+                    }
+                    self.navigationController?.popViewController(animated: true)
+                }
+            // DOWNLOAD
             case self.global.networkingStatusDownloaded:
-                guard metadata.ocId == self.currentViewController.metadata.ocId else {
+                guard ocId == self.currentViewController.metadata.ocId,
+                      let metadata = await NCManageDatabase.shared.getMetadataFromOcIdAsync(ocId) else {
                     return
                 }
                 self.progressView.progress = 0
 
                 if metadata.isImage {
-                    self.currentViewController.loadImage()
+                    await self.currentViewController.loadImage()
                 }
-                // UPLOAD
+            // UPLOAD
             case self.global.networkingStatusUploaded:
                 guard error == .success else { return }
-                if self.currentViewController.metadata.ocId == metadata.ocId {
-                    self.currentViewController.loadImage()
+                if self.currentViewController.metadata.ocId == ocId {
+                    await self.currentViewController.loadImage()
                 } else {
-                    self.modifiedOcId.append(metadata.ocId)
+                    self.modifiedOcId.append(ocId)
                 }
             default:
                 break

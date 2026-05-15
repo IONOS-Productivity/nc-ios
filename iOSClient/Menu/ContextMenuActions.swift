@@ -9,7 +9,7 @@ enum ContextMenuActions {
     static func deleteOrUnshare(selectedMetadatas: [tableMetadata], metadataFolder: tableMetadata? = nil, controller: NCMainTabBarController?, completion: (() -> Void)? = nil) -> UIAction {
          var titleDelete = NSLocalizedString("_delete_", comment: "")
          var message = NSLocalizedString("_want_delete_", comment: "")
-         var icon = "trash"
+         var icon: ImageResource = .delete
          var destructive = false
 
          if selectedMetadatas.count > 1 {
@@ -20,7 +20,7 @@ enum ContextMenuActions {
                                                                  metadataFolder: metadataFolder) {
                  titleDelete = NSLocalizedString("_leave_share_", comment: "")
                  message = NSLocalizedString("_want_leave_share_", comment: "")
-                 icon = "person.2.slash"
+                 icon = .unshare
              } else if metadata.directory {
                  titleDelete = NSLocalizedString("_delete_folder_", comment: "")
                  destructive = true
@@ -32,7 +32,7 @@ enum ContextMenuActions {
 
          return UIAction(
              title: titleDelete,
-             image: UIImage(systemName: icon),
+             image: UIImage(resource: icon),
              attributes: destructive ? [.destructive] : []
          ) { _ in
              let alert = UIAlertController.deleteFileOrFolder(
@@ -44,7 +44,7 @@ enum ContextMenuActions {
              ) { _ in
                  completion?()
              }
-             controller?.present(alert, animated: true)
+             controller?.currentViewController()?.present(alert, animated: true)
          }
      }
 
@@ -54,14 +54,16 @@ enum ContextMenuActions {
                        completion: (() -> Void)? = nil) -> UIAction {
          UIAction(
              title: NSLocalizedString("_share_", comment: ""),
-             image: UIImage(systemName: "square.and.arrow.up")
+             image: UIImage(resource: .menuShare)
          ) { _ in
-             NCDownloadAction.shared.openActivityViewController(
-                 selectedMetadata: selectedMetadatas,
-                 controller: controller,
-                 sender: sender
-             )
-             completion?()
+             Task {
+                 await NCCreate().createActivityViewController(
+                    selectedMetadata: selectedMetadatas,
+                    controller: controller,
+                    sender: sender
+                 )
+                 completion?()
+             }
          }
      }
 
@@ -70,10 +72,12 @@ enum ContextMenuActions {
                                      viewController: UIViewController,
                                      completion: (() -> Void)? = nil) -> UIAction {
          UIAction(
-             title: isAnyOffline
-                 ? NSLocalizedString("_remove_available_offline_", comment: "")
-                 : NSLocalizedString("_set_available_offline_", comment: ""),
-             image: UIImage(systemName: "icloud.and.arrow.down")
+            title: isAnyOffline
+            ? NSLocalizedString("_remove_available_offline_", comment: "")
+            : NSLocalizedString("_set_available_offline_", comment: ""),
+            image: isAnyOffline
+            ? UIImage(resource: .synced)
+            : UIImage(resource: .offline)
          ) { _ in
              if !isAnyOffline, selectedMetadatas.count > 3 {
                  let alert = UIAlertController(
@@ -84,7 +88,7 @@ enum ContextMenuActions {
                  alert.addAction(UIAlertAction(title: NSLocalizedString("_continue_", comment: ""), style: .default) { _ in
                      Task {
                          for metadata in selectedMetadatas {
-                             await NCDownloadAction.shared.setMetadataAvalableOffline(metadata, isOffline: isAnyOffline)
+                             await NCNetworking.shared.setMetadataAvalableOffline(metadata, isOffline: isAnyOffline)
                          }
                          completion?()
                      }
@@ -94,7 +98,7 @@ enum ContextMenuActions {
              } else {
                  Task {
                      for metadata in selectedMetadatas {
-                         await NCDownloadAction.shared.setMetadataAvalableOffline(metadata, isOffline: isAnyOffline)
+                         await NCNetworking.shared.setMetadataAvalableOffline(metadata, isOffline: isAnyOffline)
                      }
                      completion?()
                  }
@@ -108,7 +112,7 @@ enum ContextMenuActions {
                             completion: (() -> Void)? = nil) -> UIAction {
          UIAction(
              title: NSLocalizedString("_move_or_copy_", comment: ""),
-             image: UIImage(systemName: "rectangle.portrait.and.arrow.right")
+             image: UIImage(resource: .moveOrCopy)
          ) { _ in
              Task { @MainActor in
                  var fileNameError: NKError?
@@ -129,32 +133,37 @@ enum ContextMenuActions {
                      let message = "\(fileNameError.errorDescription) \(NSLocalizedString("_please_rename_file_", comment: ""))"
                      await UIAlertController.warningAsync(message: message, presenter: viewController)
                  } else {
-                     let controller = viewController.tabBarController as? NCMainTabBarController
-                     NCDownloadAction.shared.openSelectView(items: selectedMetadatas, controller: controller)
+                     let controller = viewController.mainTabBarController
+                     NCSelectOpen.shared.openView(items: selectedMetadatas, controller: controller)
                  }
                  completion?()
              }
          }
      }
 
-     static func lockUnlock(shouldLock: Bool,
-                            metadatas: [tableMetadata],
-                            completion: (() -> Void)? = nil) -> UIAction {
-         let titleKey: String
-         if metadatas.count == 1 {
-             titleKey = shouldLock ? "_lock_file_" : "_unlock_file_"
-         } else {
-             titleKey = shouldLock ? "_lock_selected_files_" : "_unlock_selected_files_"
-         }
+    static func lockUnlock(isLocked: Bool,
+                           metadata: tableMetadata,
+                           completion: (() -> Void)? = nil) -> UIAction {
+        let titleKey: String
+        var subtitleKey: String = ""
+        let image: UIImage?
+        if !metadata.canUnlock(as: metadata.userId), isLocked {
+            titleKey = String(format: NSLocalizedString("_locked_by_", comment: ""), metadata.lockOwnerDisplayName)
+            image = UIImage(resource: .itemLock)
+        } else {
+            titleKey = isLocked ? "_unlock_file_" : "_lock_file_"
+            image = UIImage(resource: isLocked ? .itemLockOpen : .itemLock)
+            subtitleKey = !metadata.lockOwnerDisplayName.isEmpty ? String(format: NSLocalizedString("_locked_by_", comment: ""), metadata.lockOwnerDisplayName) : ""
+        }
 
-         return UIAction(
-             title: NSLocalizedString(titleKey, comment: ""),
-             image: UIImage(systemName: shouldLock ? "lock" : "lock.open")
-         ) { _ in
-             for metadata in metadatas where metadata.lock != shouldLock {
-                 NCNetworking.shared.lockUnlockFile(metadata, shoulLock: shouldLock)
-             }
-             completion?()
-         }
-     }
+        return UIAction(
+            title: NSLocalizedString(titleKey, comment: ""),
+            subtitle: subtitleKey,
+            image: image,
+            attributes: metadata.canUnlock(as: metadata.userId) ? [] : [.disabled]
+        ) { _ in
+            NCNetworking.shared.lockUnlockFile(metadata, shouldLock: !isLocked)
+            completion?()
+        }
+    }
 }

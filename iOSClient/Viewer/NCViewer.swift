@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
 // SPDX-FileCopyrightText: 2020 Marino Faggiana
+// SPDX-FileCopyrightText: 2025 STRATO GmbH
 // SPDX-FileCopyrightText: 2025 Serhii Kaliberda
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -45,13 +46,13 @@ class NCViewer: NSObject {
             let viewerMediaPageContainer = UIStoryboard(name: "NCViewerMediaPage", bundle: nil).instantiateInitialViewController() as? NCViewerMediaPage {
                 if metadata.isAudioOrVideo {
                     let mediaCoordinator = NCMediaCoordinator.shared
-                    if mediaCoordinator.item?.ocId != metadata.ocId {
-                        mediaCoordinator.finishMediaSession()
+                    mediaCoordinator.finishMediaSession()
+                    if metadata.isAudio {
+                        mediaCoordinator.items = siblingMedia
+                    } else {
+                        mediaCoordinator.items = [metadata]
                     }
-                    mediaCoordinator.items = siblingMedia
                 }
-
-                viewerMediaPageContainer.delegateViewController = delegate
 
                 if let ocIds {
                     viewerMediaPageContainer.currentIndex = ocIds.firstIndex(where: { $0 == metadata.ocId }) ?? 0
@@ -93,7 +94,9 @@ class NCViewer: NSObject {
                     NCActivityIndicator.shared.stop()
 
                     guard results.error == .success, let url = results.url else {
-                        NCContentPresenter().showError(error: results.error)
+                        await showErrorBanner(controller: delegate?.mainTabBarController,
+                                              text: results.error.errorDescription,
+                                              errorCode: results.error.errorCode)
                         return nil
                     }
 
@@ -133,7 +136,7 @@ class NCViewer: NSObject {
                     options = NKRequestOptions(customUserAgent: utility.getCustomUserAgentOnlyOffice())
                 }
                 if metadata.url.isEmpty {
-                    let fileNamePath = utilityFileSystem.getFileNamePath(metadata.fileName, serverUrl: metadata.serverUrl, session: session)
+                    let fileNamePath = utilityFileSystem.getRelativeFilePath(metadata.fileName, serverUrl: metadata.serverUrl, session: session)
 
                     NCActivityIndicator.shared.start(backgroundView: delegate?.view)
                     let results = await NextcloudKit.shared.textOpenFileAsync(fileNamePath: fileNamePath, editor: editor, account: metadata.account, options: options) { task in
@@ -147,7 +150,9 @@ class NCViewer: NSObject {
                     NCActivityIndicator.shared.stop()
 
                     guard results.error == .success, let url = results.url else {
-                        NCContentPresenter().showError(error: results.error)
+                        await showErrorBanner(controller: delegate?.mainTabBarController,
+                                              text: results.error.errorDescription,
+                                              errorCode: results.error.errorCode)
                         return nil
                     }
 
@@ -196,8 +201,10 @@ class NCViewer: NSObject {
             delegate?.present(viewerQuickLook, animated: true)
         } else {
             // Document Interaction Controller
-            if let controller = delegate?.tabBarController as? NCMainTabBarController {
-                NCDownloadAction.shared.openActivityViewController(selectedMetadata: [metadata], controller: controller, sender: nil)
+            if let controller = delegate?.mainTabBarController {
+                Task {
+                    await NCCreate().createActivityViewController(selectedMetadata: [metadata], controller: controller, sender: nil)
+                }
             }
         }
     }

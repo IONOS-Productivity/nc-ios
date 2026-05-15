@@ -12,7 +12,7 @@ import UIKit
 class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 
 	private let custom_brand = "IONOS HiDrive Next"
-	private let custom_textCopyrightNextcloudiOS = "HiDrive Next iOS %@ © 2025"
+	private let custom_textCopyrightNextcloudiOS = "HiDrive Next iOS %@ © 2026"
 	private let custom_loginBaseUrl = "https://storage.ionos.fr"
 	private let custom_privacy = "https://wl.hidrive.com/easy/ios/privacy.html"
 	private let custom_sourceCode = "https://wl.hidrive.com/easy/0181"
@@ -33,7 +33,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	override var textCopyrightNextcloudiOS: String {
 		get {
-			if super.textCopyrightNextcloudiOS == "Nextcloud Hydrogen for iOS %@ © 2025" {
+			if super.textCopyrightNextcloudiOS == "Nextcloud Matheria for iOS %@ © 2026" {
 				return custom_textCopyrightNextcloudiOS
 			}
 			return super.textCopyrightNextcloudiOS

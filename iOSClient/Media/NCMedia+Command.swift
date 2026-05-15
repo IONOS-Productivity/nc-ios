@@ -118,7 +118,7 @@ extension NCMedia {
                 }
                 let fileName = url.lastPathComponent
                 Task {
-                    let metadata = await self.database.createMetadataAsync(fileName: fileName,
+                    let metadata = await NCManageDatabaseCreateMetadata().createMetadataAsync(fileName: fileName,
                                                                            ocId: NSUUID().uuidString,
                                                                            serverUrl: "",
                                                                            url: stringUrl,
@@ -155,7 +155,7 @@ extension NCMedia: HiDriveCollectionViewCommonSelectToolbarDelegate {
                 self.updateHeadersView()
 
                 Task {
-                    await (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+                    (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 
                     for ocId in ocIds {
                         await self.deleteImage(with: ocId)
@@ -169,11 +169,11 @@ extension NCMedia: HiDriveCollectionViewCommonSelectToolbarDelegate {
             present(alertController, animated: true, completion: { })
         }
     }
-    
+
     func toolbarWillAppear() {
         self.tabBarController?.tabBar.isHidden = true
     }
-    
+
     func toolbarWillDisappear() {
         self.tabBarController?.tabBar.isHidden = false
     }

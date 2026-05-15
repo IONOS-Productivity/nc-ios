@@ -22,6 +22,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import UIKit
+import NextcloudKit
 
 class NCShareLinkCell: UITableViewCell {
     @IBOutlet private weak var imageItem: UIImageView!
@@ -30,7 +31,7 @@ class NCShareLinkCell: UITableViewCell {
 
     @IBOutlet weak var labelQuickStatus: UILabel!
     @IBOutlet weak var statusStackView: UIStackView!
-    @IBOutlet private weak var menuButton: UIButton!
+    @IBOutlet weak var menuButton: UIButton!
     @IBOutlet private weak var copyButton: UIButton!
     @IBOutlet weak var imageDownArrow: UIImageView!
 
@@ -106,15 +107,19 @@ class NCShareLinkCell: UITableViewCell {
                 labelQuickStatus.text = NSLocalizedString("_share_read_only_", comment: "")
             }
 
-            if tableShare.shareType == NCShareCommon.shareTypeEmail {
+            if tableShare.shareType == NKShare.ShareType.email.rawValue {
                 labelTitle.text = tableShare.shareWithDisplayname
-                imageItem.image = NCUtility().loadImage(named: "envelope.circle.fill", colors: [NCBrandColor.shared.getElement(account: tableShare.account)])
+                imageItem.image = utility.userImage
             }
         }
 
         statusStackView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(openQuickStatus)))
         labelQuickStatus.textColor = NCBrandColor.shared.customer
         imageDownArrow.image = utility.loadImage(named: "arrowtriangle.down.circle", colors: [NCBrandColor.shared.customer])
+
+        contentView.bringSubviewToFront(menuButton)
+        menuButton.menu = nil
+        menuButton.showsMenuAsPrimaryAction = true
     }
 
     @IBAction func touchUpCopy(_ sender: Any) {
@@ -126,12 +131,12 @@ class NCShareLinkCell: UITableViewCell {
     }
 
     @objc func openQuickStatus(_ sender: UITapGestureRecognizer) {
-        delegate?.quickStatus(with: tableShare, sender: sender)
+        delegate?.tapQuickStatus(with: tableShare, sender: sender.view ?? sender)
     }
 }
 
 protocol NCShareLinkCellDelegate: AnyObject {
     func tapCopy(with tableShare: tableShare?, sender: Any)
     func tapMenu(with tableShare: tableShare?, sender: Any)
-    func quickStatus(with tableShare: tableShare?, sender: Any)
+    func tapQuickStatus(with tableShare: tableShare?, sender: Any)
 }

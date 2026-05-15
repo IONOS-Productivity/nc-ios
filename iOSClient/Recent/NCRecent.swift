@@ -43,7 +43,7 @@ class NCRecent: NCCollectionViewCommon {
 		super.viewDidLoad()
 		fileActionsHeader?.enableSorting(enable: false)
 	}
-	
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
@@ -88,7 +88,7 @@ class NCRecent: NCCollectionViewCommon {
 
     override func getServerData(forced: Bool = false) async {
         defer {
-            restoreDefaultTitle()
+            stopGUIGetServerData()
         }
 
         // If is already in-flight, do nothing
@@ -146,7 +146,7 @@ class NCRecent: NCCollectionViewCommon {
         <d:orderby>
             <d:order>
                 <d:prop>
-        /Users/marinofaggiana/Developer/ios/iOSClient/Assistant                 <d:getlastmodified/>
+                    <d:getlastmodified/>
                 </d:prop>
                 <d:descending/>
             </d:order>
@@ -165,7 +165,7 @@ class NCRecent: NCCollectionViewCommon {
         let requestBody = String(format: requestBodyRecent, "/files/" + session.userId, lessDateString)
         let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: session.account)
 
-        showLoadingTitle()
+        startGUIGetServerData()
 
         let resultsSearch = await NextcloudKit.shared.searchBodyRequestAsync(serverUrl: session.urlBase,
                                                                              requestBody: requestBody,
@@ -183,7 +183,7 @@ class NCRecent: NCCollectionViewCommon {
             return
         }
 
-        let (_, metadatas) = await self.database.convertFilesToMetadatasAsync(files)
+        let (_, metadatas) = await NCManageDatabaseCreateMetadata().convertFilesToMetadatasAsync(files)
 
         await self.database.addMetadatasAsync(metadatas)
         await self.reloadDataSource()

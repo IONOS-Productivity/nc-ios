@@ -27,7 +27,7 @@ struct NCSettingsView: View {
     }
 
     var body: some View {
-        Form {
+        Form(content: {
             // `Auto Upload` Section
             Section(content: {
                 NavigationLink(destination: LazyView {
@@ -61,9 +61,9 @@ struct NCSettingsView: View {
                 })
                 .tint(Color(NCBrandColor.shared.textColor))
                 /// Enable Touch ID
-                Toggle(NSLocalizedString("_enable_touch_face_id_", comment: ""), isOn: $model.enableTouchID)
+                Toggle(NSLocalizedString("_enable_touch_face_id_", comment: ""), isOn: $model.enableTouchFaceID)
                     .tint(Color(NCBrandColor.shared.switchColor))
-                    .onChange(of: model.enableTouchID) { _ in
+                    .onChange(of: model.enableTouchFaceID) { _ in
                         model.updateTouchIDSetting()
                     }
                 /// Reset app wrong attempts
@@ -152,6 +152,7 @@ struct NCSettingsView: View {
                 .tint(Color(NCBrandColor.shared.textColor))
                 .sheet(isPresented: $showAcknowledgements) {
                     NCBrowserWebView(urlBase: URL(string: NCBrandOptions.shared.acknowloedgements)!, browserTitle: NSLocalizedString("_acknowledgements_", comment: ""))
+                        .ignoresSafeArea()
                 }
                 // Terms & Privacy Conditions
                 Button(action: {
@@ -169,6 +170,7 @@ struct NCSettingsView: View {
                 .tint(Color(NCBrandColor.shared.textColor))
                 .sheet(isPresented: $showBrowser) {
                     NCBrowserWebView(urlBase: URL(string: NCBrandOptions.shared.privacy)!, browserTitle: NSLocalizedString("_privacy_legal_", comment: ""))
+                        .ignoresSafeArea()
                 }
                 /// Source Code
                 Button(action: {
@@ -192,7 +194,7 @@ struct NCSettingsView: View {
             }, footer: {
                 Text(model.footerApp).listRowBackground(Color.clear)
             }).applyGlobalFormSectionStyle()
-        }
+        })
         .sheet(isPresented: $showPasscode) {
             SetupPasscodeView(isLockActive: $model.isLockActive)
         }

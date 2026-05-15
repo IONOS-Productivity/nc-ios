@@ -1,11 +1,7 @@
-//
-//  HiDriveCollectionViewCommonSelectToolbarDelegate.swift
-//  Nextcloud
-//
-//  Created by Sergey Kaliberda on 05.01.2025.
-//  Copyright © 2025 Viseven Europe OÜ. All rights reserved.
-//
-
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
+// SPDX-FileCopyrightText: 2020 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 protocol HiDriveCollectionViewCommonSelectToolbarDelegate: AnyObject {
     func selectAll()

@@ -34,6 +34,14 @@ class NCMainTabBarController: UITabBarController {
         return SceneManager.shared.getWindow(controller: self)
     }
 
+    var barHeightBottom: CGFloat {
+        return tabBar.frame.height - tabBar.safeAreaInsets.bottom
+    }
+
+    var barHeightTop: CGFloat {
+        return tabBar.frame.height - tabBar.safeAreaInsets.top
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         delegate = self
@@ -41,10 +49,7 @@ class NCMainTabBarController: UITabBarController {
 			traitOverrides.horizontalSizeClass = .compact
 		}
 
-        NCNetworking.shared.controller = self
-        NCImageCache.shared.controller = self
-
-        NCDownloadAction.shared.setup(sceneIdentifier: sceneIdentifier)
+        NCNetworking.shared.setupScene(sceneIdentifier: sceneIdentifier, controller: self)
 
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterCheckUserDelaultErrorDone), object: nil, queue: nil) { notification in
             if let userInfo = notification.userInfo,
@@ -58,6 +63,14 @@ class NCMainTabBarController: UITabBarController {
 
         NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
             self.timerTask?.cancel()
+        }
+
+        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
+            if !isAppInBackground {
+                self.timerTask = Task { @MainActor [weak self] in
+                    await self?.timerCheck()
+                }
+            }
         }
 
 		setupTabBarView()
@@ -75,6 +88,20 @@ class NCMainTabBarController: UITabBarController {
             vc.isModalInPresentation = true
 
             present(vc, animated: true)
+        }
+    }
+
+    @MainActor
+    private func timerCheck() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(3))
+
+            guard isViewLoaded, view.window != nil else {
+                continue
+            }
+
+            // Check error
+            await NCNetworking.shared.checkServerError(account: self.account, controller: self)
         }
     }
 

@@ -24,7 +24,6 @@
 
 import UIKit
 import NextcloudKit
-import SVGKit
 import CloudKit
 
 class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDelegate, NCShareNavigationTitleSetting {
@@ -54,6 +53,7 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
     /// This can only be created after the share has been actually created due to its requirement of the share token provided by the server.
     ///
     var downloadLimit: DownloadLimitViewModel = .unlimited
+    var downloadLimitChanged: Bool = false
 
     var shareConfig: NCShareConfig!
     var networking: NCShareNetworking?
@@ -85,7 +85,7 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
         
         self.setNavigationTitle()
         self.navigationItem.hidesBackButton = true
-        self.navigationController?.setNavigationBarAppearance(backround: UIColor(resource: .Share.Advanced.background))
+        self.navigationController?.setNavigationBarAppearance(backgroundColor: UIColor(resource: .Share.Advanced.background))
         
         // disbale pull to dimiss
         isModalInPresentation = true
@@ -266,15 +266,15 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
         }
 
         Task {
-            if (share.shareType == NCShareCommon.shareTypeLink || share.shareType == NCShareCommon.shareTypeEmail) && NCSharePermissions.hasPermissionToShare(share.permissions) {
-                share.permissions = share.permissions - NCSharePermissions.permissionReshareShare
+            if (share.shareType == NKShare.ShareType.publicLink.rawValue || share.shareType == NKShare.ShareType.email.rawValue) && NCSharePermissions.hasPermissionToShare(share.permissions) {
+                share.permissions = share.permissions - NKShare.Permission.share.rawValue
             }
 
             if isNewShare {
                 let capabilities = await NKCapabilities.shared.getCapabilities(for: metadata.account)
 
-                if share.shareType != NCShareCommon.shareTypeLink, metadata.e2eEncrypted,
-                   capabilities.e2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
+                if share.shareType != NKShare.ShareType.publicLink.rawValue, metadata.e2eEncrypted,
+                   NCGlobal.shared.isE2eeVersion2(capabilities.e2EEApiVersion) {
 
                     if await NCNetworkingE2EE().isInUpload(account: metadata.account, serverUrl: metadata.serverUrlFileName) {
                         let error = NKError(errorCode: NCGlobal.shared.errorE2EEUploadInProgress, errorDescription: NSLocalizedString("_e2e_in_upload_", comment: ""))
@@ -290,7 +290,7 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
 
                 networking?.createShare(share, downloadLimit: self.downloadLimit)
             } else {
-                networking?.updateShare(share, downloadLimit: self.downloadLimit)
+                networking?.updateShare(share, downloadLimit: self.downloadLimit, changeDownloadLimit: downloadLimitChanged)
             }
         }
 
@@ -303,5 +303,6 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
 extension NCShareAdvancePermission: NCShareDownloadLimitTableViewControllerDelegate {
     func didSetDownloadLimit(_ downloadLimit: DownloadLimitViewModel) {
         self.downloadLimit = downloadLimit
+        self.downloadLimitChanged = true
     }
 }

@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
 // SPDX-FileCopyrightText: 2021 Marino Faggiana
-// SPDX-FileCopyrightText: 2025 Serhii Kaliberda
+// SPDX-FileCopyrightText: 2025 STRATO GmbH
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
@@ -34,7 +34,6 @@ class NCPlayer: NSObject {
 
     deinit {
         print("deinit NCPlayer with ocId \(metadata.ocId)")
-        NotificationCenter.default.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
         NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterPlayerStoppedPlaying)
     }
 
@@ -105,8 +104,7 @@ class NCPlayer: NSObject {
         set { mediaCoordinator.currentAudioTrackIndex = newValue }
     }
 
-    @discardableResult
-    func addPlaybackSlave(_ slaveURL: URL, type slaveType: VLCMediaPlaybackSlaveType, enforce enforceSelection: Bool) -> Int32 {
-        mediaCoordinator.addPlaybackSlave(slaveURL, type: slaveType, enforce: enforceSelection)
+    func addPlaybackTrack(_ trackURL: URL, type mediaTrackType: NCMediaCoordinator.MediaTrackType, enforce enforceSelection: Bool) {
+        mediaCoordinator.addPlaybackTrack(trackURL, type: mediaTrackType, enforce: enforceSelection)
     }
 }

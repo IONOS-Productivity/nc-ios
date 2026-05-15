@@ -83,9 +83,6 @@
                         <fontDescription key="fontDescription" type="system" pointSize="10"/>
                         <color key="tintColor" systemColor="systemGray2Color"/>
                         <state key="normal" image="ellipsis" catalog="system"/>
-                        <connections>
-                            <action selector="touchUpInsideMore:" destination="vf1-Kf-9uL" eventType="touchUpInside" id="GDx-NN-gE9"/>
-                        </connections>
                     </button>
                     <progressView hidden="YES" opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="750" progress="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="ye7-nn-BuE">
                         <rect key="frame" x="25" y="520" width="363" height="4"/>

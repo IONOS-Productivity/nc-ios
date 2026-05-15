@@ -8,6 +8,7 @@ import UIKit
 import NextcloudKit
 import RealmSwift
 import Combine
+import SwiftUI
 
 class NCMedia: UIViewController {
 	@IBOutlet weak var collectionView: UICollectionView!
@@ -50,7 +51,7 @@ class NCMedia: UIViewController {
 	var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
 
 	private var accountButtonFactory: AccountButtonFactory!
-	var activeTransfersListener: AnyCancellable? = nil
+	var activeTransfersListener: AnyCancellable?
 
 	var lastScale: CGFloat = 1.0
 	var currentScale: CGFloat = 1.0
@@ -64,7 +65,8 @@ class NCMedia: UIViewController {
 	var numberOfColumns: Int = 0
 	var lastNumberOfColumns: Int = 0
 
-    let debouncer = NCDebouncer(delay: 1)
+    let debouncerLoadDataSource = NCDebouncer(maxEventCount: 10)
+    let debouncerSearch = NCDebouncer(maxEventCount: 10)
 
     @MainActor
 	var session: NCSession.Session {
@@ -72,7 +74,7 @@ class NCMedia: UIViewController {
 	}
 
 	var controller: NCMainTabBarController? {
-		self.tabBarController as? NCMainTabBarController
+		self.mainTabBarController
 	}
 
 	var isViewActived: Bool {
@@ -109,9 +111,9 @@ class NCMedia: UIViewController {
 		layout.sectionInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
 		collectionView.collectionViewLayout = layout
         layoutType = database.getLayoutForView(account: session.account, key: global.layoutViewMedia, serverUrl: "").layout
-		
+
 		tabBarSelect = HiDriveCollectionViewCommonSelectToolbar(controller: controller, delegate: self, displayedButtons: [.delete])
-		
+
 		gradient.startPoint = CGPoint(x: 0, y: 0.1)
 		gradient.endPoint = CGPoint(x: 0, y: 1)
 		gradient.colors = [UIColor.black.withAlphaComponent(UIAccessibility.isReduceTransparencyEnabled ? 0.8 : 0.4).cgColor, UIColor.clear.cgColor]
@@ -162,7 +164,7 @@ class NCMedia: UIViewController {
 
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
-		
+
 		navigationController?.setNavigationBarAppearance()
 		navigationItem.largeTitleDisplayMode = .never
 		if dataSource.metadatas.isEmpty {
@@ -213,9 +215,9 @@ class NCMedia: UIViewController {
 		super.viewWillLayoutSubviews()
 		tabBarSelect.onViewWillLayoutSubviews()
 	}
-	
+
 	// MARK: - NotificationCenter
-	
+
 	@objc func networkRemoveAll() async {
         timerSearchNewMedia?.invalidate()
         timerSearchNewMedia = nil
@@ -227,33 +229,10 @@ class NCMedia: UIViewController {
             task.cancel()
         }
 	}
-	
-//	@objc func fileExists(_ notification: NSNotification) {
-//		guard let userInfo = notification.userInfo as NSDictionary?,
-//			  let ocId = userInfo["ocId"] as? String,
-//			  let fileExists = userInfo["fileExists"] as? Bool
-//		else {
-//			return
-//		}
-//		
-//		filesExists.append(ocId)
-//		if !fileExists {
-//			ocIdDoNotExists.append(ocId)
-//		}
-//		
-//		if NCNetworking.shared.fileExistsQueue.operationCount == 0,
-//		   !ocIdDoNotExists.isEmpty,
-//		   let ocIdDoNotExists = self.ocIdDoNotExists.getArray() {
-//			dataSource.removeMetadata(ocIdDoNotExists)
-//			database.deleteMetadataOcIds(ocIdDoNotExists)
-//			self.ocIdDoNotExists.removeAll()
-//			collectionViewReloadData()
-//		}
-//	}
-	
+
 	func buildMediaPhotoVideo(columnCount: Int) {
 		var pointSize: CGFloat = 0
-		
+
 		switch columnCount {
 		case 0...1: pointSize = 60
 		case 2...3: pointSize = 30
@@ -275,26 +254,28 @@ extension NCMedia {
 	func setNavigationRightItems() {
 		navigationItem.rightBarButtonItems = [createAccountButton(), createTransfersButtonIfNeeded()].compactMap { $0 }
 	}
-	
+
 	private func createAccountButton() -> UIBarButtonItem {
 		accountButtonFactory.createAccountButton()
 	}
-	
+
 	private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
 		guard TransfersListener.shared.areActiveTransfersPresent else {
 			return nil
 		}
 		let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
 											  style: .plain) { [weak self] in
-			if let navigationController = UIStoryboard(name: "NCTransfers", bundle: nil).instantiateInitialViewController() as? UINavigationController,
-			   let viewController = navigationController.topViewController as? NCTransfers {
-				viewController.modalPresentationStyle = .pageSheet
-				self?.present(navigationController, animated: true, completion: nil)
-			}
+            let rootView = TransfersView(session: self?.session, onClose: { [weak self] in
+                self?.dismiss(animated: true)
+            })
+            let hosting = UIHostingController(rootView: rootView)
+            hosting.modalPresentationStyle = .pageSheet
+
+            self?.present(hosting, animated: true)
 		}
 		return transfersButton
 	}
-	
+
 	func setNavigationLeftItems() {
 		if isEditMode {
 			navigationItem.setLeftBarButtonItems(nil, animated: true)
@@ -308,17 +289,17 @@ extension NCMedia {
 		burgerMenuItem.tintColor = UIColor(resource: .BurgerMenu.navigationBarButton)
 		navigationItem.setLeftBarButtonItems([burgerMenuItem], animated: true)
 	}
-	
+
 	func showBurgerMenu() {
 		mainTabBarController?.showBurgerMenu()
 	}
-	
+
 	private func setNavigationBarLogoIfNeeded() {
 		if self.navigationController?.viewControllers.count == 1 {
 			setNavigationBarLogo()
 		}
 	}
-	
+
 	func updateHeadersView() {
 		fileActionsHeader?.showViewModeButton(false)
 		fileActionsHeader?.setIsEditingMode(isEditingMode: isEditMode)
@@ -329,7 +310,7 @@ extension NCMedia {
 			self?.updateHeadersView()
 			self?.fileActionsHeader?.setSelectionState(selectionState: .none)
 		}
-		
+
 		fileActionsHeader?.onSelectAll = { [weak self] in
 			guard let self = self else { return }
 			self.selectAllOrDeselectAll()
@@ -337,16 +318,16 @@ extension NCMedia {
 			self.fileActionsHeader?.setSelectionState(selectionState: selectionState)
 		}
 	}
-	
+
 	var selectionState: FileActionsHeaderSelectionState {
 		let selectedItemsCount = fileSelect.count
 		if selectedItemsCount == self.dataSource.metadatas.count {
 			return .all
 		}
-		
+
 		return selectedItemsCount == 0 ? .none : .some(selectedItemsCount)
 	}
-	
+
 	func selectAllOrDeselectAll() {
 		let metadatas = self.dataSource.metadatas
 		if !fileSelect.isEmpty, metadatas.count == fileSelect.count {
@@ -356,7 +337,7 @@ extension NCMedia {
 		}
 		collectionView.reloadData()
 	}
-	
+
 	func updateHeadersMenu() {
 		fileActionsHeader?.setSortingMenu(sortingMenuElements: createMenuElements(), title: NSLocalizedString("_media_options_", tableName: nil, bundle: Bundle.main, value: "Media Options", comment: ""), image: nil)
 	}

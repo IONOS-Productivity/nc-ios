@@ -16,7 +16,7 @@ class NCBrandOptions: @unchecked Sendable {
 
     var brand: String = "Nextcloud"
     var brandUserAgent: String = ""
-    var textCopyrightNextcloudiOS: String = "Nextcloud Matheria for iOS %@ © 2025"
+    var textCopyrightNextcloudiOS: String = "Nextcloud Matheria for iOS %@ © 2026"
     var textCopyrightNextcloudServer: String = "Nextcloud Server %@"
     var loginBaseUrl: String = "https://cloud.nextcloud.com"
     var pushNotificationServerProxy: String = ""
@@ -65,6 +65,9 @@ class NCBrandOptions: @unchecked Sendable {
     let httpMaximumConnectionsPerHost: Int = 8
     let httpMaximumConnectionsPerHostInDownload: Int = 8
     let httpMaximumConnectionsPerHostInUpload: Int = 8
+
+    // Max request/download/upload process
+    let numMaximumProcess: Int = 20
 
     // Number of failed attempts after reset app
     let resetAppPasscodeAttempts: Int = 10
@@ -115,13 +118,29 @@ class NCBrandOptions: @unchecked Sendable {
     @objc func getUserAgent() -> String {
         return userAgent
     }
+
+    func isServerVersion(_ capabilities: NKCapabilities.Capabilities,
+                         greaterOrEqualTo major: Int,
+                         _ minor: Int,
+                         _ micro: Int) -> Bool {
+
+        let server = (
+            capabilities.serverVersionMajor,
+            capabilities.serverVersionMinor,
+            capabilities.serverVersionMicro
+        )
+
+        let required = (major, minor, micro)
+
+        return server >= required
+    }
 }
 
 class NCBrandColor: @unchecked Sendable {
     static let shared = NCBrandColorIONOS()
 
     // This is rewrited from customet theme, default is Nextcloud color
-    let customer: UIColor = UIColor(red: 0.0 / 255.0, green: 130.0 / 255.0, blue: 201.0 / 255.0, alpha: 1.0)
+    let customer: UIColor = UIColor(red: 0.0 / 255.0, green: 130.0 / 255.0, blue: 201.0 / 255.0, alpha: 1.0)         // Nextcloud : #0082C9
     var customerText: UIColor = .white
 
     // INTERNAL DEFINE COLORS

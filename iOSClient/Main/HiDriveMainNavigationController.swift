@@ -8,36 +8,37 @@
 
 import UIKit
 import Combine
+import SwiftUI
 
 class HiDriveMainNavigationController: UINavigationController, UINavigationControllerDelegate {
-    
+
     var accountButtonFactory: AccountButtonFactory!
-    
-    var activeTransfersListener: AnyCancellable? = nil
-    
+
+    var activeTransfersListener: AnyCancellable?
+
     var controller: NCMainTabBarController? {
-        self.tabBarController as? NCMainTabBarController
+        self.mainTabBarController
     }
-    
+
     var collectionViewCommon: NCCollectionViewCommon? {
         topViewController as? NCCollectionViewCommon
     }
-    
+
     var session: NCSession.Session {
         NCSession.shared.getSession(controller: controller)
     }
-    
+
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
         setNavigationBarAppearance()
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         self.delegate = self
         navigationBar.prefersLargeTitles = false
         setNavigationBarHidden(false, animated: true)
-        
+
         accountButtonFactory = AccountButtonFactory(controller: controller,
                                                     onAccountDetailsOpen: { [weak self] in self?.collectionViewCommon?.setEditMode(false) },
                                                     presentVC: { [weak self] vc in self?.present(vc, animated: true) },
@@ -129,13 +130,17 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
         }
         let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
                                               style: .plain) { [weak self] in
-            if let navigationController = UIStoryboard(name: "NCTransfers", bundle: nil).instantiateInitialViewController() as? UINavigationController,
-               let viewController = navigationController.topViewController as? NCTransfers {
-                viewController.modalPresentationStyle = .pageSheet
-                self?.present(navigationController, animated: true, completion: nil)
-            }
+            let rootView = TransfersView(session: self?.session, onClose: { [weak self] in
+                self?.dismiss(animated: true)
+            })
+            let hosting = UIHostingController(rootView: rootView)
+            hosting.modalPresentationStyle = .pageSheet
+
+            self?.present(hosting, animated: true)
         }
 		transfersButton.tintColor = UIColor(resource: .Transfers.buttonBackground)
         return transfersButton
     }
+
+    func updateMenuOption() { }
 }
