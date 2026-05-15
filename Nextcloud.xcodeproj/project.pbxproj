@@ -1199,6 +1199,7 @@
 		421651302E28F6ED002E19D6 /* Notification Service ExtensionDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Notification Service ExtensionDebug.entitlements"; sourceTree = "<group>"; };
 		421657AA2D2AF2BF003BC9D5 /* HiDriveCollectionViewCommonSelectToolbarDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiDriveCollectionViewCommonSelectToolbarDelegate.swift; sourceTree = "<group>"; };
 		421DC45E2F6D38F3001EE5E3 /* ItemShareState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemShareState.swift; sourceTree = "<group>"; };
+		42226BFC2FB76B7E0018A519 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Intent.strings; sourceTree = "<group>"; };
 		4232DC092C9D7C44008D546D /* UIView+GridSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+GridSelection.swift"; sourceTree = "<group>"; };
 		4240DB4D2C5646B400E72FC0 /* BurgerMenuAttachController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurgerMenuAttachController.swift; sourceTree = "<group>"; };
 		4240DB4F2C5648E300E72FC0 /* BurgerMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurgerMenuViewController.swift; sourceTree = "<group>"; };
@@ -5019,6 +5020,7 @@
 				F7BE7C51290ADF0B002ABB61 /* es */,
 				F7BE7C63290ADF10002ABB61 /* fr */,
 				F7BE7C69290ADF11002ABB61 /* de */,
+				42226BFC2FB76B7E0018A519 /* it */,
 			);
 			name = Intent.intentdefinition;
 			sourceTree = "<group>";
