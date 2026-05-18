@@ -35,7 +35,7 @@ class NCViewerContextMenu: NSObject {
 
         // DETAIL
         if !(!capabilities.fileSharingApiEnabled && !capabilities.filesComments && capabilities.activity.isEmpty) {
-            menuElements.append(makeDetailAction(metadata: metadata))
+            menuElements.append(makeDetailAction(metadata: metadata, controller: controller))
         }
 
         // VIEW IN FOLDER
@@ -73,13 +73,13 @@ class NCViewerContextMenu: NSObject {
 
     // MARK: - Private Action Makers
 
-    private func makeDetailAction(metadata: tableMetadata) -> UIAction {
+    private func makeDetailAction(metadata: tableMetadata, controller: NCMainTabBarController) -> UIAction {
         UIAction(
             title: NSLocalizedString("_details_", comment: ""),
-            image: UIImage(systemName: "info")
-        ) { [weak self] _ in
-            guard let controller = self?.controller else { return }
-            NCCreate().createShare(viewController: controller,
+            image: UIImage(resource: .details)
+        ) { _ in
+            let presentOn = controller.currentViewController() ?? controller
+            NCCreate().createShare(viewController: presentOn,
                                    metadata: metadata,
                                    page: .activity)
         }
@@ -88,7 +88,7 @@ class NCViewerContextMenu: NSObject {
     private func makeViewInFolderAction(metadata: tableMetadata, controller: NCMainTabBarController) -> UIAction {
         UIAction(
             title: NSLocalizedString("_view_in_folder_", comment: ""),
-            image: UIImage(systemName: "questionmark.folder")
+            image: UIImage(resource: .viewInFolder)
         ) { _ in
             Task {
                 await NCNetworking.shared.blinkInFolder(serverUrl: metadata.serverUrl,
@@ -103,7 +103,7 @@ class NCViewerContextMenu: NSObject {
             title: metadata.favorite
                 ? NSLocalizedString("_remove_favorites_", comment: "")
                 : NSLocalizedString("_add_favorites_", comment: ""),
-            image: utility.loadImage(named: metadata.favorite ? "star.slash" : "star", colors: [NCBrandColor.shared.yellowFavorite])
+            image: UIImage(resource: metadata.favorite ? .starFilled : .starHollow)
         ) { _ in
             NCNetworking.shared.setStatusWaitFavorite(metadata) { error in
                 if error != .success {
@@ -119,7 +119,7 @@ class NCViewerContextMenu: NSObject {
         [
             UIAction(
                 title: NSLocalizedString("_search_", comment: ""),
-                image: UIImage(systemName: "magnifyingglass")
+                image: UIImage(resource: .menuSearch)
             ) { _ in
                 NotificationCenter.default.postOnMainThread(
                     name: NCGlobal.shared.notificationCenterMenuSearchTextPDF
@@ -127,7 +127,7 @@ class NCViewerContextMenu: NSObject {
             },
             UIAction(
                 title: NSLocalizedString("_go_to_page_", comment: ""),
-                image: UIImage(systemName: "number.circle")
+                image: UIImage(resource: .goToPage)
             ) { _ in
                 NotificationCenter.default.postOnMainThread(
                     name: NCGlobal.shared.notificationCenterMenuGotToPageInPDF

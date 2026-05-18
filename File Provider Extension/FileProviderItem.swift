@@ -112,6 +112,9 @@ class FileProviderItem: NSObject, NSFileProviderItem {
         }
     }
     /// Sharing
+    var isShared: Bool {
+        return !metadata.shareType.isEmpty
+    }
     /// Managing Metadata
     var tagData: Data? {
         return nil

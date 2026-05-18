@@ -10,10 +10,8 @@ import SwiftUI
 struct NextcloudWidgetBundle: WidgetBundle {
     @WidgetBundleBuilder
     var body: some Widget {
-        DashboardWidget()
         FilesWidget()
         ToolbarWidget()
-        LockscreenWidget()
     }
 }
 

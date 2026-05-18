@@ -29,7 +29,7 @@ class NCShareCell: UITableViewCell {
         self.account = account
         self.iconName = iconName
 
-        backgroundColor = .systemBackground
+        backgroundColor = NCBrandColor.shared.appBackgroundColor
         imageCell?.layer.cornerRadius = 6
         imageCell?.layer.masksToBounds = true
 

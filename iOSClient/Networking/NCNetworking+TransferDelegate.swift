@@ -75,10 +75,10 @@ extension NCNetworking: NCTransferDelegate {
                     }
                     let navigationController = UINavigationController(rootViewController: viewerQuickLook)
                     navigationController.modalPresentationStyle = .fullScreen
-                    controller.present(navigationController, animated: true)
+                    controller.currentViewController()?.present(navigationController, animated: true)
                 } else {
                     self.utilityFileSystem.copyFile(atPath: fileNamePath, toPath: fileNameTemp)
-                    controller.present(viewerQuickLook, animated: true)
+                    controller.currentViewController()?.present(viewerQuickLook, animated: true)
                 }
 
             case NCGlobal.shared.selectorLoadFileView:
@@ -180,7 +180,7 @@ extension NCNetworking: NCTransferDelegate {
                     let viewController = navigationController.presentedViewController as? NCScan
                     viewController?.serverUrl = controller.currentServerUrl()
                     viewController?.controller = controller
-                    controller.present(navigationController, animated: true, completion: nil)
+                    controller.currentViewController()?.present(navigationController, animated: true, completion: nil)
                 }
 
             case NCGlobal.shared.selectorOpenDetail:
@@ -309,6 +309,10 @@ extension NCNetworking: NCTransferDelegate {
         else { return }
         let session = NCSession.shared.getSession(controller: controller)
         var serverUrlPush = self.utilityFileSystem.getHomeServer(session: session)
+
+        if let presentedViewController = controller.presentedViewController {
+            presentedViewController.dismiss(animated: false)
+        }
 
         navigationController.popToRootViewController(animated: false)
         controller.selectedIndex = 0

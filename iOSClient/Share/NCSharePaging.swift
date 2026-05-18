@@ -47,7 +47,7 @@ class NCSharePaging: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
         title = NSLocalizedString("_details_", comment: "")
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: NSLocalizedString("_close_", comment: ""), style: .plain, target: self, action: #selector(exitTapped(_:)))
@@ -58,12 +58,12 @@ class NCSharePaging: UIViewController {
 
         // *** MUST BE THE FIRST ONE ***
         pagingViewController.metadata = metadata
-        pagingViewController.backgroundColor = .systemBackground
-        pagingViewController.menuBackgroundColor = .systemBackground
-        pagingViewController.selectedBackgroundColor = .systemBackground
-        pagingViewController.indicatorColor = NCBrandColor.shared.getElement(account: metadata.account)
+        pagingViewController.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        pagingViewController.menuBackgroundColor = NCBrandColor.shared.appBackgroundColor
+        pagingViewController.selectedBackgroundColor = NCBrandColor.shared.appBackgroundColor
+        pagingViewController.indicatorColor = NCBrandColor.shared.brandElement
         pagingViewController.textColor = NCBrandColor.shared.textColor
-        pagingViewController.selectedTextColor = NCBrandColor.shared.getElement(account: metadata.account)
+        pagingViewController.selectedTextColor = UIColor(resource: .Share.tabTitle)
 
         // Pagination
         addChild(pagingViewController)
@@ -265,7 +265,7 @@ class NCSharePagingView: PagingView {
     override func setupConstraints() {
         guard let headerView = Bundle.main.loadNibNamed("NCShareHeader", owner: self, options: nil)?.first as? NCShareHeader else { return }
         header = headerView
-        headerView.backgroundColor = .systemBackground
+        headerView.backgroundColor = NCBrandColor.shared.appBackgroundColor
 
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .short
@@ -322,10 +322,9 @@ class NCShareHeaderView: UIView {
         NCNetworking.shared.setStatusWaitFavorite(metadata) { error in
             if error == .success {
                 guard let metadata = NCManageDatabase.shared.getMetadataFromOcId(metadata.ocId) else { return }
-                self.favorite.setImage(NCUtility().loadImage(
-                    named: "star.fill",
-                    colors: metadata.favorite ? [NCBrandColor.shared.yellowFavorite] : [NCBrandColor.shared.iconImageColor2],
-                    size: 20), for: .normal)
+                if metadata.favorite {
+                    self.favorite.setImage(NCImagesRepository.shareHeaderFavorite, for: .normal)
+                }
             } else {
                 NCContentPresenter().showError(error: error)
             }

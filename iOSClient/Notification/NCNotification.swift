@@ -33,7 +33,7 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
     var session: NCSession.Session!
 
     var controller: NCMainTabBarController? {
-        self.tabBarController as? NCMainTabBarController
+        self.mainTabBarController
     }
 
     // MARK: - View Life Cycle
@@ -42,14 +42,14 @@ class NCNotification: UITableViewController, NCNotificationCellDelegate {
         super.viewDidLoad()
 
         title = NSLocalizedString("_notifications_", comment: "")
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
 
         navigationController?.setNavigationBarAppearance()
 
         tableView.tableFooterView = UIView()
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 50.0
-        tableView.backgroundColor = .systemBackground
+        tableView.backgroundColor = NCBrandColor.shared.appBackgroundColor
 
         refreshControl?.action(for: .valueChanged) { _ in
             Task {
