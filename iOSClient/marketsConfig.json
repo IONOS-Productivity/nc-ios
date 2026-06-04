@@ -1,0 +1,32 @@
+[
+    {
+      "countryCode": "IT",
+      "loginUrl": "https://storage.ionos.it/index.php/login/v2",
+      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
+    },
+    {
+      "countryCode": "DE",
+      "loginUrl": "https://storage.ionos.de/index.php/login/v2",
+      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
+    },
+    {
+      "countryCode": "FR",
+      "loginUrl": "https://storage.ionos.fr",
+      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
+    },
+    {
+      "countryCode": "ES",
+      "loginUrl": "https://storage.ionos.es/index.php/login/v2",
+      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
+    },
+    {
+      "countryCode": "UK",
+      "loginUrl": "https://storage.ionos.co.uk/index.php/login/v2",
+      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
+    },
+    {
+      "countryCode": "fallback",
+      "loginUrl": "https://storage.ionos.co.uk/index.php/login/v2",
+      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
+    }
+]
