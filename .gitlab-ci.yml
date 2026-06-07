@@ -1,16 +1,18 @@
+include:
+  - project: 'it-infrastructure/ai-powered-solutions/gitlabaireviewer'
+    file:
+      - 'templates/ai_reviewer.yml'
+
 variables:
   outputDirPath: "./build/sym"
+  scheme: "Nextcloud"
   IPA_PATH: "${outputDirPath}/${scheme}.ipa"
   DSYM_PATH: "*.dSYM.zip"
-  scheme: "Nextcloud"
-  dev_configuration: "Alpha"
-  beta_configuration: "Beta"
-  archive_path: "${outputDirPath}/${scheme}"
-  export_method: "ad-hoc"
 
 stages:
 - build
 - deploy
+- ai_review
 
 .mac_general_scripts: &mac_general_scripts
   - security unlock-keychain -p $PASSWORD_BUILDE ~/Library/Keychains/login.keychain-db
@@ -34,38 +36,7 @@ stages:
     --location
     --request GET
     --url $FB_BETA_PLIST_PATH
-    --header "Authorization:Bearer ${FB_PLIST_PROJECT_TOKEN}"  | jq -r '.content' | base64 --decode >> "./GoogleService-Info.plist"
-
-
-.build_general_script: &build_general_script
-  - fastlane gym
-    --scheme $scheme
-    --configuration $dev_configuration
-    --output_directory $outputDirPath
-    --derived_data_path ./ipaDerivedData
-    --output_name $scheme
-    --archive_path $archive_path
-    --export_method $export_method
-    --export_options ./ExportAlphaOptions.plist
-    --silent
-    --clean
-    
-.build_general_script_beta: &build_general_script_beta
-  - fastlane gym
-    --scheme $scheme
-    --configuration $beta_configuration
-    --output_directory $outputDirPath
-    --derived_data_path ./ipaDerivedData
-    --output_name $scheme
-    --archive_path $archive_path
-    --export_method $export_method
-    --silent
-    --clean
-    
-.build_simulator_general_script: &build_simulator_general_script
-  - xcodebuild -configuration Alpha -scheme $scheme -sdk iphonesimulator -derivedDataPath ./BuildForSimulator -quiet
-
-############## build ##############
+    --header "Authorization:Bearer ${FB_PLIST_PROJECT_TOKEN}" | jq -r '.content' | base64 --decode >> "./GoogleService-Info.plist"
 
 .build_general_params: &build_general_params
   retry: 1
@@ -84,7 +55,7 @@ build_develop_feature:
   <<: *build_general_params
   script:
     - *download_google_info_plist
-    - *build_general_script
+    - fastlane build_alpha
   only:
     - develop
     - /^feature/
@@ -95,7 +66,7 @@ build_beta:
   when: manual
   script:
     - *download_google_info_plist_beta
-    - *build_general_script_beta
+    - fastlane build_beta
   only:
     - develop
     - /^feature/
@@ -104,23 +75,22 @@ build_beta:
 build_simulator:
   <<: *build_general_params
   when: manual
+  artifacts:
+    paths:
+      - Nextcloud.zip
+    expire_in: 1 week
   script:
     - *download_google_info_plist
-    - *build_simulator_general_script
-    - zip -r ./${scheme}.zip ./BuildForSimulator/Build/Products/Debug-iphonesimulator/${scheme}.app
-
+    - fastlane build_simulator
+    - zip -r ./${scheme}.zip ./BuildForSimulator/Build/Products/Alpha-iphonesimulator/${scheme}.app
   only:
     - develop
     - /^feature/
     - /^hotfix/
     - /^release/
-  artifacts:
-    paths:
-      - Nextcloud.zip
-    expire_in: 1 week
-    
-############ deploy ###########
-    
+
+########## deploy ################
+
 .deploy_general_params: &deploy_general_params
   stage: deploy
   image: ruby
@@ -150,3 +120,14 @@ deploy_beta:
     - develop
     - /^feature/
     - /^release/
+
+##################################
+######### AI review ##############
+##################################
+
+ai_review:
+  extends: .ai_review
+  variables:
+        GIT_DEPTH: 0
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'

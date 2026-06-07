@@ -49,5 +49,6 @@ excluded:
   - iOSClient/Utility/NCLivePhoto.swift
   - DerivedData
   - ipaDerivedData
+  - BuildForSimulator
   
 reporter: "xcode"
