@@ -151,8 +151,10 @@ struct NCSettingsView: View {
                 })
                 .tint(Color(NCBrandColor.shared.textColor))
                 .sheet(isPresented: $showAcknowledgements) {
-                    NCBrowserWebView(urlBase: URL(string: NCBrandOptions.shared.acknowloedgements)!, browserTitle: NSLocalizedString("_acknowledgements_", comment: ""))
-                        .ignoresSafeArea()
+                    if let url = URL(string: NCBrandOptions.shared.acknowledgements) {
+                        NCBrowserWebView(urlBase: url, browserTitle: NSLocalizedString("_acknowledgements_", comment: ""))
+                            .ignoresSafeArea()
+                    }
                 }
                 // Terms & Privacy Conditions
                 Button(action: {

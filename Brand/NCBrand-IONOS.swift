@@ -14,7 +14,8 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	private let custom_brand = "IONOS HiDrive Next"
 	private let custom_textCopyrightNextcloudiOS = "HiDrive Next iOS %@ © 2026"
 	private let custom_sourceCode = "https://wl.hidrive.com/easy/0181"
-    private var marketConfiguration: MarketConfiguration?
+    private var loginConfiguration: LoginConfiguration?
+    static var staticLinksConfiguration: StaticLinksConfiguration?
 
 	
 	//MARK: - override custom values if not default (changed by Brander)
@@ -44,7 +45,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	override var loginBaseUrl: String {
 		get {
-            return self.marketConfiguration?.loginUrl ?? super.loginBaseUrl
+            return self.loginConfiguration?.loginUrl ?? super.loginBaseUrl
 		}
 		set {
 			super.loginBaseUrl = newValue
@@ -53,7 +54,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	override var privacy: String {
 		get {
-            return self.marketConfiguration?.privacyPolicyUrl ?? super.privacy
+            return NCBrandOptionsIONOS.staticLinksConfiguration?.privacyPolicyUrl ?? super.privacy
 		}
 		set {
 			super.privacy = newValue
@@ -79,7 +80,9 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 		disable_request_login_url = true
 		disable_crash_service = true
 
-        marketConfiguration = MarketsConfigurations().configurations.filter{  $0.countryCode == countryCode() }.first
+        let marketsConfiguration = MarketsConfigurationLoader.loadConfiguration()
+        loginConfiguration = marketsConfiguration?.login.filter{  $0.countryCode.lowercased() == countryCode().lowercased() }.first ?? marketsConfiguration?.login.filter{  $0.countryCode.lowercased() == MarketsConfiguration.fallback }.first
+        NCBrandOptionsIONOS.staticLinksConfiguration = marketsConfiguration?.staticLinks.filter{  $0.language.lowercased() == language().lowercased() }.first ?? marketsConfiguration?.staticLinks.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
 
 #if ALPHA
 		capabilitiesGroup = "group.com.viseven.ionos.easystorage"
@@ -93,13 +96,17 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	}
 
     private func countryCode() -> String {
-        DeviceRegionDeterminer().getDeviceRegion() ?? "fallback"
+        DeviceRegionDeterminer().getDeviceRegion() ?? MarketsConfiguration.fallback
+    }
+
+    private func language() -> String {
+        Bundle.main.preferredLocalizations.first ?? MarketsConfiguration.fallback
     }
 }
 
 extension NCBrandOptions {
-	var acknowloedgements: String {
-		"https://wl.hidrive.com/easy/0171"
+	var acknowledgements: String? {
+        NCBrandOptionsIONOS.staticLinksConfiguration?.acknowledgementsUrl
 	}
 }
 

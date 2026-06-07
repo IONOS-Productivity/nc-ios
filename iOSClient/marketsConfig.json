@@ -1,32 +1,60 @@
-[
-    {
-      "countryCode": "IT",
-      "loginUrl": "https://storage.ionos.it/index.php/login/v2",
-      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
-    },
-    {
-      "countryCode": "DE",
-      "loginUrl": "https://storage.ionos.de/index.php/login/v2",
-      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
-    },
-    {
-      "countryCode": "FR",
-      "loginUrl": "https://storage.ionos.fr",
-      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
-    },
-    {
-      "countryCode": "ES",
-      "loginUrl": "https://storage.ionos.es/index.php/login/v2",
-      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
-    },
-    {
-      "countryCode": "UK",
-      "loginUrl": "https://storage.ionos.co.uk/index.php/login/v2",
-      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
-    },
-    {
-      "countryCode": "fallback",
-      "loginUrl": "https://storage.ionos.co.uk/index.php/login/v2",
-      "privacyPolicyUrl": "https://wl.hidrive.com/easy/ios/privacy.html",
-    }
-]
+{
+    "login": [
+        {
+            "countryCode": "IT",
+            "loginUrl": "https://storage.ionos.it/index.php/login/v2"
+        },
+        {
+            "countryCode": "DE",
+            "loginUrl": "https://storage.ionos.de/index.php/login/v2"
+        },
+        {
+            "countryCode": "FR",
+            "loginUrl": "https://storage.ionos.fr/index.php/login/v2"
+        },
+        {
+            "countryCode": "ES",
+            "loginUrl": "https://storage.ionos.es/index.php/login/v2",
+        },
+        {
+            "countryCode": "UK",
+            "loginUrl": "https://storage.ionos.co.uk/index.php/login/v2"
+        },
+        {
+            "countryCode": "fallback",
+            "loginUrl": "https://storage.ionos.co.uk/index.php/login/v2"
+        }
+    ],
+    "staticLinks": [
+        {
+            "language": "EN",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/0041",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "DE",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/00711",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "IT",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/0071",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "FR",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/0061",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "ES",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/0051",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "fallback",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/0041",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171" 
+        }
+    ]
+}

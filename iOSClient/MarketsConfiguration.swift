@@ -8,32 +8,39 @@
 
 import Foundation
 
-struct MarketsConfigurations: Decodable {
-    var configurations: [MarketConfiguration] = []
+struct MarketsConfigurationLoader {
 
-    init() {
-        self.configurations = loadConfigurations()
-    }
-
-    private func loadConfigurations() -> [MarketConfiguration] {
+    static func loadConfiguration() -> MarketsConfiguration? {
         guard let url = Bundle.main.url(forResource: "marketsConfig", withExtension: "json") else {
-            return []
+            return nil
         }
 
         do {
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
-            let configurations = try decoder.decode([MarketConfiguration].self, from: data)
+            let configuration = try decoder.decode(MarketsConfiguration.self, from: data)
 
-            return configurations
+            return configuration
         } catch {
-            return []
+            return nil
         }
     }
 }
 
-struct MarketConfiguration: Decodable {
+struct MarketsConfiguration: Decodable {
+    static let fallback = "fallback"
+
+    let login: [LoginConfiguration]
+    let staticLinks: [StaticLinksConfiguration]
+}
+
+struct LoginConfiguration: Decodable {
     let countryCode: String
     let loginUrl: String
+}
+
+struct StaticLinksConfiguration: Decodable {
+    let language: String
     let privacyPolicyUrl: String
+    let acknowledgementsUrl: String
 }
