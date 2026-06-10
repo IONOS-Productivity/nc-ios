@@ -45,7 +45,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	override var loginBaseUrl: String {
 		get {
-            return self.loginConfiguration?.loginUrl ?? super.loginBaseUrl
+            return self.loginConfiguration!.loginUrl
 		}
 		set {
 			super.loginBaseUrl = newValue
@@ -54,7 +54,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	override var privacy: String {
 		get {
-            return NCBrandOptionsIONOS.staticLinksConfiguration?.privacyPolicyUrl ?? super.privacy
+            return NCBrandOptionsIONOS.staticLinksConfiguration!.privacyPolicyUrl
 		}
 		set {
 			super.privacy = newValue
@@ -75,14 +75,15 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	//MARK: -
 	override init() {
-		super.init()
+        super.init()
+
 		disable_intro = true
 		disable_request_login_url = true
 		disable_crash_service = true
 
         let marketsConfiguration = MarketsConfigurationLoader.loadConfiguration()
-        loginConfiguration = marketsConfiguration?.login.filter{  $0.countryCode.lowercased() == countryCode().lowercased() }.first ?? marketsConfiguration?.login.filter{  $0.countryCode.lowercased() == MarketsConfiguration.fallback }.first
-        NCBrandOptionsIONOS.staticLinksConfiguration = marketsConfiguration?.staticLinks.filter{  $0.language.lowercased() == language().lowercased() }.first ?? marketsConfiguration?.staticLinks.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
+        loginConfiguration = marketsConfiguration.login.filter{  $0.countryCode.lowercased() == countryCode().lowercased() }.first ?? marketsConfiguration.login.filter{  $0.countryCode.lowercased() == MarketsConfiguration.fallback }.first
+        NCBrandOptionsIONOS.staticLinksConfiguration = marketsConfiguration.staticLinks.filter{  $0.language.lowercased() == language().lowercased() }.first ?? marketsConfiguration.staticLinks.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
 
 #if ALPHA
 		capabilitiesGroup = "group.com.viseven.ionos.easystorage"
@@ -105,8 +106,8 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 }
 
 extension NCBrandOptions {
-	var acknowledgements: String? {
-        NCBrandOptionsIONOS.staticLinksConfiguration?.acknowledgementsUrl
+	var acknowledgements: String {
+        NCBrandOptionsIONOS.staticLinksConfiguration!.acknowledgementsUrl
 	}
 }
 

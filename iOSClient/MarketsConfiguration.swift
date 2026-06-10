@@ -10,9 +10,10 @@ import Foundation
 
 struct MarketsConfigurationLoader {
 
-    static func loadConfiguration() -> MarketsConfiguration? {
+    static func loadConfiguration() -> MarketsConfiguration {
         guard let url = Bundle.main.url(forResource: "marketsConfig", withExtension: "json") else {
-            return nil
+            assertionFailure("Critical Error: 'marketsConfig.json' could not be found in the main bundle.")
+            return MarketsConfiguration(login: [], staticLinks: [])
         }
 
         do {
@@ -20,9 +21,18 @@ struct MarketsConfigurationLoader {
             let decoder = JSONDecoder()
             let configuration = try decoder.decode(MarketsConfiguration.self, from: data)
 
+            if configuration.login.filter({ $0.countryCode == MarketsConfiguration.fallback }).count == 0 {
+                assertionFailure("Critical Error: 'marketsConfig.json' must contain a fallback entry for login configuration.")
+            }
+
+            if configuration.staticLinks.filter({ $0.language == MarketsConfiguration.fallback }).count == 0 {
+                assertionFailure("Critical Error: 'marketsConfig.json' must contain a fallback entry for static links configuration.")
+            }
+
             return configuration
         } catch {
-            return nil
+            assertionFailure("Critical Error: 'marketsConfig.json' has wrong format.")
+            return MarketsConfiguration(login: [], staticLinks: [])
         }
     }
 }
