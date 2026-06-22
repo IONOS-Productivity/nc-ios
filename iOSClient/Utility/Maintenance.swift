@@ -13,7 +13,8 @@ struct Maintenance: View {
 
     var body: some View {
         ZStack {
-            Color(NCBrandColor.shared.brandElement)
+            Image(.gradientBackground)
+                .resizable()
                 .ignoresSafeArea()
             VStack(spacing: 20) {
                 Spacer()
@@ -41,6 +42,7 @@ struct Maintenance: View {
                 await startMaintenance()
             }
         }
+        .preferredColorScheme(.dark)
     }
 
     /// Executes the maintenance.
