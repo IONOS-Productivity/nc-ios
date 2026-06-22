@@ -18,7 +18,8 @@ struct MigrationMultiDomains: View {
 
     var body: some View {
         ZStack {
-            Color(NCBrandColor.shared.brandElement)
+            Image(.gradientBackground)
+                .resizable()
                 .ignoresSafeArea()
             VStack(spacing: 20) {
                 Spacer()
@@ -50,6 +51,7 @@ struct MigrationMultiDomains: View {
                 await startMigration()
             }
         }
+        .preferredColorScheme(.dark)
     }
 
     /// Executes the migration pipeline: scan directories, move them, and finalize.
