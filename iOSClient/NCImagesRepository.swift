@@ -32,7 +32,6 @@ class NCImagesRepository: NSObject {
         case selectAll = "checkmark.circle.fill"
         case close = "xmark"
         case photoOrVideo = "photoOrVideo"
-        case uploadFile = "uploadFile"
         case scan = "scan"
         case createFolder = "createFolder"
         case restore = "restore"
@@ -147,10 +146,6 @@ class NCImagesRepository: NSObject {
 
     static var menuIconUploadPhotosVideos: UIImage {
         menuIcon(ImageName.photoOrVideo)
-    }
-
-    static var menuIconUploadFile: UIImage {
-        menuIcon(ImageName.uploadFile)
     }
 
     static var menuIconScan: UIImage {
