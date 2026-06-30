@@ -252,11 +252,14 @@ class NCMedia: UIViewController {
 // MARK: -
 extension NCMedia {
 	func setNavigationRightItems() {
-		navigationItem.rightBarButtonItems = [createAccountButton(), createTransfersButtonIfNeeded()].compactMap { $0 }
+		Task { @MainActor in
+			let accountButton = await createAccountButton()
+			navigationItem.rightBarButtonItems = [accountButton, createTransfersButtonIfNeeded()].compactMap { $0 }
+		}
 	}
 
-	private func createAccountButton() -> UIBarButtonItem {
-		accountButtonFactory.createAccountButton()
+	private func createAccountButton() async -> UIBarButtonItem {
+		await accountButtonFactory.createAccountButton()
 	}
 
 	private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {

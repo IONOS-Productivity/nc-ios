@@ -32,15 +32,14 @@ class AccountButtonFactory {
         self.onMenuOpened = onMenuOpened
     }
     
-    func createAccountButton() -> UIBarButtonItem {
+    func createAccountButton() async -> UIBarButtonItem {
         let session = NCSession.shared.getSession(controller: controller)
-        guard let tableAccount = self.database.getTableAccount(predicate: NSPredicate(format: "account == %@", session.account)) else {
+        guard let tableAccount = await self.database.getTableAccountAsync(predicate: NSPredicate(format: "account == %@", session.account)) else {
             return UIBarButtonItem()
         }
         let image = utility.loadUserImage(for: tableAccount.account, displayName: tableAccount.displayName, urlBase: tableAccount.urlBase)
         let accountButton = AccountSwitcherButton(type: .custom)
-        let accounts = NCManageDatabase.shared.getAllAccountOrderAlias()
-        
+
         accountButton.setImage(image, for: .normal)
         accountButton.setImage(image, for: .highlighted)
         accountButton.semanticContentAttribute = .forceLeftToRight

@@ -114,14 +114,21 @@ class HiDriveMainNavigationController: UINavigationController, UINavigationContr
             collectionViewCommon.tabBarSelect?.show()
         } else {
             collectionViewCommon.tabBarSelect?.hide()
-            collectionViewCommon.navigationItem.rightBarButtonItems = isCurrentScreenInMainTabBar() ?
-            [createAccountButton(), createTransfersButtonIfNeeded()].compactMap { $0 }
-            : []
+            guard isCurrentScreenInMainTabBar() else {
+                collectionViewCommon.navigationItem.rightBarButtonItems = []
+                return
+            }
+            Task { @MainActor in
+                guard isCurrentScreenInMainTabBar() else { return }
+                let accountButton = await createAccountButton()
+                collectionViewCommon.navigationItem.rightBarButtonItems =
+                    [accountButton, createTransfersButtonIfNeeded()].compactMap { $0 }
+            }
         }
     }
 
-    private func createAccountButton() -> UIBarButtonItem {
-        accountButtonFactory.createAccountButton()
+    private func createAccountButton() async -> UIBarButtonItem {
+        await accountButtonFactory.createAccountButton()
     }
 
     private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
