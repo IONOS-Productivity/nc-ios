@@ -7,8 +7,6 @@ import Foundation
 import UIKit
 import NextcloudKit
 import RealmSwift
-import Combine
-import SwiftUI
 
 class NCMedia: UIViewController {
 	@IBOutlet weak var collectionView: UICollectionView!
@@ -49,9 +47,6 @@ class NCMedia: UIViewController {
 	var photoImage = UIImage()
 	var videoImage = UIImage()
 	var pinchGesture: UIPinchGestureRecognizer = UIPinchGestureRecognizer()
-
-	private var accountButtonFactory: AccountButtonFactory!
-	var activeTransfersListener: AnyCancellable?
 
 	var lastScale: CGFloat = 1.0
 	var currentScale: CGFloat = 1.0
@@ -156,10 +151,6 @@ class NCMedia: UIViewController {
                 await self.networkRemoveAll()
             }
         }
-
-		accountButtonFactory = AccountButtonFactory(controller: controller,
-													onAccountDetailsOpen: { [weak self] in self?.setEditMode(false) },
-													presentVC: { [weak self] vc in self?.present(vc, animated: true) })
 	}
 
 	override func viewWillAppear(_ animated: Bool) {
@@ -173,21 +164,10 @@ class NCMedia: UIViewController {
             }
 		}
 
-		setNavigationRightItems()
+		(navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 		setNavigationLeftItems()
 		updateHeadersView()
 		setNavigationBarLogoIfNeeded()
-
-		activeTransfersListener = TransfersListener
-			.shared
-			.activeTransfersListener
-            .receive(on: DispatchQueue.main)
-			.sink { [weak self] in self?.setNavigationRightItems() }
-	}
-
-	override func viewWillDisappear(_ animated: Bool) {
-		super.viewWillDisappear(animated)
-		activeTransfersListener = nil
 	}
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -251,34 +231,6 @@ class NCMedia: UIViewController {
 
 // MARK: -
 extension NCMedia {
-	func setNavigationRightItems() {
-		Task { @MainActor in
-			let accountButton = await createAccountButton()
-			navigationItem.rightBarButtonItems = [accountButton, createTransfersButtonIfNeeded()].compactMap { $0 }
-		}
-	}
-
-	private func createAccountButton() async -> UIBarButtonItem {
-		await accountButtonFactory.createAccountButton()
-	}
-
-	private func createTransfersButtonIfNeeded() -> UIBarButtonItem? {
-		guard TransfersListener.shared.areActiveTransfersPresent else {
-			return nil
-		}
-		let transfersButton = UIBarButtonItem(image: UIImage(systemName: "arrow.left.arrow.right.circle.fill"),
-											  style: .plain) { [weak self] in
-            let rootView = TransfersView(session: self?.session, onClose: { [weak self] in
-                self?.dismiss(animated: true)
-            })
-            let hosting = UIHostingController(rootView: rootView)
-            hosting.modalPresentationStyle = .pageSheet
-
-            self?.present(hosting, animated: true)
-		}
-		return transfersButton
-	}
-
 	func setNavigationLeftItems() {
 		if isEditMode {
 			navigationItem.setLeftBarButtonItems(nil, animated: true)
