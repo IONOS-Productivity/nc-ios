@@ -31,7 +31,8 @@ class AccountButtonFactory {
         self.presentVC = presentVC
         self.onMenuOpened = onMenuOpened
     }
-    
+
+    @MainActor
     func createAccountButton() async -> UIBarButtonItem {
         let session = NCSession.shared.getSession(controller: controller)
         guard let tableAccount = await self.database.getTableAccountAsync(predicate: NSPredicate(format: "account == %@", session.account)) else {
