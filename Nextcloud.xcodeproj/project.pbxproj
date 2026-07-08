@@ -143,7 +143,6 @@
 		D59793B62CF7A73A00C44F4E /* DataProtectionAgreementManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59793B52CF7A73A00C44F4E /* DataProtectionAgreementManager.swift */; };
 		D59D37CC2F0ECAEC0072C824 /* NCManageDatabase+Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76340FB2EBDF64A0056F538 /* NCManageDatabase+Tag.swift */; };
 		D59D37CE2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37CD2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift */; };
-		D59D37D02F0EE97C0072C824 /* TransfersListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37CF2F0EE97C0072C824 /* TransfersListener.swift */; };
 		D59D37D72F1082F60072C824 /* NCBackgroundLocationUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37D22F1082F50072C824 /* NCBackgroundLocationUploadManager.swift */; };
 		D5B6AA7827200C7200D49C24 /* NCActivityTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B6AA7727200C7200D49C24 /* NCActivityTableViewCell.swift */; };
 		D5C2D21F2C9DC0EF00E7579D /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C2D21E2C9DC0EF00E7579D /* PrimaryButton.swift */; };
@@ -1285,7 +1284,6 @@
 		D52D53F22F0DD53300D824BF /* AccountButtonFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountButtonFactory.swift; sourceTree = "<group>"; };
 		D59793B52CF7A73A00C44F4E /* DataProtectionAgreementManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataProtectionAgreementManager.swift; sourceTree = "<group>"; };
 		D59D37CD2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIDevice+VirtualOrientation.swift"; sourceTree = "<group>"; };
-		D59D37CF2F0EE97C0072C824 /* TransfersListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersListener.swift; sourceTree = "<group>"; };
 		D59D37D22F1082F50072C824 /* NCBackgroundLocationUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCBackgroundLocationUploadManager.swift; sourceTree = "<group>"; };
 		D5B6AA7727200C7200D49C24 /* NCActivityTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCActivityTableViewCell.swift; sourceTree = "<group>"; };
 		D5C2D21E2C9DC0EF00E7579D /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };

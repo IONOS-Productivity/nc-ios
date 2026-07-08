@@ -37,10 +37,6 @@ class NCMainTabBar: UITabBar {
 
     private var menuPlus: NCContextMenuPlus?
 
-	private var centerButtonColor: UIColor {
-        UIColor(resource: .Tabbar.fabButton)
-	}
-
     override open func sizeThatFits(_ size: CGSize) -> CGSize {
         guard !UIDevice.current.hasComplexSaveArea else {
             return super.sizeThatFits(size)
@@ -193,7 +189,7 @@ class NCMainTabBar: UITabBar {
 
         centerButton.setTitle("", for: .normal)
         centerButton.setImage(imagePlus, for: .normal)
-        centerButton.backgroundColor = NCBrandColor.shared.customer
+        centerButton.backgroundColor = UIColor(resource: .Tabbar.fabButton)
         centerButton.tintColor = UIColor.white
         centerButton.tag = 99
         centerButton.accessibilityLabel = NSLocalizedString("_accessibility_add_upload_", comment: "")
