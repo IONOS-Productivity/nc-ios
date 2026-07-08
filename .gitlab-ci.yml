@@ -14,7 +14,17 @@ stages:
 - deploy
 - ai_review
 
+.clear_old_builds: &clear_old_builds
+- |
+  find /Users/qap-adm/builds \
+    -mindepth 2 \
+    -maxdepth 2 \
+    -type d \
+    -mtime +7 \
+    -exec rm -rf {} + 2>/dev/null || true
+
 .mac_general_scripts: &mac_general_scripts
+  - *clear_old_builds
   - security unlock-keychain -p $PASSWORD_BUILDE ~/Library/Keychains/login.keychain-db
   - brew install jq
   - gem install fastlane --user-install
