@@ -58,6 +58,11 @@ class NCShareUserCell: UITableViewCell {
         isUserInteractionEnabled = true
         labelQuickStatus.isHidden = false
         imageDownArrow.isHidden = false
+        buttonMenu.setImage(
+            UIImage(resource: .Share.threeDots)
+                .withTintColor(UIColor(resource: .Share.commonIconTint)),
+            for: .normal
+        )
         buttonMenu.isHidden = false
         buttonMenu.accessibilityLabel = NSLocalizedString("_more_", comment: "")
         imageItem.image = NCShareCommon.getImageShareType(shareType: tableShare.shareType)

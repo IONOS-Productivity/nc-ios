@@ -305,6 +305,10 @@ extension NCCollectionViewCommon {
         // Obligatory here, at the end !!
         cell.metadata = metadata
 
+        #if !EXTENSION
+        cell.setupPlaybackProgress(visible: metadata.isAudioOrVideo && !isEditMode)
+        #endif
+
         return cell
     }
 }

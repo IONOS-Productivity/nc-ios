@@ -615,7 +615,7 @@ extension NCViewerMedia {
     }
 
     private func addDownloadHudIfNeeded() {
-        if hudToken != nil { return }
+        guard (hudToken == nil) && (metadata.ocId == mediaCoordinator.item?.ocId) else { return }
 
         let scene = SceneManager.shared.getWindow(controller: self.tabBarController)?.windowScene
         hudToken = showHudBanner(
