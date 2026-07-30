@@ -161,7 +161,7 @@ class NCLoginProvider: NSObject, ASWebAuthenticationPresentationContextProviding
     ///
     private func poll(token: String, endpoint: String, options: NKRequestOptions) async -> (urlBase: String, loginName: String, appPassword: String)? {
         await withCheckedContinuation { continuation in
-            NextcloudKit.shared.getLoginFlowV2Poll(token: token, endpoint: endpoint, options: options) { server, loginName, appPassword, _, error in
+            LoginFlowV2Customized.shared.getLoginFlowV2Poll(token: token, endpoint: endpoint, options: options) { server, loginName, appPassword, _, error in
 
                 guard error == .success else {
                     continuation.resume(returning: nil)

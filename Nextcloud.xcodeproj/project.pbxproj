@@ -155,6 +155,7 @@
 		D52D53EF2F0DCD1600D824BF /* NCMediaSelectTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 420113DB2D1303E00063BF54 /* NCMediaSelectTabBar.swift */; };
 		D52D53F32F0DD53300D824BF /* AccountButtonFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52D53F22F0DD53300D824BF /* AccountButtonFactory.swift */; };
 		D52D54022F0DE1BE00D824BF /* NCManageDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76340EB2EBDE7420056F538 /* NCManageDatabase.swift */; };
+		D5941C0E301BDE750014BECD /* LoginFlowV2Customized.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5941C0D301BDE590014BECD /* LoginFlowV2Customized.swift */; };
 		D59793B62CF7A73A00C44F4E /* DataProtectionAgreementManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59793B52CF7A73A00C44F4E /* DataProtectionAgreementManager.swift */; };
 		D59D37CC2F0ECAEC0072C824 /* NCManageDatabase+Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76340FB2EBDF64A0056F538 /* NCManageDatabase+Tag.swift */; };
 		D59D37CE2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59D37CD2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift */; };
@@ -1300,6 +1301,7 @@
 		D521B9E92FD1F1DA00202351 /* MarketsConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketsConfiguration.swift; sourceTree = "<group>"; };
 		D521B9EB2FD1F6AF00202351 /* marketsConfig.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = marketsConfig.json; sourceTree = "<group>"; };
 		D52D53F22F0DD53300D824BF /* AccountButtonFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountButtonFactory.swift; sourceTree = "<group>"; };
+		D5941C0D301BDE590014BECD /* LoginFlowV2Customized.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginFlowV2Customized.swift; sourceTree = "<group>"; };
 		D59793B52CF7A73A00C44F4E /* DataProtectionAgreementManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataProtectionAgreementManager.swift; sourceTree = "<group>"; };
 		D59D37CD2F0EDAEC0072C824 /* UIDevice+VirtualOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIDevice+VirtualOrientation.swift"; sourceTree = "<group>"; };
 		D59D37D22F1082F50072C824 /* NCBackgroundLocationUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NCBackgroundLocationUploadManager.swift; sourceTree = "<group>"; };
@@ -3003,6 +3005,7 @@
 		F7BFFA621A24D7300044ED85 /* Login */ = {
 			isa = PBXGroup;
 			children = (
+				D5941C0D301BDE590014BECD /* LoginFlowV2Customized.swift */,
 				F702F2F025EE5CDA008F8E80 /* NCLogin.storyboard */,
 				F702F2F625EE5CEC008F8E80 /* NCLogin.swift */,
 				0F4AA77E2DE0A3F700138679 /* NCLoginNavigationController.swift */,
@@ -4874,6 +4877,7 @@
 				F752BA052E58C05200616A26 /* Maintenance.swift in Sources */,
 				F763D29D2A249C4500A3C901 /* NCManageDatabase+Capabilities.swift in Sources */,
 				F76882252C0DD1E7001CF441 /* NCSettingsAdvancedModel.swift in Sources */,
+				D5941C0E301BDE750014BECD /* LoginFlowV2Customized.swift in Sources */,
 				4294B88B2CA5550B002E6FED /* LinkButton.swift in Sources */,
 				F7C7B489245EBA4100D93E60 /* NCViewerQuickLook.swift in Sources */,
 				F758B45E212C569D00515F55 /* NCScanCell.swift in Sources */,
@@ -5149,6 +5153,7 @@
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Alpha/iOSClient.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Distribution: Viseven Europe Ou (R7V5Z67X53)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution: Viseven Europe Ou (R7V5Z67X53)";
+				CURRENT_PROJECT_VERSION = 25;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = R7V5Z67X53;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/iOSClient.plist";
@@ -5830,6 +5835,7 @@
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/Beta/iOSClient.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CURRENT_PROJECT_VERSION = 25;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 6UU53QCET7;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -6231,6 +6237,7 @@
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/AppStore/iOSClient.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CURRENT_PROJECT_VERSION = 25;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 5TDLCVD243;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -6798,6 +6805,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = NextcloudDebug.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 25;
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = R7V5Z67X53;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/iOSClient.plist";
@@ -6823,6 +6831,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Brand/iOSClient.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CURRENT_PROJECT_VERSION = 25;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/iOSClient.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage;
