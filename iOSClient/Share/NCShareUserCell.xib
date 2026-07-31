@@ -24,15 +24,6 @@
                             <constraint firstAttribute="width" constant="34" id="GNY-Va-SIJ"/>
                         </constraints>
                         <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="large"/>
-                        <userDefinedRuntimeAttributes>
-                            <userDefinedRuntimeAttribute type="boolean" keyPath="disableAvatar" value="YES"/>
-                            <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
-                                <integer key="value" value="1"/>
-                            </userDefinedRuntimeAttribute>
-                            <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
-                                <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                            </userDefinedRuntimeAttribute>
-                        </userDefinedRuntimeAttributes>
                     </imageView>
                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="cEA-ts-Q8I">
                         <rect key="frame" x="28" y="35" width="20" height="20"/>
@@ -42,10 +33,10 @@
                         </constraints>
                     </imageView>
                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="top" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="YFh-W4-7kJ">
-                        <rect key="frame" x="53" y="10" width="299" height="42"/>
+                        <rect key="frame" x="53" y="10" width="293" height="42"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" tag="101" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="user1@tos.ltd3.nextcloud.com (Remote group)" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.84999999999999998" adjustsLetterSpacingToFitWidth="YES" translatesAutoresizingMaskIntoConstraints="NO" id="otH-mT-7Z4" userLabel="labelTitle">
-                                <rect key="frame" x="0.0" y="0.0" width="299" height="18"/>
+                                <rect key="frame" x="0.0" y="0.0" width="293" height="18"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="18" id="iet-xr-SX6"/>
                                 </constraints>
@@ -80,15 +71,15 @@
                         <nil key="highlightedColor"/>
                     </label>
                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="J1z-RG-U4A" userLabel="ButtonMenu">
-                        <rect key="frame" x="354" y="23" width="20" height="20"/>
+                        <rect key="frame" x="348" y="17" width="32" height="32"/>
                         <constraints>
-                            <constraint firstAttribute="height" constant="20" id="G48-LB-BsD"/>
-                            <constraint firstAttribute="width" constant="20" id="vLI-cJ-Jqx"/>
+                            <constraint firstAttribute="height" constant="32" id="G48-LB-BsD"/>
+                            <constraint firstAttribute="width" constant="32" id="vLI-cJ-Jqx"/>
                         </constraints>
                         <state key="normal">
                             <imageReference key="image" image="ellipsis" catalog="system" renderingMode="hierarchical">
                                 <hierarchicalColors>
-                                    <color systemColor="labelColor"/>
+                                    <color name="Share/CommonIconTint"/>
                                     <color systemColor="secondaryLabelColor"/>
                                     <color systemColor="tertiaryLabelColor"/>
                                 </hierarchicalColors>
@@ -111,7 +102,7 @@
                     <constraint firstItem="qDs-UG-Mn7" firstAttribute="centerY" secondItem="3Oe-gU-3Nk" secondAttribute="centerY" id="ZrD-Aw-xkx"/>
                     <constraint firstItem="cEA-ts-Q8I" firstAttribute="top" secondItem="qDs-UG-Mn7" secondAttribute="bottom" constant="-15" id="j4V-Ji-PdK"/>
                     <constraint firstItem="YFh-W4-7kJ" firstAttribute="leading" secondItem="cEA-ts-Q8I" secondAttribute="trailing" constant="5" id="nN7-Gi-dOe"/>
-                    <constraint firstAttribute="trailing" secondItem="J1z-RG-U4A" secondAttribute="trailing" constant="10" id="pQA-B9-MM5"/>
+                    <constraint firstAttribute="trailing" secondItem="J1z-RG-U4A" secondAttribute="trailing" constant="4" id="pQA-B9-MM5"/>
                     <constraint firstAttribute="trailing" secondItem="cUC-wO-Mxm" secondAttribute="trailing" constant="50" id="zHr-FD-PMG"/>
                 </constraints>
                 <variation key="default">
@@ -138,14 +129,14 @@
         <image name="arrowtriangle.down.circle" catalog="system" width="128" height="123"/>
         <image name="avatar2" width="32" height="32"/>
         <image name="ellipsis" catalog="system" width="128" height="37"/>
-        <systemColor name="labelColor">
-            <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
+        <namedColor name="Share/CommonIconTint">
+            <color red="0.078431372549019607" green="0.45490196078431372" blue="0.7686274509803922" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <systemColor name="secondaryLabelColor">
-            <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="tertiaryLabelColor">
-            <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.29803921570000003" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.29803921568627451" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

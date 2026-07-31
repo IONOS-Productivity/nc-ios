@@ -5,6 +5,7 @@
 //  Created by Marino Faggiana on 02/10/2018.
 //  Copyright © 2018 Marino Faggiana. All rights reserved.
 //  Copyright © 2022 Henrik Storch. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Henrik Storch <henrik.storch@nextcloud.com>
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
@@ -30,15 +31,22 @@ import RealmSwift
 class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegate {
     @IBOutlet weak var collectionView: UICollectionView!
 
+    @IBOutlet weak var vHeader: FileActionsHeader!
+    
     var filePath = ""
     var titleCurrentFolder = NSLocalizedString("_trash_view_", comment: "")
     var blinkFileId: String?
     let utilityFileSystem = NCUtilityFileSystem()
     let database = NCManageDatabase.shared
     let utility = NCUtility()
-    var isEditMode = false
+	var isEditMode = false {
+		didSet {
+			vHeader.setIsEditingMode(isEditingMode: isEditMode)
+            updateSelectionToolbar()
+		}
+	}
     var selectOcId: [String] = []
-    var tabBarSelect: NCTrashSelectTabBar!
+    var selectionToolbar: HiDriveCollectionViewCommonSelectToolbar!
     var datasource: [tableTrash]?
     var layoutForView: NCDBLayoutForView?
     var listLayout: NCListLayout!
@@ -53,20 +61,21 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
     }
 
     var controller: NCMainTabBarController? {
-        self.tabBarController as? NCMainTabBarController
+        self.mainTabBarController
     }
 
-    var mainNavigationController: NCMainNavigationController? {
-        self.navigationController as? NCMainNavigationController
+    var mainNavigationController: HiDriveMainNavigationController? {
+        self.navigationController as? HiDriveMainNavigationController
     }
 
     // MARK: - View Life Cycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        navigationController?.setNavigationBarAppearance()
+        selectionToolbar = HiDriveCollectionViewCommonSelectToolbar(controller: nil, delegate: self, displayedButtons: [.restore, .delete])
 
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        self.navigationController?.navigationBar.prefersLargeTitles = false
 
         collectionView.register(UINib(nibName: "NCTrashListCell", bundle: nil), forCellWithReuseIdentifier: "listCell")
         collectionView.register(UINib(nibName: "NCTrashGridCell", bundle: nil), forCellWithReuseIdentifier: "gridCell")
@@ -75,7 +84,7 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
         collectionView.register(UINib(nibName: "NCSectionFooter", bundle: nil), forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: "sectionFooter")
 
         collectionView.alwaysBounceVertical = true
-        collectionView.backgroundColor = .systemBackground
+        collectionView.backgroundColor = NCBrandColor.shared.appBackgroundColor
 
         listLayout = NCListLayout()
         gridLayout = NCGridLayout()
@@ -88,14 +97,32 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
                 await self.loadListingTrash()
             }
         }
+
+		updateHeadersView()
     }
+
+	private func updateHeadersView() {
+		vHeader?.setIsEditingMode(isEditingMode: isEditMode)
+		vHeader?.setViewModeMenu(viewMenuElements: createViewModeMenuActions(), image: viewModeImage?.templateRendered())
+        vHeader?.enableSelection(enable: !(datasource?.isEmpty ?? true))
+		
+		vHeader?.onSelectModeChange = { [weak self] isSelectionMode in
+			self?.setEditMode(isSelectionMode)
+			self?.updateHeadersView()
+			self?.vHeader?.setSelectionState(selectionState: .none)
+		}
+		
+		vHeader?.onSelectAll = { [weak self] in
+			guard let self = self else { return }
+			self.selectAll()
+			let selectionState: FileActionsHeaderSelectionState = self.selectOcId.count == 0 ? .none : .all
+			self.vHeader?.setSelectionState(selectionState: selectionState)
+		}
+		updateSelectionToolbar()
+	}
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        if tabBarSelect == nil {
-            tabBarSelect = NCTrashSelectTabBar(controller: tabBarController, viewController: self, delegate: self)
-        }
 
         navigationController?.setNavigationBarAppearance()
         navigationItem.title = titleCurrentFolder
@@ -109,12 +136,19 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
         }
 
         isEditMode = false
-
+        setNavigationLeftItems()
+		updateHeadersView()
+		
         Task {
-            await (self.navigationController as? NCMainNavigationController)?.setNavigationRightItems()
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
             await self.reloadDataSource()
             await loadListingTrash()
         }
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        selectionToolbar.controller = mainTabBarController
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -126,6 +160,35 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
 
         // Cancel Queue & Retrieves Properties
         NCNetworking.shared.downloadThumbnailTrashQueue.cancelAll()
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        selectionToolbar.onViewWillLayoutSubviews()
+    }
+
+    // MARK: - Layout
+
+    func updateSelectionToolbar() {
+        if isEditMode {
+            selectionToolbar.update(fileSelect: selectOcId)
+            selectionToolbar.show()
+        } else if navigationItem.rightBarButtonItems == nil || (!isEditMode && !selectionToolbar.isHidden()) {
+            selectionToolbar.hide()
+        }
+    }
+    
+    func setNavigationLeftItems() {
+        if layoutKey == NCGlobal.shared.layoutViewTrash {
+            navigationItem.leftItemsSupplementBackButton = true
+            if navigationController?.viewControllers.count == 1 {
+                navigationItem.setLeftBarButtonItems([UIBarButtonItem(title: NSLocalizedString("_close_", comment: ""),
+                                                                      style: .plain,
+                                                                      action: { [weak self] in
+                    self?.dismiss(animated: true)
+                })], animated: true)
+            }
+        }
     }
 
     // MARK: TAP EVENT
@@ -166,11 +229,12 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
     func reloadDataSource(withQueryDB: Bool = true) async {
         let results = await self.database.getTableTrashAsync(filePath: getFilePath(), account: session.account)
 
-        await mainNavigationController?.updateMenuOption()
+        (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 
         await MainActor.run {
             self.datasource = results
             self.collectionView.reloadData()
+        	self.updateHeadersView()
 
             guard let blinkFileId = self.blinkFileId else { return }
 
@@ -201,4 +265,30 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
             return filePath + "/"
         }
     }
+}
+
+
+extension NCTrash {
+	private var viewModeImage: UIImage? {
+		let imageResource: ImageResource = collectionView.collectionViewLayout == listLayout ? .FileSelection.viewModeList : .FileSelection.viewModeGrid
+		return UIImage(resource: imageResource)
+	}
+	
+	func createViewModeMenuActions() -> [UIMenuElement] {
+		let layoutForView = collectionView.collectionViewLayout
+
+		let listImage = UIImage(resource: .FileSelection.viewModeList).templateRendered()
+		let gridImage = UIImage(resource: .FileSelection.viewModeGrid).templateRendered()
+
+		let list = UIAction(title: NSLocalizedString("_list_", comment: ""), image: listImage, state: layoutForView == listLayout ? .on : .off) { [weak self] _ in
+			self?.onListSelected()
+			self?.updateHeadersView()
+		}
+
+		let grid = UIAction(title: NSLocalizedString("_icons_", comment: ""), image: gridImage, state: layoutForView == gridLayout ? .on : .off) { [weak self] _ in
+			self?.onGridSelected()
+			self?.updateHeadersView()
+		}
+		return [list, grid]
+	}
 }

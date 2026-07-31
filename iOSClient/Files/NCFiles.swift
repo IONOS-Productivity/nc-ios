@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2020 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -27,6 +28,8 @@ class NCFiles: NCCollectionViewCommon {
     // MARK: - View Life Cycle
 
     override func viewDidLoad() {
+        enableSearchBar = !isOpenedFromSearchResults()
+
         super.viewDidLoad()
 
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeTheming), object: nil, queue: nil) { notification in
@@ -35,7 +38,6 @@ class NCFiles: NCCollectionViewCommon {
                    let account = userInfo["account"] as? String,
                    self.controller?.account == account {
                     let color = NCBrandColor.shared.getElement(account: account)
-                    self.mainNavigationController?.menuToolbar.items?.forEach { $0.tintColor = color }
                 }
             }
         }
@@ -65,9 +67,6 @@ class NCFiles: NCCollectionViewCommon {
                     if let userInfo = notification.userInfo,
                        let account = userInfo["account"] as? String {
                         let color = NCBrandColor.shared.getElement(account: account)
-                        self.mainNavigationController?.menuToolbar.items?.forEach {
-                            $0.tintColor = color
-                        }
                     }
 
                     self.navigationController?.popToRootViewController(animated: false)
@@ -88,7 +87,7 @@ class NCFiles: NCCollectionViewCommon {
                     self.titleCurrentFolder = self.getNavigationTitle()
                     self.navigationItem.title = self.titleCurrentFolder
 
-                    await (self.navigationController as? NCMainNavigationController)?.setNavigationLeftItems()
+                    (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
                     await self.reloadDataSource()
                     await self.getServerData()
                 }
@@ -114,8 +113,7 @@ class NCFiles: NCCollectionViewCommon {
 
         Task {
             // Plus Menu reload
-            await self.mainNavigationController?.menuPlus?.create(session: session)
-
+            let capabilities = await database.getCapabilities(account: self.session.account) ?? NKCapabilities.Capabilities()
             // Server data
             if !isSearchingMode {
                 await getServerData()
@@ -152,16 +150,6 @@ class NCFiles: NCCollectionViewCommon {
         }
         if let metadataFolder {
             nkLog(info: "Inside metadata folder \(metadataFolder.fileName) with permissions: \(metadataFolder.permissions)")
-
-            // disable + button if no create permission
-            let color = NCBrandColor.shared.getElement(account: self.session.account)
-
-            if let items = self.mainNavigationController?.menuToolbar.items {
-                for item in items {
-                    item.isEnabled = metadataFolder.isCreatable
-                    item.tintColor = metadataFolder.isCreatable ? color : .lightGray
-                }
-            }
         }
 
         let metadatas = await self.database.getMetadatasAsyncDataSource(withServerUrl: self.serverUrl,
@@ -381,6 +369,12 @@ class NCFiles: NCCollectionViewCommon {
         }
         await didSelectMetadata(metadata, withOcIds: false)
     }
+    
+    private func isOpenedFromSearchResults() -> Bool {
+        return self.navigationController?.viewControllers.contains(where: { viewController in
+            return (viewController as? NCCollectionViewCommon)?.isSearchingMode ?? false
+        }) ?? false
+    }
 
     // MARK: - NCAccountSettingsModelDelegate
 
@@ -407,7 +401,7 @@ class NCFiles: NCCollectionViewCommon {
         }
 
         Task {
-            await (self.navigationController as? NCMainNavigationController)?.setNavigationLeftItems()
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
         }
     }
 }

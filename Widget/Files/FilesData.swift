@@ -27,6 +27,7 @@ struct FilesData: Identifiable, Hashable {
     var subTitle: String
     var url: URL
     var useTypeIconFile: Bool = false
+	var color: UIColor?
 }
 
 let filesDatasTest: [FilesData] = [
@@ -237,4 +238,21 @@ func getFilesDataEntry(configuration: AccountIntent?, isPreview: Bool, displaySi
     } else {
         return(FilesDataEntry(date: Date(), datas: datas, isPlaceholder: false, isEmpty: datas.isEmpty, userId: activeTableAccount.userId, url: activeTableAccount.urlBase, account: activeTableAccount.account, tile: title, footerImage: "checkmark.icloud", footerText: footerText))
     }
+
+	@Sendable func colorByImageName(_ name: String) -> UIColor {
+		switch name {
+		case NKTypeIconFile.audio.rawValue,
+             NKTypeIconFile.code.rawValue,
+             NKTypeIconFile.compress.rawValue,
+             NKTypeIconFile.image.rawValue,
+             NKTypeIconFile.video.rawValue,
+             NKTypeIconFile.txt.rawValue,
+             NKTypeIconFile.url.rawValue: return NCBrandColor.shared.iconImageColor2
+		case NKTypeIconFile.document.rawValue: return NCBrandColor.shared.documentIconColor
+		case NKTypeIconFile.ppt.rawValue: return NCBrandColor.shared.presentationIconColor
+		case NKTypeIconFile.xls.rawValue: return NCBrandColor.shared.spreadsheetIconColor
+
+        default: return NCBrandColor.shared.brandElement
+		}
+	}
 }

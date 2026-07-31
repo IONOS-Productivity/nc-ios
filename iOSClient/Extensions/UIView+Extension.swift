@@ -30,4 +30,8 @@ extension UIView {
         self.layer.cornerRadius = self.frame.size.width / 2
         self.layer.masksToBounds = true
     }
+
+    var bottomCenter: CGRect {
+        return CGRect(origin: CGPoint(x: center.x, y: bounds.height), size: CGSizeZero)
+    }
 }

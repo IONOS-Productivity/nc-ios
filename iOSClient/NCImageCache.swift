@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2021 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -161,40 +162,64 @@ final class NCImageCache: @unchecked Sendable {
         return utility.loadImage(named: "doc", colors: colors)
     }
 
-    func getImageShared(colors: [UIColor] = NCBrandColor.shared.iconImageMultiColors) -> UIImage {
-        return utility.loadImage(named: "person.fill.badge.plus", colors: colors)
+    func getImageShared() -> UIImage {
+        return UIImage(resource: .Share.canShare).withTintColor(NCBrandColor.shared.brandElement)
     }
 
-    func getImageCanShare(colors: [UIColor] = NCBrandColor.shared.iconImageMultiColors) -> UIImage {
-        return utility.loadImage(named: "person.fill.badge.plus", colors: colors)
+    func getImageCanShare() -> UIImage {
+        return UIImage(resource: .Share.canShare).withTintColor(NCBrandColor.shared.brandElement)
     }
 
     func getImageShareByLink(colors: [UIColor] = [NCBrandColor.shared.iconImageColor]) -> UIImage {
         return utility.loadImage(named: "link", colors: colors)
     }
 
-    func getImageFavorite(colors: [UIColor] = [NCBrandColor.shared.yellowFavorite]) -> UIImage {
-        return utility.loadImage(named: "star.fill", colors: colors)
+	func getIconSharedByLink() -> UIImage {
+		UIImage(resource: .Share.Icon.byLink)
+	}
+
+	func getIconSharedInternally() -> UIImage {
+		UIImage(resource: .Share.Icon.internally)
+	}
+
+	func getIconSharedWithMe() -> UIImage {
+		UIImage(resource: .Share.Icon.withMe)
+	}
+
+	func getFolderSharedByLink() -> UIImage {
+		UIImage(resource: .Share.Folder.byLink)
+	}
+
+	func getFolderSharedInternally() -> UIImage {
+		UIImage(resource: .Share.Folder.internally)
+	}
+
+	func getFolderSharedWithMe() -> UIImage {
+		UIImage(resource: .Share.Folder.withMe)
+	}
+
+    func getImageFavorite() -> UIImage {
+        return UIImage(resource: .FileFolderCell.star)
     }
 
     func getImageOfflineFlag(colors: [UIColor] = [.systemGreen]) -> UIImage {
-        return utility.loadImage(named: "arrow.down.circle.fill", colors: colors)
+        return UIImage(resource: .offlineFlag)
     }
 
     func getImageLocal(colors: [UIColor] = [.systemGreen]) -> UIImage {
-        return utility.loadImage(named: "checkmark.circle.fill", colors: colors)
+        return UIImage(resource: .local).withTintColor(NCBrandColor.shared.brandElement)
     }
 
-    func getImageCheckedYes(colors: [UIColor] = [NCBrandColor.shared.iconImageColor2]) -> UIImage {
-        return utility.loadImage(named: "checkmark.circle.fill", colors: colors)
+    func getImageCheckedYes() -> UIImage {
+        return UIImage(resource: .FileSelection.listItemSelected)
     }
 
-    func getImageCheckedNo(colors: [UIColor] = [NCBrandColor.shared.iconImageColor]) -> UIImage {
-        return utility.loadImage(named: "circle", colors: colors)
+    func getImageCheckedNo() -> UIImage {
+        return UIImage(resource: .FileSelection.listItemDeselected)
     }
 
-    func getImageButtonMore(colors: [UIColor] = [NCBrandColor.shared.iconImageColor]) -> UIImage {
-        return utility.loadImage(named: "ellipsis", colors: colors)
+    func getImageButtonMore() -> UIImage {
+        return UIImage(resource: .more).withTintColor(NCBrandColor.shared.brandElement)
     }
 
     func getImageButtonStop(colors: [UIColor] = [NCBrandColor.shared.iconImageColor]) -> UIImage {
@@ -205,31 +230,35 @@ final class NCImageCache: @unchecked Sendable {
         return utility.loadImage(named: "lock.fill", colors: colors)
     }
 
+	func getFolder() -> UIImage {
+		return UIImage(resource: .folder)
+	}
+
     func getFolder(account: String) -> UIImage {
-        return UIImage(named: "folder")!.image(color: NCBrandColor.shared.getElement(account: account))
+        return UIImage(resource: .folder)
     }
 
     func getFolderEncrypted(account: String) -> UIImage {
-        return UIImage(named: "folderEncrypted")!.image(color: NCBrandColor.shared.getElement(account: account))
+        return UIImage(named: "folderEncrypted")!.image(color: NCBrandColor.shared.brandElement)
     }
 
     func getFolderSharedWithMe(account: String) -> UIImage {
-        return UIImage(named: "folder_shared_with_me")!.image(color: NCBrandColor.shared.getElement(account: account))
+        return UIImage(resource: .folderGroup)
     }
 
     func getFolderPublic(account: String) -> UIImage {
-        return UIImage(named: "folder_public")!.image(color: NCBrandColor.shared.getElement(account: account))
+        return UIImage(resource: .folderGroup)
     }
 
     func getFolderGroup(account: String) -> UIImage {
-        return UIImage(named: "folder_group")!.image(color: NCBrandColor.shared.getElement(account: account))
+        return UIImage(resource: .folderGroup)
     }
 
     func getFolderExternal(account: String) -> UIImage {
-        return UIImage(named: "folder_external")!.image(color: NCBrandColor.shared.getElement(account: account))
+        return UIImage(named: "folder_external")!.image(color: NCBrandColor.shared.brandElement)
     }
 
     func getFolderAutomaticUpload(account: String) -> UIImage {
-        return UIImage(named: "folderAutomaticUpload")!.image(color: NCBrandColor.shared.getElement(account: account))
+        return UIImage(resource: .folderAutomaticUpload)
     }
 }

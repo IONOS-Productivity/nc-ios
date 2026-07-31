@@ -28,7 +28,8 @@ import MarkdownKit
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        navigationController?.navigationBar.tintColor = NCBrandColor.shared.iconImageColor
         presentationController?.delegate = self
 
         let closeItem = UIBarButtonItem(title: NSLocalizedString("_back_", comment: ""), style: .plain, target: self, action: #selector(closeItemTapped(_:)))
@@ -75,7 +76,7 @@ import MarkdownKit
     @IBAction func editItemAction(_ sender: Any) {
         richWorkspaceCommon.openViewerNextcloudText(serverUrl: serverUrl,
                                                     viewController: self,
-                                                    controller: delegate?.tabBarController as? NCMainTabBarController,
+                                                    controller: delegate?.mainTabBarController,
                                                     session: session)
     }
 }

@@ -13,15 +13,16 @@ struct Maintenance: View {
 
     var body: some View {
         ZStack {
-            Color(NCBrandColor.shared.customer)
+            Image(.gradientBackground)
+                .resizable()
                 .ignoresSafeArea()
             VStack(spacing: 20) {
                 Spacer()
 
-                Image(systemName: "externaldrive.fill.badge.icloud")
+                Image(.ionosLogo)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 80, height: 80)
+                    .frame(width: 320, height: 40)
                     .foregroundColor(.white)
 
                 Text("_opt_in_pro_")
@@ -41,6 +42,7 @@ struct Maintenance: View {
                 await startMaintenance()
             }
         }
+        .preferredColorScheme(.dark)
     }
 
     /// Executes the maintenance.

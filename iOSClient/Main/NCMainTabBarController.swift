@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2024 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -27,6 +28,8 @@ class NCMainTabBarController: UITabBarController {
     private var timerTask: Task<Void, Never>?
     private let global = NCGlobal.shared
 
+    private(set) var burgerMenuController: BurgerMenuAttachController?
+
     var window: UIWindow? {
         return SceneManager.shared.getWindow(controller: self)
     }
@@ -42,58 +45,11 @@ class NCMainTabBarController: UITabBarController {
     override func viewDidLoad() {
         super.viewDidLoad()
         delegate = self
+		if #available(iOS 17.0, *) {
+			traitOverrides.horizontalSizeClass = .compact
+		}
 
         NCNetworking.shared.setupScene(sceneIdentifier: sceneIdentifier, controller: self)
-
-        tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
-
-        // File
-        if let item = tabBar.items?[0] {
-            item.title = NSLocalizedString("_home_", comment: "")
-            item.image = UIImage(systemName: "folder.fill")
-            item.selectedImage = item.image
-            item.tag = 100
-        }
-
-        // Favorite
-        if let item = tabBar.items?[1] {
-            item.title = NSLocalizedString("_favorites_", comment: "")
-            item.image = UIImage(systemName: "star.fill")
-            item.selectedImage = item.image
-            item.tag = 101
-        }
-
-        // Media
-        if let item = tabBar.items?[2] {
-            item.title = NSLocalizedString("_media_", comment: "")
-            item.image = UIImage(systemName: "photo.fill")
-            item.selectedImage = item.image
-            item.tag = 102
-        }
-
-        // Activity
-        if let item = tabBar.items?[3] {
-            item.title = NSLocalizedString("_activity_", comment: "")
-            item.image = UIImage(systemName: "bolt.fill")
-            item.selectedImage = item.image
-            item.tag = 103
-        }
-
-        // More
-        if let item = tabBar.items?[4] {
-            item.title = NSLocalizedString("_more_", comment: "")
-            item.image = UIImage(systemName: "ellipsis.circle.fill")
-            item.selectedImage = item.image
-            item.tag = 104
-        }
-
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterChangeTheming), object: nil, queue: .main) { [weak self] notification in
-            if let userInfo = notification.userInfo as? NSDictionary,
-               let account = userInfo["account"] as? String,
-               self?.account == account {
-                self?.tabBar.tintColor = NCBrandColor.shared.getElement(account: account)
-            }
-        }
 
         NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: self.global.notificationCenterCheckUserDelaultErrorDone), object: nil, queue: nil) { notification in
             if let userInfo = notification.userInfo,
@@ -116,10 +72,15 @@ class NCMainTabBarController: UITabBarController {
                 }
             }
         }
+
+		setupTabBarView()
+        burgerMenuController = BurgerMenuAttachController(with: self)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        DataProtectionAgreementManager.shared.showAgreement(viewController: self)
+
         previousIndex = selectedIndex
 
         if NCBrandOptions.shared.enforce_passcode_lock && NCPreferences().passcode.isEmptyOrNil {
@@ -144,12 +105,29 @@ class NCMainTabBarController: UITabBarController {
         }
     }
 
-    func currentViewController() -> UIViewController? {
-        return (selectedViewController as? UINavigationController)?.topViewController
+	private func setupTabBarView() {
+		if UIDevice.current.userInterfaceIdiom == .pad {
+			tabBar.itemPositioning = .centered
+			if let itemsCount = tabBar.items?.count {
+				tabBar.itemWidth = UITabBarGuideline.padItemWidth
+				tabBar.itemSpacing = UITabBarGuideline.padItemsSpacing(for: view.bounds.width, itemsCount: itemsCount)
+			}
+		}
+	}
+
+    func showBurgerMenu() {
+        burgerMenuController?.showMenu()
     }
 
-    func currentNavigationController() -> UINavigationController? {
-        return selectedViewController as? UINavigationController
+    func presentedNavigationController() -> UINavigationController? {
+        return presentedViewController as? UINavigationController
+    }
+
+    func currentViewController() -> UIViewController? {
+        if let navVC = presentedNavigationController() {
+            return navVC.topViewController
+        }
+        return (selectedViewController as? UINavigationController)?.topViewController
     }
 
     func currentServerUrl() -> String {
