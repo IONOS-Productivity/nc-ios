@@ -82,7 +82,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 		disable_crash_service = true
 
         let marketsConfiguration = MarketsConfigurationLoader.loadConfiguration()
-        loginConfiguration = marketsConfiguration.login.filter{  $0.countryCode.lowercased() == countryCode().lowercased() }.first ?? marketsConfiguration.login.filter{  $0.countryCode.lowercased() == MarketsConfiguration.fallback }.first
+        loginConfiguration = marketsConfiguration.login.filter{  $0.language.lowercased() == deviceLanguage().lowercased() }.first ?? marketsConfiguration.login.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
         NCBrandOptionsIONOS.staticLinksConfiguration = marketsConfiguration.staticLinks.filter{  $0.language.lowercased() == language().lowercased() }.first ?? marketsConfiguration.staticLinks.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
 
 #if ALPHA
@@ -96,8 +96,8 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 #endif
 	}
 
-    private func countryCode() -> String {
-        DeviceRegionDeterminer().getDeviceRegion() ?? MarketsConfiguration.fallback
+    private func deviceLanguage() -> String {
+        DeviceRegionDeterminer().getDeviceLanguage() ?? MarketsConfiguration.fallback
     }
 
     private func language() -> String {

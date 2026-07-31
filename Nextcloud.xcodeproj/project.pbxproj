@@ -5157,6 +5157,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = R7V5Z67X53;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/iOSClient.plist";
+				MARKETING_VERSION = 33.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Ad Hoc Easy Storage";
@@ -5843,6 +5844,7 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/Beta/iOSClient.plist";
+				MARKETING_VERSION = 33.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = de.strato.ionos.easystorage.beta;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Ad Hoc Easy Storage Beta";
@@ -6245,6 +6247,7 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/AppStore/iOSClient.plist";
+				MARKETING_VERSION = 33.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ionos.hidrivenext;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "AppStore com.ionos.hidrivenext";
@@ -6809,6 +6812,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = R7V5Z67X53;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/iOSClient.plist";
+				MARKETING_VERSION = 33.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Develop com.viseven.ionos.easystorage";
@@ -6834,6 +6838,7 @@
 				CURRENT_PROJECT_VERSION = 25;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/iOSClient.plist";
+				MARKETING_VERSION = 33.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Ad Hoc Easy Storage";

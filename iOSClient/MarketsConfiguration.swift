@@ -21,7 +21,7 @@ struct MarketsConfigurationLoader {
             let decoder = JSONDecoder()
             let configuration = try decoder.decode(MarketsConfiguration.self, from: data)
 
-            if configuration.login.filter({ $0.countryCode == MarketsConfiguration.fallback }).count == 0 {
+            if configuration.login.filter({ $0.language == MarketsConfiguration.fallback }).count == 0 {
                 assertionFailure("Critical Error: 'marketsConfig.json' must contain a fallback entry for login configuration.")
             }
 
@@ -45,7 +45,7 @@ struct MarketsConfiguration: Decodable {
 }
 
 struct LoginConfiguration: Decodable {
-    let countryCode: String
+    let language: String
     let loginUrl: String
 }
 

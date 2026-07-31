@@ -1,27 +1,27 @@
 {
     "login": [
         {
-            "countryCode": "IT",
+            "language": "IT",
             "loginUrl": "https://storage.ionos.it"
         },
         {
-            "countryCode": "DE",
+            "language": "DE",
             "loginUrl": "https://storage.ionos.de"
         },
         {
-            "countryCode": "FR",
+            "language": "FR",
             "loginUrl": "https://storage.ionos.fr"
         },
         {
-            "countryCode": "ES",
+            "language": "ES",
             "loginUrl": "https://storage.ionos.es",
         },
         {
-            "countryCode": "UK",
+            "language": "EN",
             "loginUrl": "https://storage.ionos.co.uk"
         },
         {
-            "countryCode": "fallback",
+            "language": "fallback",
             "loginUrl": "https://storage.ionos.co.uk"
         }
     ],
