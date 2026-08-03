@@ -13,7 +13,7 @@ struct NCFileNameView: View {
             Section(header: Text(NSLocalizedString("_mode_filename_", comment: ""))) {
                 Toggle(NSLocalizedString("_maintain_original_filename_", comment: ""), isOn: $model.maintainFilenameOriginal)
                     .font(.system(size: 16))
-                    .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                    .tint(Color(NCBrandColor.shared.switchColor))
                     .onChange(of: model.maintainFilenameOriginal) { _, newValue in
                         model.toggleMaintainFilenameOriginal(newValue: newValue)
                         model.getFileName()
@@ -22,13 +22,13 @@ struct NCFileNameView: View {
                 if !model.maintainFilenameOriginal {
                     Toggle(NSLocalizedString("_add_filenametype_", comment: ""), isOn: $model.addFileNameType)
                         .font(.system(size: 16))
-                        .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                        .tint(Color(NCBrandColor.shared.switchColor))
                         .onChange(of: model.addFileNameType) { _, newValue in
                             model.toggleAddFilenameType(newValue: newValue)
                             model.getFileName()
                         }
                 }
-            }
+            }.applyGlobalFormSectionStyle()
             .transition(.slide)
             .animation(.easeInOut, value: model.maintainFilenameOriginal)
 
@@ -38,6 +38,7 @@ struct NCFileNameView: View {
         }
         .navigationBarTitle(NSLocalizedString("_mode_filename_", comment: ""))
         .defaultViewModifier(model)
+        .applyGlobalFormStyle()
         .padding(.top, 0)
         .transition(.slide)
     }
@@ -65,19 +66,19 @@ struct NCFileNameView: View {
                     .font(.system(size: 16))
                     .foregroundColor(Color(UIColor.lightGray))
             }, header: {
-                Text(NSLocalizedString("_filename_", comment: ""))
+                Text(NSLocalizedString("_filename_", comment: "")).listRowBackground(Color.clear)
             }, footer: {
-                Text(String(format: NSLocalizedString("_preview_filename_", comment: ""), "MM, MMM, DD, YY, YYYY, HH, hh, mm, ss, ampm"))
-            })
+                Text(String(format: NSLocalizedString("_preview_filename_", comment: ""), "MM, MMM, DD, YY, YYYY, HH, hh, mm, ss, ampm")).listRowBackground(Color.clear)
+            }).applyGlobalFormSectionStyle()
         } else {
             Section(content: {
                 Text("IMG_0001.JPG")
                     .foregroundColor(Color(UIColor.lightGray))
             }, header: {
-                Text(NSLocalizedString("_filename_", comment: ""))
+                Text(NSLocalizedString("_filename_", comment: "")).listRowBackground(Color.clear)
             }, footer: {
-                Text(NSLocalizedString("_default_preview_filename_footer_", comment: ""))
-            })
+                Text(NSLocalizedString("_default_preview_filename_footer_", comment: "")).listRowBackground(Color.clear)
+            }).applyGlobalFormSectionStyle()
         }
 
     }

@@ -22,7 +22,7 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
     }
 
     var sceneIdentifier: String {
-        (self.tabBarController as? NCMainTabBarController)?.sceneIdentifier ?? ""
+        self.mainTabBarController?.sceneIdentifier ?? ""
     }
 
     // MARK: - View Life Cycle
@@ -40,7 +40,10 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
                 primaryAction: nil,
                 menu: UIMenu(title: "", children: [
                     UIDeferredMenuElement.uncached { [self] completion in
-                        if let menu = NCViewerContextMenu(metadata: self.metadata, controller: self.tabBarController as? NCMainTabBarController, webView: true, sender: self).viewMenu() {
+                        if let menu = NCViewerContextMenu(metadata: self.metadata,
+                                                          controller: self.mainTabBarController,
+                                                          webView: true,
+                                                          sender: self).viewMenu() {
                             completion(menu.children)
                         }
                     }
@@ -66,6 +69,8 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
         webView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 0).isActive = true
         webView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: 0).isActive = true
         webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0).isActive = true
+        webView.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        webView.scrollView.backgroundColor = NCBrandColor.shared.appBackgroundColor
         bottomConstraint = webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 0)
         bottomConstraint?.isActive = true
 
@@ -169,7 +174,7 @@ class NCViewerRichDocument: UIViewController, WKNavigationDelegate, WKScriptMess
                     viewController.includeImages = true
                     viewController.type = ""
                     viewController.session = session
-                    viewController.controller = self.tabBarController as? NCMainTabBarController
+                    viewController.controller = self.mainTabBarController
 
                     self.present(navigationController, animated: true, completion: nil)
                 }

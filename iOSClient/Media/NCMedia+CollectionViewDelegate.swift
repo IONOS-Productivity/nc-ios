@@ -20,12 +20,13 @@ extension NCMedia: UICollectionViewDelegate {
                     fileSelect.append(metadata.ocId)
                     cell.selected(true)
                 }
-                tabBarSelect.selectCount = fileSelect.count
+            	fileActionsHeader?.setSelectionState(selectionState: selectionState)
+            	tabBarSelect.update(fileSelect: fileSelect)
             } else if let metadata = await self.database.getMetadataFromOcIdAsync(metadata.ocId) {
                 let image = utility.getImage(ocId: metadata.ocId, etag: metadata.etag, ext: global.previewExt1024, userId: metadata.userId, urlBase: metadata.urlBase)
                 let ocIds = dataSource.metadatas.map { $0.ocId }
 
-                if let vc = await NCViewer().getViewerController(metadata: metadata, ocIds: ocIds, image: image, delegate: self) {
+                if let vc = await NCViewer().getViewerController(metadata: metadata, ocIds: ocIds, siblingMedia: [metadata], image: image, delegate: self) {
                     self.navigationController?.pushViewController(vc, animated: true)
                 }
             }
@@ -44,7 +45,7 @@ extension NCMedia: UICollectionViewDelegate {
         return UIContextMenuConfiguration(identifier: identifier, previewProvider: {
             return NCViewerProviderContextMenu(metadata: metadata, image: image, sceneIdentifier: self.sceneIdentifier)
         }, actionProvider: { _ in
-            let contextMenu = NCContextMenuMain(metadata: metadata.detachedCopy(), viewController: self, sceneIdentifier: self.sceneIdentifier, sender: collectionView)
+            let contextMenu = NCContextMenuMain(metadata: metadata.detachedCopy(), viewController: self, sceneIdentifier: self.sceneIdentifier, sender: self.view)
             return contextMenu.viewMenu()
         })
     }

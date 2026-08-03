@@ -57,42 +57,7 @@ class NCLoginProvider: NSObject, ASWebAuthenticationPresentationContextProviding
             return
         }
 
-        // Use custom URL scheme to handle login callbacks (e.g., nc://login/...)
-        let callbackScheme = NCBrandOptions.shared.webLoginAutenticationProtocol.replacingOccurrences(of: "://", with: "")
-
-        authSession = ASWebAuthenticationSession(url: url, callbackURLScheme: callbackScheme) { [weak self] callbackURL, error in
-            guard let self else { return }
-
-            if let error = error {
-                if let asError = error as? ASWebAuthenticationSessionError, asError.code == .canceledLogin {
-                    // Only treat as user cancellation if polling hasn't succeeded yet
-                    if self.pollingTask != nil {
-                        Task { @MainActor in
-                            self.delegate?.onBack()
-                        }
-                    }
-                } else {
-                    // Fall back to WKWebView for other errors (e.g., certificate issues)
-                    Task { @MainActor in
-                        self.fallbackToWebView(url: url)
-                    }
-                }
-                return
-            }
-
-            // Handle login callback URL (e.g., nc://login/server:...&user:...&password:...)
-            if let callbackURL {
-                self.handleLoginCallback(url: callbackURL)
-            }
-        }
-
-        authSession?.presentationContextProvider = self
-        authSession?.prefersEphemeralWebBrowserSession = true
-
-        if authSession?.start() != true {
-            // Fall back to WKWebView if ASWebAuthenticationSession fails to start
-            fallbackToWebView(url: url)
-        }
+        fallbackToWebView(url: url)
     }
 
     ///
@@ -128,6 +93,7 @@ class NCLoginProvider: NSObject, ASWebAuthenticationPresentationContextProviding
 
         let navController = UINavigationController(rootViewController: fallbackVC)
         navController.modalPresentationStyle = .fullScreen
+        navController.overrideUserInterfaceStyle = .dark
 
         presentingVC.present(navController, animated: true)
         self.webViewFallbackVC = fallbackVC
@@ -195,7 +161,7 @@ class NCLoginProvider: NSObject, ASWebAuthenticationPresentationContextProviding
     ///
     private func poll(token: String, endpoint: String, options: NKRequestOptions) async -> (urlBase: String, loginName: String, appPassword: String)? {
         await withCheckedContinuation { continuation in
-            NextcloudKit.shared.getLoginFlowV2Poll(token: token, endpoint: endpoint, options: options) { server, loginName, appPassword, _, error in
+            LoginFlowV2Customized.shared.getLoginFlowV2Poll(token: token, endpoint: endpoint, options: options) { server, loginName, appPassword, _, error in
 
                 guard error == .success else {
                     continuation.resume(returning: nil)

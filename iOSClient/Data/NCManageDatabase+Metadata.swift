@@ -170,6 +170,10 @@ extension tableMetadata {
     var isImage: Bool {
         return classFile == NKTypeClassFile.image.rawValue
     }
+    
+    var isURL: Bool {
+        return classFile == NKTypeClassFile.url.rawValue
+    }
 
     var isSavebleAsImage: Bool {
         classFile == NKTypeClassFile.image.rawValue && contentType != "image/svg+xml"

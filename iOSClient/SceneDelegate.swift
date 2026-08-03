@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2024 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -31,6 +32,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         UserDefaults.standard.set(true, forKey: global.udMigrationMultiDomains)
 
         self.window = UIWindow(windowScene: windowScene)
+		setupUIAppearance()
         if !NCPreferences().appearanceAutomatic {
             self.window?.overrideUserInterfaceStyle = NCPreferences().appearanceInterfaceStyle
         }
@@ -114,11 +116,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             }
 
             if NCBrandOptions.shared.disable_intro {
-                if let viewController = UIStoryboard(name: "NCLogin", bundle: nil).instantiateViewController(withIdentifier: "NCLogin") as? NCLogin {
-                    let navigationController = UINavigationController(rootViewController: viewController)
-                    window?.rootViewController = navigationController
-                    window?.makeKeyAndVisible()
-                }
+                appDelegate?.openLogin(selector: NCGlobal.shared.introLogin, window: window)
             } else {
                 if let navigationController = UIStoryboard(name: "NCIntro", bundle: nil).instantiateInitialViewController() as? UINavigationController {
                     window?.rootViewController = navigationController
@@ -190,6 +188,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             await FileProviderDomain().cleanOrphanedFileProviderDomains()
         }
     }
+
+	private func setupUIAppearance() {
+		NCMainTabBar.setupAppearance()
+	}
 
     func sceneDidDisconnect(_ scene: UIScene) {
         print("[DEBUG] Scene did disconnect")
@@ -293,6 +295,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let controller = SceneManager.shared.getController(scene: scene),
               let url = URLContexts.first?.url else { return }
+
+        let sceneIdentifier = controller.sceneIdentifier
         let scheme = url.scheme
         let action = url.host
         let versionApp = NCUtility().getVersionMaintenance()

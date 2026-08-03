@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2020 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -12,6 +13,9 @@ import LucidBanner
 class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, UIGestureRecognizerDelegate, UISearchResultsUpdating, UISearchControllerDelegate, UISearchBarDelegate, UIAdaptivePresentationControllerDelegate, UIContextMenuInteractionDelegate {
 
     @IBOutlet weak var collectionView: UICollectionView!
+	@IBOutlet weak var headerTop: NSLayoutConstraint?
+	@IBOutlet weak var collectionViewTop: NSLayoutConstraint?
+	@IBOutlet weak var fileActionsHeader: FileActionsHeader?
 
     internal let database = NCManageDatabase.shared
     internal let global = NCGlobal.shared
@@ -29,7 +33,13 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     internal var searchController: UISearchController?
     internal var backgroundImageView = UIImageView()
     internal var serverUrl: String = ""
-    internal var isEditMode = false
+    internal var isEditMode = false {
+		didSet {
+			DispatchQueue.main.async { [weak self] in
+				self?.updateHeadersView()
+			}
+		}
+	}
     internal var isDirectoryE2EE = false
     internal var fileSelect: [String] = []
     internal var metadataFolder: tableMetadata?
@@ -44,9 +54,15 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     internal var listLayout = NCListLayout()
     internal var gridLayout = NCGridLayout()
     internal var mediaLayout = NCMediaLayout()
-    internal var layoutType = NCGlobal.shared.layoutList
+    internal var layoutType = NCGlobal.shared.layoutList {
+		didSet {
+			DispatchQueue.main.async { [weak self] in
+				self?.updateHeadersView()
+			}
+		}
+	}
 
-    internal var tabBarSelect: NCCollectionViewCommonSelectTabBar?
+    internal var tabBarSelect: HiDriveCollectionViewCommonSelectToolbar?
 
     internal var attributesZoomIn: UIMenuElement.Attributes = []
     internal var attributesZoomOut: UIMenuElement.Attributes = []
@@ -56,7 +72,13 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 
     // Search
     //
-    internal var isSearchingMode: Bool = false
+    internal var isSearchingMode: Bool = false {
+		didSet {
+			DispatchQueue.main.async { [weak self] in
+				self?.updateHeadersView()
+			}
+		}
+	}
     internal var networkSearchInProgress: Bool = false
     internal var searchOperationHandle = NKOperationHandle()
     internal var searchTask: URLSessionTask?
@@ -126,15 +148,15 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 
     @MainActor
     internal var controller: NCMainTabBarController? {
-        self.tabBarController as? NCMainTabBarController
+        self.mainTabBarController
     }
 
-    internal var mainNavigationController: NCMainNavigationController? {
-        self.navigationController as? NCMainNavigationController
+    internal var mainNavigationController: HiDriveMainNavigationController? {
+        self.navigationController as? HiDriveMainNavigationController
     }
 
     internal var sceneIdentifier: String {
-        (self.tabBarController as? NCMainTabBarController)?.sceneIdentifier ?? ""
+        self.mainTabBarController?.sceneIdentifier ?? ""
     }
 
     internal var isNumberOfItemsInAllSectionsNull: Bool {
@@ -176,9 +198,9 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         collectionView.alwaysBounceVertical = true
         collectionView.accessibilityIdentifier = "NCCollectionViewCommon"
 
-        view.backgroundColor = .systemBackground
-        collectionView.backgroundColor = .systemBackground
-        refreshControl.tintColor = .clear
+        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        collectionView.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        refreshControl.tintColor = NCBrandColor.shared.textColor2
         definesPresentationContext = true
 
         if enableSearchBar {
@@ -186,14 +208,14 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
             searchController?.searchResultsUpdater = self
             searchController?.obscuresBackgroundDuringPresentation = false
             searchController?.delegate = self
-
-            let searchBar = searchController?.searchBar
-            searchBar?.delegate = self
-            searchBar?.autocapitalizationType = .none
-
+            searchController?.searchBar.delegate = self
+            searchController?.searchBar.autocapitalizationType = .none
+            searchController?.searchBar.searchTextField.backgroundColor = UIColor(resource: .searchBarBackground)
+            searchController?.searchBar.searchTextField.layer.cornerRadius = 10
+            searchController?.searchBar.searchTextField.layer.masksToBounds = true
+            searchController?.searchBar.setSearchFieldBackgroundImage(UIImage(), for: .normal)
             navigationItem.searchController = searchController
-            navigationItem.hidesSearchBarWhenScrolling = false
-            navigationItem.preferredSearchBarPlacement = .inline
+            navigationItem.hidesSearchBarWhenScrolling = true
         }
 
         // Cell
@@ -225,7 +247,6 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 
                 // Wait 1.5 seconds before resetting the button alpha
                 try? await Task.sleep(for: .seconds(1.5))
-                self.mainNavigationController?.menuPlus?.resetPlusButtonAlpha()
             }
         }
 
@@ -298,16 +319,17 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         navigationItem.title = titleCurrentFolder
 
         if tabBarSelect == nil {
-            tabBarSelect = NCCollectionViewCommonSelectTabBar(controller: self.controller, viewController: self, delegate: self)
+            tabBarSelect = HiDriveCollectionViewCommonSelectToolbar(controller: controller, delegate: self)
         }
 
         isEditMode = false
+        setNavigationBarLogoIfNeeded()
 
         Task {
             await NCNetworking.shared.transferDispatcher.addDelegate(self)
 
-            await (self.navigationController as? NCMainNavigationController)?.setNavigationLeftItems()
-            await (self.navigationController as? NCMainNavigationController)?.setNavigationRightItems()
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
         }
 
         layoutForView = database.getLayoutForView(account: session.account, key: layoutKey, serverUrl: serverUrl)
@@ -326,6 +348,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         }
 
         collectionView.reloadData()
+        updateHeadersView()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -333,6 +356,8 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
 
         NotificationCenter.default.addObserver(self, selector: #selector(applicationWillResignActive(_:)), name: UIApplication.willResignActiveNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(closeRichWorkspaceWebView), name: NSNotification.Name(rawValue: global.notificationCenterCloseRichWorkspaceWebView), object: nil)
+
+        tabBarSelect?.controller = controller
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -373,6 +398,11 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         return true
     }
 
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        tabBarSelect?.onViewWillLayoutSubviews()
+    }
+
     func presentationControllerDidDismiss( _ presentationController: UIPresentationController) {
         let viewController = presentationController.presentedViewController
 
@@ -384,7 +414,8 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     // MARK: - NotificationCenter
 
     @objc func applicationWillResignActive(_ notification: NSNotification) {
-        self.mainNavigationController?.menuPlus?.resetPlusButtonAlpha()
+// MERGE: HiDrive Next doesn't use new menuPlus in HiDrive Next
+//        self.mainNavigationController?.menuPlus?.resetPlusButtonAlpha()
     }
 
     @objc func closeRichWorkspaceWebView() {
@@ -425,6 +456,10 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     }
 
     internal func setLayout(layoutForView: NCDBLayoutForView, withSubFolders: Bool = false) async {
+        defer {
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+            self.updateHeadersView()
+        }
         self.layoutForView = self.database.setLayoutForView(layoutForView: layoutForView, withSubFolders: withSubFolders)
         layoutForView.layout = layoutForView.layout
         self.layoutType = layoutForView.layout
@@ -485,6 +520,7 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         self.dataSource.setGetServerData(true)
         self.navigationItem.titleView = nil
         self.navigationItem.title = self.titleCurrentFolder
+        setNavigationBarLogoIfNeeded()
     }
 
     // MARK: - SEARCH
@@ -510,8 +546,9 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
         // TIP
         dismissTip()
 
-        // (+)
-        self.mainNavigationController?.menuPlus?.hiddenPlusButton(true)
+// MERGE: HiDrive Next doesn't use new menuPlus in HiDrive Next
+// (+)
+//        self.mainNavigationController?.menuPlus?.hiddenPlusButton(true)
 
         if !isSearchingMode {
             self.isSearchingMode = true
@@ -530,8 +567,9 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
     }
 
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        // (+)
-        self.mainNavigationController?.menuPlus?.hiddenPlusButton(false)
+// MERGE: HiDrive Next doesn't use new menuPlus in HiDrive Next
+//        // (+)
+//        self.mainNavigationController?.menuPlus?.hiddenPlusButton(false)
 
         self.isSearchingMode = false
         self.networkSearchInProgress = false
@@ -710,7 +748,8 @@ class NCCollectionViewCommon: UIViewController, NCAccountSettingsModelDelegate, 
             delegate.transferReloadData(serverUrl: self.serverUrl)
         }
 
-        await mainNavigationController?.updateMenuOption()
+        (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+        self.updateHeadersView()
     }
 
     func getServerData(forced: Bool = false) async { }

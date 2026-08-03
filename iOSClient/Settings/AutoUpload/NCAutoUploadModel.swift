@@ -225,10 +225,10 @@ class NCAutoUploadModel: ObservableObject, ViewOnAppearHandling {
             await NCManageDatabase.shared.deleteAutoUploadTransferAsync(account: session.account, autoUploadServerUrlBase: autoUploadServerUrlBase)
         }
     }
-
+    
     /// Updates the auto-upload create subfolder setting.
     func handleLocationChange(newValue: Bool) {
-        if let controller = self.controller {
+        if let controller = (self.controller?.presentedViewController as? UINavigationController)?.topViewController {
             if newValue {
                 Task { @MainActor in
                     let result = await NCBackgroundLocationUploadManager.shared.requestAuthorizationAlwaysAsync(from: controller)

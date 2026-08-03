@@ -175,7 +175,7 @@ class NCContextMenuProfile: NSObject {
     }
 
     private func showError(_ errorKey: String) {
-        let controller = self.viewController.tabBarController as? NCMainTabBarController
+        let controller = self.viewController.mainTabBarController
         Task {
             await showErrorBanner(controller: controller,
                                   text: errorKey,

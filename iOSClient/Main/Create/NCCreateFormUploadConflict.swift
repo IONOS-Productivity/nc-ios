@@ -4,6 +4,7 @@
 //
 //  Created by Marino Faggiana on 29/03/2020.
 //  Copyright © 2020 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -82,10 +83,10 @@ class NCCreateFormUploadConflict: UIViewController {
         tableView.allowsSelection = false
         tableView.tableFooterView = UIView()
 
-        view.backgroundColor = .systemGroupedBackground
-        tableView.backgroundColor = .systemGroupedBackground
-        viewSwitch.backgroundColor = .systemGroupedBackground
-        viewButton.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        tableView.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        viewSwitch.backgroundColor = NCBrandColor.shared.appBackgroundColor
+        viewButton.backgroundColor = NCBrandColor.shared.appBackgroundColor
 
         tableView.register(UINib(nibName: "NCCreateFormUploadConflictCell", bundle: nil), forCellReuseIdentifier: "Cell")
 
@@ -101,25 +102,12 @@ class NCCreateFormUploadConflict: UIViewController {
             labelAlreadyExistingFiles.text = NSLocalizedString("_file_conflict_exists_", comment: "")
         }
 
-        switchNewFiles.onTintColor = NCBrandColor.shared.getElement(account: account)
         switchNewFiles.isOn = false
-        switchAlreadyExistingFiles.onTintColor = NCBrandColor.shared.getElement(account: account)
         switchAlreadyExistingFiles.isOn = false
 
-        buttonCancel.layer.cornerRadius = 20
-        buttonCancel.layer.masksToBounds = true
-        buttonCancel.layer.borderWidth = 0.5
-        buttonCancel.layer.borderColor = UIColor.darkGray.cgColor
-        buttonCancel.backgroundColor = .systemGray5
         buttonCancel.setTitle(NSLocalizedString("_cancel_", comment: ""), for: .normal)
-        buttonCancel.setTitleColor(NCBrandColor.shared.textColor, for: .normal)
-
-        buttonContinue.layer.cornerRadius = 20
-        buttonContinue.layer.masksToBounds = true
-        buttonContinue.backgroundColor = NCBrandColor.shared.getElement(account: account)
         buttonContinue.setTitle(NSLocalizedString("_continue_", comment: ""), for: .normal)
         buttonContinue.isEnabled = false
-        buttonContinue.setTitleColor(.white, for: .normal)
 
         let blurEffect = UIBlurEffect(style: .light)
         blurView = UIVisualEffectView(effect: blurEffect)
@@ -309,6 +297,9 @@ extension NCCreateFormUploadConflict: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as? NCCreateFormUploadConflictCell {
+
+            cell.backgroundColor = tableView.backgroundColor
+
             let metadataNewFile = tableMetadata.init(value: metadatasUploadInConflict[indexPath.row])
 
             cell.backgroundColor = tableView.backgroundColor
@@ -540,10 +531,8 @@ extension NCCreateFormUploadConflict: NCCreateFormUploadConflictCellDelegate {
 
         if result {
             buttonContinue.isEnabled = true
-            buttonContinue.setTitleColor(NCBrandColor.shared.textColor, for: .normal)
         } else {
             buttonContinue.isEnabled = false
-            buttonContinue.setTitleColor(NCBrandColor.shared.textColor2, for: .normal)
         }
     }
 }

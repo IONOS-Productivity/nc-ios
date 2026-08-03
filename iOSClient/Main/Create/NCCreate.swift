@@ -331,7 +331,7 @@ class NCCreate: NSObject {
             }
         }
 
-        controller.present(activityViewController, animated: true)
+        controller.currentViewController()?.present(activityViewController, animated: true)
     }
 
     // MARK: - Private helper

@@ -23,7 +23,7 @@ struct NCDisplayView: View {
                                 .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                             Text(NSLocalizedString("_light_", comment: ""))
                             Image(systemName: colorScheme == .light ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                                .foregroundColor(Color(NCBrandColor.shared.brandElement))
                                 .imageScale(.large)
                                 .font(Font.system(.body).weight(.light))
                                 .frame(width: 50, height: 50)
@@ -41,7 +41,7 @@ struct NCDisplayView: View {
                                 .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                             Text(NSLocalizedString("_dark_", comment: ""))
                             Image(systemName: colorScheme == .dark ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                                .foregroundColor(Color(NCBrandColor.shared.brandElement))
                                 .imageScale(.large)
                                 .font(Font.system(.body).weight(.light))
                                 .frame(width: 50, height: 50)
@@ -55,7 +55,7 @@ struct NCDisplayView: View {
                         .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: -50))
 
                     Toggle(NSLocalizedString("_use_system_style_", comment: ""), isOn: $model.appearanceAutomatic)
-                        .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                        .tint(Color(NCBrandColor.shared.switchColor))
                         .onChange(of: model.appearanceAutomatic) {
                             model.updateAppearanceAutomatic()
                         }
@@ -83,5 +83,5 @@ struct NCDisplayView: View {
 }
 
 #Preview {
-    NCDisplayView(model: NCDisplayModel(controller: nil))
+    NCDisplayView(model: NCDisplayModel())
 }
