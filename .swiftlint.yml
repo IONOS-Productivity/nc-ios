@@ -38,13 +38,17 @@ disabled_rules:
   - void_function_in_ternary
   - switch_case_alignment
   - unavailable_condition
+  - orphaned_doc_comment
 excluded:
   - Carthage
   - Pods
   - Tests
   - Brand/NCBrand.swift
+  - Brand/NCBrand-IONOS.swift
   - iOSClient/NCGlobal.swift
   - iOSClient/Utility/NCLivePhoto.swift
   - DerivedData
+  - ipaDerivedData
+  - BuildForSimulator
   
 reporter: "xcode"

@@ -1,25 +1,6 @@
-//
-//  NCNetworking+Download.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 07/02/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import NextcloudKit
@@ -28,256 +9,322 @@ import Queuer
 import RealmSwift
 
 extension NCNetworking {
-    func download(metadata: tableMetadata,
-                  withNotificationProgressTask: Bool,
-                  start: @escaping () -> Void = { },
-                  requestHandler: @escaping (_ request: DownloadRequest) -> Void = { _ in },
-                  progressHandler: @escaping (_ progress: Progress) -> Void = { _ in },
-                  completion: @escaping (_ afError: AFError?, _ error: NKError) -> Void = { _, _ in }) {
-        if metadata.session == sessionDownload {
-            downloadFile(metadata: metadata, withNotificationProgressTask: withNotificationProgressTask) {
-                start()
-            } requestHandler: { request in
-                requestHandler(request)
-            } progressHandler: { progress in
-                progressHandler(progress)
-            } completion: { afError, error in
-                completion(afError, error)
-            }
-        } else {
-            downloadFileInBackground(metadata: metadata, start: start, completion: { error in
-                completion(nil, error)
-            })
-        }
-    }
 
-    private func downloadFile(metadata: tableMetadata,
-                              withNotificationProgressTask: Bool,
-                              start: @escaping () -> Void = { },
-                              requestHandler: @escaping (_ request: DownloadRequest) -> Void = { _ in },
-                              progressHandler: @escaping (_ progress: Progress) -> Void = { _ in },
-                              completion: @escaping (_ afError: AFError?, _ error: NKError) -> Void = { _, _ in }) {
-        var metadata = metadata
-        var downloadTask: URLSessionTask?
-        let serverUrlFileName = metadata.serverUrl + "/" + metadata.fileName
-        let fileNameLocalPath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileName)
+    // MARK: - Download file in foreground
+
+    @discardableResult
+    func downloadFile(metadata: tableMetadata,
+                      requestHandler: @escaping (_ request: DownloadRequest) -> Void = { _ in },
+                      taskHandler: @escaping (_ task: URLSessionTask) -> Void = { _ in },
+                      progressHandler: @escaping (_ progress: Progress) -> Void = { _ in })
+    async -> (account: String,
+              etag: String?,
+              date: Date?,
+              length: Int64,
+              headers: [AnyHashable: Any]?,
+              afError: AFError?,
+              nkError: NKError ) {
         let options = NKRequestOptions(queue: NextcloudKit.shared.nkCommonInstance.backgroundQueue)
-
-        /// Test metadata exists ?
-        database.realmRefresh()
-        ///
-        if let metadataExists = database.getMetadataFromOcId(metadata.ocId) {
-            metadata = metadataExists
-        } else {
-            metadata = database.addMetadata(metadata)
-        }
+        let fileNameLocalPath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileName: metadata.fileName, userId: metadata.userId, urlBase: metadata.urlBase)
 
         if metadata.status == global.metadataStatusDownloading || metadata.status == global.metadataStatusUploading {
-            return completion(nil, NKError())
+            return(metadata.account, metadata.etag, metadata.date as Date, metadata.size, nil, nil, .success)
         }
 
-        NextcloudKit.shared.download(serverUrlFileName: serverUrlFileName, fileNameLocalPath: fileNameLocalPath, account: metadata.account, options: options, requestHandler: { request in
-            self.database.setMetadataSession(ocId: metadata.ocId,
-                                             status: self.global.metadataStatusDownloading)
+        let results = await NextcloudKit.shared.downloadAsync(serverUrlFileName: metadata.serverUrlFileName,
+                                                              fileNameLocalPath: fileNameLocalPath,
+                                                              account: metadata.account,
+                                                              options: options) { request in
             requestHandler(request)
-        }, taskHandler: { task in
-            downloadTask = task
-            self.database.setMetadataSession(ocId: metadata.ocId,
-                                             sessionTaskIdentifier: task.taskIdentifier,
-                                             status: self.global.metadataStatusDownloading)
-            NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterDownloadStartFile,
-                                                        object: nil,
-                                                        userInfo: ["ocId": metadata.ocId,
-                                                                   "ocIdTransfer": metadata.ocIdTransfer,
-                                                                   "session": metadata.session,
-                                                                   "serverUrl": metadata.serverUrl,
-                                                                   "account": metadata.account])
-            start()
-        }, progressHandler: { progress in
-            NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterProgressTask,
-                                                        object: nil,
-                                                        userInfo: ["account": metadata.account,
-                                                                   "ocId": metadata.ocId,
-                                                                   "ocIdTransfer": metadata.ocIdTransfer,
-                                                                   "session": metadata.session,
-                                                                   "fileName": metadata.fileName,
-                                                                   "serverUrl": metadata.serverUrl,
-                                                                   "status": NSNumber(value: self.global.metadataStatusDownloading),
-                                                                   "progress": NSNumber(value: progress.fractionCompleted),
-                                                                   "totalBytes": NSNumber(value: progress.totalUnitCount),
-                                                                   "totalBytesExpected": NSNumber(value: progress.completedUnitCount)])
-            progressHandler(progress)
-        }) { _, etag, date, length, responseData, afError, error in
-            var error = error
-            var dateLastModified: Date?
+        } taskHandler: { task in
+            Task {
+                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: metadata.account,
+                                                                                            path: metadata.serverUrlFileName,
+                                                                                            name: "download")
+                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
 
-            // this delay was added because for small file the "taskHandler: { task" is not called, so this part of code is not executed
-            NextcloudKit.shared.nkCommonInstance.backgroundQueue.asyncAfter(deadline: .now() + 0.5) {
-                if let downloadTask = downloadTask {
-                    if let header = responseData?.response?.allHeaderFields,
-                       let dateString = header["Last-Modified"] as? String {
-                        dateLastModified = NextcloudKit.shared.nkCommonInstance.convertDate(dateString, format: "EEE, dd MMM y HH:mm:ss zzz")
-                    }
-                    if afError?.isExplicitlyCancelledError ?? false {
-                        error = NKError(errorCode: self.global.errorRequestExplicityCancelled, errorDescription: "error request explicity cancelled")
-                    }
-                    self.downloadComplete(fileName: metadata.fileName, serverUrl: metadata.serverUrl, etag: etag, date: date, dateLastModified: dateLastModified, length: length, task: downloadTask, error: error)
+                await NCManageDatabase.shared.setMetadataSessionAsync(
+                    ocId: metadata.ocId,
+                    sessionTaskIdentifier: task.taskIdentifier,
+                    status: self.global.metadataStatusDownloading)
+
+                await self.transferDispatcher.notifyAllDelegates { delegate in
+                    delegate.transferChange(status: self.global.networkingStatusDownloading,
+                                            account: metadata.account,
+                                            fileName: metadata.fileName,
+                                            serverUrl: metadata.serverUrl,
+                                            selector: metadata.sessionSelector,
+                                            ocId: metadata.ocId,
+                                            destination: nil,
+                                            error: .success)
                 }
-                completion(afError, error)
+            }
+            taskHandler(task)
+        } progressHandler: { progress in
+            Task {
+                guard await self.progressQuantizer.shouldEmit(serverUrlFileName: metadata.serverUrlFileName, fraction: progress.fractionCompleted) else {
+                    return
+                }
+                await self.transferDispatcher.notifyAllDelegates { delegate in
+                    delegate.transferProgressDidUpdate(progress: Float(progress.fractionCompleted),
+                                                       totalBytes: progress.totalUnitCount,
+                                                       totalBytesExpected: progress.completedUnitCount,
+                                                       fileName: metadata.fileName,
+                                                       serverUrl: metadata.serverUrl)
+                }
+            }
+            progressHandler(progress)
+        }
+
+        Task {
+            await progressQuantizer.clear(serverUrlFileName: metadata.serverUrlFileName)
+            var error = NKError()
+
+            if results.afError?.isExplicitlyCancelledError ?? false || (results.afError?.underlyingError as? URLError)?.code.rawValue == -999 {
+                error = NKError(errorCode: self.global.errorRequestExplicityCancelled, errorDescription: "error request explicity cancelled")
+            }
+
+            if error == .success {
+                await downloadSuccess(withMetadata: metadata, etag: results.etag)
+            } else {
+                await downloadError(withMetadata: metadata, error: error)
             }
         }
+
+        return results
     }
 
-    private func downloadFileInBackground(metadata: tableMetadata,
-                                          start: @escaping () -> Void = { },
-                                          requestHandler: @escaping (_ request: DownloadRequest) -> Void = { _ in },
-                                          progressHandler: @escaping (_ progress: Progress) -> Void = { _ in },
-                                          completion: @escaping (_ error: NKError) -> Void) {
-        let serverUrlFileName = metadata.serverUrl + "/" + metadata.fileName
-        let fileNameLocalPath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView)
+    // MARK: - Download file in background
+
+    @discardableResult
+    func downloadFileInBackground(metadata: tableMetadata,
+                                  taskHandler: @escaping (_ task: URLSessionDownloadTask?) -> Void = { _ in },
+                                  start: @escaping () -> Void = { }) async -> NKError {
+        let fileNameLocalPath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileName: metadata.fileNameView, userId: metadata.userId, urlBase: metadata.urlBase)
 
         start()
 
-        let (task, error) = NKBackground(nkCommonInstance: NextcloudKit.shared.nkCommonInstance).download(serverUrlFileName: serverUrlFileName, fileNameLocalPath: fileNameLocalPath, account: metadata.account)
+        let (task, error) = await backgroundSession.downloadAsync(serverUrlFileName: metadata.serverUrlFileName,
+                                                                  fileNameLocalPath: fileNameLocalPath,
+                                                                  account: metadata.account,
+                                                                  sessionIdentifier: sessionDownloadBackground)
+
+        taskHandler(task)
 
         if let task, error == .success {
-            database.setMetadataSession(ocId: metadata.ocId,
-                                        sessionTaskIdentifier: task.taskIdentifier,
-                                        status: self.global.metadataStatusDownloading)
-            NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDownloadStartFile,
-                                                        object: nil,
-                                                        userInfo: ["ocId": metadata.ocId,
-                                                                   "ocIdTransfer": metadata.ocIdTransfer,
-                                                                   "session": metadata.session,
-                                                                   "serverUrl": metadata.serverUrl,
-                                                                   "account": metadata.account])
+            nkLog(debug: " Downloading file \(metadata.fileNameView) with task with taskIdentifier \(task.taskIdentifier)")
+
+            await NCManageDatabase.shared.setMetadataSessionAsync(ocId: metadata.ocId,
+                                                                  sessionTaskIdentifier: task.taskIdentifier,
+                                                                  status: self.global.metadataStatusDownloading)
+
+            await self.transferDispatcher.notifyAllDelegates { delegate in
+                delegate.transferChange(status: self.global.networkingStatusDownloading,
+                                        account: metadata.account,
+                                        fileName: metadata.fileName,
+                                        serverUrl: metadata.serverUrl,
+                                        selector: metadata.sessionSelector,
+                                        ocId: metadata.ocId,
+                                        destination: nil,
+                                        error: .success)
+            }
         } else {
-            database.setMetadataSession(ocId: metadata.ocId,
-                                        session: "",
-                                        sessionTaskIdentifier: 0,
-                                        sessionError: "",
-                                        selector: "",
-                                        status: self.global.metadataStatusNormal)
+            _ = await NCManageDatabase.shared.setMetadataSessionAsync(ocId: metadata.ocId,
+                                                                      session: "",
+                                                                      sessionTaskIdentifier: 0,
+                                                                      sessionError: "",
+                                                                      selector: "",
+                                                                      status: self.global.metadataStatusNormal)
         }
 
-        completion(error)
+        return(error)
     }
 
-    func downloadingFinish(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        if let httpResponse = (downloadTask.response as? HTTPURLResponse) {
-            if httpResponse.statusCode >= 200 && httpResponse.statusCode < 300,
-               let url = downloadTask.currentRequest?.url,
-               var serverUrl = url.deletingLastPathComponent().absoluteString.removingPercentEncoding {
-                let fileName = url.lastPathComponent
-                if serverUrl.hasSuffix("/") { serverUrl = String(serverUrl.dropLast()) }
-                if let metadata = database.getResultMetadata(predicate: NSPredicate(format: "serverUrl == %@ AND fileName == %@", serverUrl, fileName)) {
-                    let destinationFilePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileName)
-                    utilityFileSystem.copyFile(at: location, to: NSURL.fileURL(withPath: destinationFilePath))
-                }
-            }
-        }
-    }
+    // MARK: - DOWNLOAD SUCCESS
 
-    func downloadComplete(fileName: String,
-                          serverUrl: String,
-                          etag: String?,
-                          date: Date?,
-                          dateLastModified: Date?,
-                          length: Int64,
-                          task: URLSessionTask,
-                          error: NKError) {
+    func downloadSuccess(withMetadata metadata: tableMetadata, etag: String?) async {
+        nkLog(success: "Downloaded file: " + metadata.serverUrlFileName)
 
-        DispatchQueue.global().async {
-            guard let url = task.currentRequest?.url,
-                  let metadata = self.database.getMetadata(from: url, sessionTaskIdentifier: task.taskIdentifier) else { return }
-
-            if error == .success {
-                NCTransferProgress.shared.clearCountError(ocIdTransfer: metadata.ocIdTransfer)
 #if !EXTENSION
-                if let result = self.database.getE2eEncryption(predicate: NSPredicate(format: "fileNameIdentifier == %@ AND serverUrl == %@", metadata.fileName, metadata.serverUrl)) {
-                    NCEndToEndEncryption.shared().decryptFile(metadata.fileName, fileNameView: metadata.fileNameView, ocId: metadata.ocId, key: result.key, initializationVector: result.initializationVector, authenticationTag: result.authenticationTag)
-                }
+        if let result = await NCManageDatabase.shared.getE2eEncryptionAsync(predicate: NSPredicate(format: "fileNameIdentifier == %@ AND serverUrl == %@", metadata.fileName, metadata.serverUrl)) {
+            NCEndToEndEncryption.shared().decryptFile(metadata.fileName,
+                                                      fileNameView: metadata.fileNameView,
+                                                      ocId: metadata.ocId,
+                                                      userId: metadata.userId,
+                                                      urlBase: metadata.urlBase,
+                                                      key: result.key,
+                                                      initializationVector: result.initializationVector,
+                                                      authenticationTag: result.authenticationTag)
+        }
 #endif
-                self.database.addLocalFile(metadata: metadata)
-                self.database.setMetadataSession(ocId: metadata.ocId,
-                                                 session: "",
-                                                 sessionTaskIdentifier: 0,
-                                                 sessionError: "",
-                                                 status: self.global.metadataStatusNormal,
-                                                 etag: etag)
-                NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterDownloadedFile,
-                                                            object: nil,
-                                                            userInfo: ["ocId": metadata.ocId,
-                                                                       "ocIdTransfer": metadata.ocIdTransfer,
-                                                                       "session": metadata.session,
-                                                                       "serverUrl": metadata.serverUrl,
-                                                                       "account": metadata.account,
-                                                                       "selector": metadata.sessionSelector,
-                                                                       "error": error],
-                                                            second: 0.5)
-            } else if error.errorCode == NSURLErrorCancelled || error.errorCode == self.global.errorRequestExplicityCancelled {
-                NCTransferProgress.shared.clearCountError(ocIdTransfer: metadata.ocIdTransfer)
-                self.database.setMetadataSession(ocId: metadata.ocId,
-                                                 session: "",
-                                                 sessionTaskIdentifier: 0,
-                                                 sessionError: "",
-                                                 selector: "",
-                                                 status: self.global.metadataStatusNormal)
-                NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterDownloadCancelFile,
-                                                            object: nil,
-                                                            userInfo: ["ocId": metadata.ocId,
-                                                                       "ocIdTransfer": metadata.ocIdTransfer,
-                                                                       "session": metadata.session,
-                                                                       "serverUrl": metadata.serverUrl,
-                                                                       "account": metadata.account],
-                                                            second: 0.5)
-            } else {
-                NextcloudKit.shared.nkCommonInstance.appendServerErrorAccount(metadata.account, errorCode: error.errorCode)
+        await NCManageDatabase.shared.addLocalFilesAsync(metadatas: [metadata])
 
-                NCTransferProgress.shared.clearCountError(ocIdTransfer: metadata.ocIdTransfer)
+        await NCManageDatabase.shared.setMetadataSessionAsync(ocId: metadata.ocId,
+                                                              session: "",
+                                                              sessionTaskIdentifier: 0,
+                                                              sessionError: "",
+                                                              status: self.global.metadataStatusNormal,
+                                                              etag: etag)
 
-                self.database.setMetadataSession(ocId: metadata.ocId,
-                                                 session: "",
-                                                 sessionTaskIdentifier: 0,
-                                                 sessionError: "",
-                                                 selector: "",
-                                                 status: self.global.metadataStatusNormal)
-                NotificationCenter.default.postOnMainThread(name: NCGlobal.shared.notificationCenterDownloadedFile,
-                                                            object: nil,
-                                                            userInfo: ["ocId": metadata.ocId,
-                                                                       "ocIdTransfer": metadata.ocIdTransfer,
-                                                                       "session": metadata.session,
-                                                                       "serverUrl": metadata.serverUrl,
-                                                                       "account": metadata.account,
-                                                                       "selector": metadata.sessionSelector,
-                                                                       "error": error],
-                                                            second: 0.5)
+        await self.transferDispatcher.notifyAllDelegates { delegate in
+            delegate.transferChange(status: self.global.networkingStatusDownloaded,
+                                    account: metadata.account,
+                                    fileName: metadata.fileName,
+                                    serverUrl: metadata.serverUrl,
+                                    selector: metadata.sessionSelector,
+                                    ocId: metadata.ocId,
+                                    destination: nil,
+                                    error: .success)
+        }
+    }
+
+    // MARK: - DOWNLOAD ERROR
+
+    func downloadError(withMetadata metadata: tableMetadata, error: NKError) async {
+        await NextcloudKit.shared.nkCommonInstance.appendServerErrorAccount(metadata.account, errorCode: error.errorCode)
+
+        nkLog(error: "Downloaded file: " + metadata.serverUrlFileName + ", result: error \(error.errorCode)")
+
+        if error.errorCode == NCGlobal.shared.errorResourceNotFound {
+            self.utilityFileSystem.removeFile(atPath: self.utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, userId: metadata.userId, urlBase: metadata.urlBase))
+
+            await NCManageDatabase.shared.deleteLocalFileAsync(id: metadata.ocId)
+            await NCManageDatabase.shared.deleteMetadataAsync(id: metadata.ocId)
+        } else if error.errorCode == NSURLErrorCancelled || error.errorCode == self.global.errorRequestExplicityCancelled {
+            await NCManageDatabase.shared.setMetadataSessionAsync(ocId: metadata.ocId,
+                                                                  session: "",
+                                                                  sessionTaskIdentifier: 0,
+                                                                  sessionError: "",
+                                                                  selector: "",
+                                                                  status: self.global.metadataStatusNormal)
+
+            await self.transferDispatcher.notifyAllDelegates { delegate in
+                    delegate.transferChange(status: self.global.networkingStatusDownloadCancel,
+                                            account: metadata.account,
+                                            fileName: metadata.fileName,
+                                            serverUrl: metadata.serverUrl,
+                                            selector: metadata.sessionSelector,
+                                            ocId: metadata.ocId,
+                                            destination: nil,
+                                            error: .success)
+                }
+        } else {
+           await NCManageDatabase.shared.setMetadataSessionAsync(ocId: metadata.ocId,
+                                                                 session: "",
+                                                                 sessionTaskIdentifier: 0,
+                                                                 sessionError: "",
+                                                                 selector: "",
+                                                                 status: self.global.metadataStatusNormal)
+
+            await self.transferDispatcher.notifyAllDelegates { delegate in
+                delegate.transferChange(status: NCGlobal.shared.networkingStatusDownloaded,
+                                        account: metadata.account,
+                                        fileName: metadata.fileName,
+                                        serverUrl: metadata.serverUrl,
+                                        selector: metadata.sessionSelector,
+                                        ocId: metadata.ocId,
+                                        destination: nil,
+                                        error: error)
             }
         }
     }
 
-    func downloadProgress(_ progress: Float,
-                          totalBytes: Int64,
-                          totalBytesExpected: Int64,
-                          fileName: String,
-                          serverUrl: String,
-                          session: URLSession,
-                          task: URLSessionTask) {
+    // MARK: - Synchronization Download
 
-        DispatchQueue.global().async {
-            if let metadata = self.database.getResultMetadataFromFileName(fileName, serverUrl: serverUrl, sessionTaskIdentifier: task.taskIdentifier) {
-                NotificationCenter.default.postOnMainThread(name: self.global.notificationCenterProgressTask,
-                                                            object: nil,
-                                                            userInfo: ["account": metadata.account,
-                                                                       "ocId": metadata.ocId,
-                                                                       "ocIdTransfer": metadata.ocIdTransfer,
-                                                                       "session": metadata.session,
-                                                                       "fileName": metadata.fileName,
-                                                                       "serverUrl": metadata.serverUrl,
-                                                                       "status": NSNumber(value: self.global.metadataStatusDownloading),
-                                                                       "progress": NSNumber(value: progress),
-                                                                       "totalBytes": NSNumber(value: totalBytes),
-                                                                       "totalBytesExpected": NSNumber(value: totalBytesExpected)])
+    internal func synchronizationDownload(account: String, serverUrl: String, userId: String, urlBase: String, metadatasInDownload: [tableMetadata]?) async {
+        let showHiddenFiles = NCPreferences().getShowHiddenFiles(account: account)
+        let options = NKRequestOptions(timeout: 300, taskDescription: NCGlobal.shared.taskDescriptionSynchronization, queue: NextcloudKit.shared.nkCommonInstance.backgroundQueue)
+
+        nkLog(tag: self.global.logTagSync, emoji: .start, message: "Start read infinite folder: \(serverUrl)")
+
+        let results = await NextcloudKit.shared.readFileOrFolderAsync(serverUrlFileName: serverUrl, depth: "infinity", showHiddenFiles: showHiddenFiles, account: account, options: options) { task in
+            Task {
+                let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: account,
+                                                                                            path: serverUrl,
+                                                                                            name: "readFileOrFolder")
+                await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+            }
+        }
+
+        if results.error == .success, let files = results.files {
+            nkLog(tag: self.global.logTagSync, emoji: .success, message: "Read infinite folder: \(serverUrl)")
+
+            for file in files {
+                if file.directory {
+                    let metadata = await NCManageDatabaseCreateMetadata().convertFileToMetadataAsync(file)
+                    await NCManageDatabase.shared.createDirectory(metadata: metadata)
+                } else {
+                    if await isFileDifferent(ocId: file.ocId, fileName: file.fileName, etag: file.etag, metadatasInDownload: metadatasInDownload, userId: userId, urlBase: urlBase) {
+                        let metadata = await NCManageDatabaseCreateMetadata().convertFileToMetadataAsync(file)
+                        metadata.session = self.sessionDownloadBackground
+                        metadata.sessionSelector = NCGlobal.shared.selectorSynchronizationOffline
+                        metadata.sessionTaskIdentifier = 0
+                        metadata.sessionError = ""
+                        metadata.status = NCGlobal.shared.metadataStatusWaitDownload
+                        metadata.sessionDate = Date()
+
+                        await NCManageDatabase.shared.addMetadataAsync(metadata)
+
+                        nkLog(tag: self.global.logTagSync, emoji: .start, message: "File download: \(file.serverUrl)/\(file.fileName)")
+                    }
+                }
+            }
+        } else {
+            nkLog(tag: self.global.logTagSync, emoji: .error, message: "Read infinite folder: \(serverUrl), error: \(results.error.errorCode)")
+        }
+
+        nkLog(tag: self.global.logTagSync, emoji: .stop, message: "Stop read infinite folder: \(serverUrl)")
+    }
+
+    internal func isFileDifferent(ocId: String,
+                                  fileName: String,
+                                  etag: String,
+                                  metadatasInDownload: [tableMetadata]?,
+                                  userId: String,
+                                  urlBase: String) async -> Bool {
+        let match = metadatasInDownload?.contains { $0.ocId == ocId } ?? false
+        if match {
+            return false
+        }
+
+        guard let localFile = await NCManageDatabase.shared.getTableLocalFileAsync(predicate: NSPredicate(format: "ocId == %@", ocId)) else {
+            return true
+        }
+        let fileNamePath = self.utilityFileSystem.getDirectoryProviderStorageOcId(ocId, fileName: fileName, userId: userId, urlBase: urlBase)
+        let size = await utilityFileSystem.fileSizeAsync(atPath: fileNamePath)
+        let isDifferent = (localFile.etag != etag) || size == 0
+
+        return isDifferent
+    }
+
+    // MARK: - Download for Offline
+
+    func setMetadataAvalableOffline(_ metadata: tableMetadata, isOffline: Bool) async {
+        if isOffline {
+            if metadata.directory {
+                await NCManageDatabase.shared.setDirectoryAsync(serverUrl: metadata.serverUrlFileName, offline: false, metadata: metadata)
+                let predicate = NSPredicate(format: "account == %@ AND serverUrl BEGINSWITH %@ AND sessionSelector == %@ AND status == %d", metadata.account, metadata.serverUrlFileName, NCGlobal.shared.selectorSynchronizationOffline, NCGlobal.shared.metadataStatusWaitDownload)
+                if let metadatas = await NCManageDatabase.shared.getMetadatasAsync(predicate: predicate) {
+                    await NCManageDatabase.shared.clearMetadatasSessionAsync(metadatas: metadatas)
+                }
+            } else {
+                await NCManageDatabase.shared.setOffLocalFileAsync(ocId: metadata.ocId)
+            }
+        } else if metadata.directory {
+            await NCManageDatabase.shared.cleanTablesOcIds(account: metadata.account, userId: metadata.userId, urlBase: metadata.urlBase)
+            await NCManageDatabase.shared.setDirectoryAsync(serverUrl: metadata.serverUrlFileName, offline: true, metadata: metadata)
+            await NCNetworking.shared.synchronizationDownload(account: metadata.account, serverUrl: metadata.serverUrlFileName, userId: metadata.userId, urlBase: metadata.urlBase, metadatasInDownload: nil)
+        } else {
+            var metadatasSynchronizationOffline: [tableMetadata] = []
+            metadatasSynchronizationOffline.append(metadata)
+            if let metadata = await NCManageDatabase.shared.getMetadataLivePhotoAsync(metadata: metadata) {
+                metadatasSynchronizationOffline.append(metadata)
+            }
+            await NCManageDatabase.shared.addLocalFilesAsync(metadatas: [metadata], offline: true)
+            for metadata in metadatasSynchronizationOffline {
+                await NCManageDatabase.shared.setMetadataSessionInWaitDownloadAsync(ocId: metadata.ocId,
+                                                                                    session: NCNetworking.shared.sessionDownloadBackground,
+                                                                                    selector: NCGlobal.shared.selectorSynchronizationOffline)
             }
         }
     }

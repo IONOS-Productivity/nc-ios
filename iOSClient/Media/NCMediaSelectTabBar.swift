@@ -1,25 +1,6 @@
-//
-//  NCMediaTabbarSelect.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 01/02/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import SwiftUI
@@ -29,38 +10,71 @@ protocol NCMediaSelectTabBarDelegate: AnyObject {
 }
 
 class NCMediaSelectTabBar: ObservableObject {
-    var hostingController: UIViewController!
-    var mediaTabBarController: UITabBarController?
+    var hostingController: UIViewController?
+    var controller: UITabBarController?
     open weak var delegate: NCMediaSelectTabBarDelegate?
     @Published var selectCount: Int = 0
 
-    init(tabBarController: UITabBarController? = nil, delegate: NCMediaSelectTabBarDelegate? = nil) {
-        guard let tabBarController else { return }
-        let mediaTabBarSelectView = MediaTabBarSelectView(tabBarSelect: self)
-        hostingController = UIHostingController(rootView: mediaTabBarSelectView)
+    init(controller: UITabBarController? = nil, viewController: UIViewController, delegate: NCMediaSelectTabBarDelegate? = nil) {
+        guard let controller else {
+            return
+        }
+        let rootView = MediaTabBarSelectView(tabBarSelect: self)
+        let bottomAreaInsets: CGFloat = controller.tabBar.safeAreaInsets.bottom == 0 ? 34 : 0
+        let height = controller.tabBar.frame.height + bottomAreaInsets
+        hostingController = UIHostingController(rootView: rootView)
+        guard let hostingController else {
+            return
+        }
 
-        self.mediaTabBarController = tabBarController
+        self.controller = controller
         self.delegate = delegate
 
-        tabBarController.view.addSubview(hostingController.view)
-
-        hostingController.view.frame = tabBarController.tabBar.frame
-        hostingController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         hostingController.view.backgroundColor = .clear
         hostingController.view.isHidden = true
+
+        viewController.view.addSubview(hostingController.view)
+
+        NSLayoutConstraint.activate([
+            hostingController.view.leadingAnchor.constraint(equalTo: viewController.view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: viewController.view.trailingAnchor),
+            hostingController.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor),
+            hostingController.view.heightAnchor.constraint(equalToConstant: height)
+        ])
     }
 
     func show() {
+        guard let controller,
+              let hostingController else {
+            return
+        }
+
         hostingController.view.isHidden = false
         hostingController.view.transform = .init(translationX: 0, y: hostingController.view.frame.height)
         UIView.animate(withDuration: 0.2) {
-            self.hostingController.view.transform = .init(translationX: 0, y: 0)
+            hostingController.view.transform = .init(translationX: 0, y: 0)
         }
-        mediaTabBarController?.tabBar.isHidden = true
+
+        if #available(iOS 18.0, *) {
+            controller.setTabBarHidden(true, animated: true)
+        } else {
+            controller.tabBar.isHidden = true
+        }
     }
 
     func hide() {
-        mediaTabBarController?.tabBar.isHidden = false
+        guard let controller,
+              let hostingController else {
+            return
+        }
+
+        if #available(iOS 18.0, *) {
+            controller.setTabBarHidden(false, animated: true)
+        } else {
+            controller.tabBar.isHidden = false
+        }
+
         hostingController.view.isHidden = true
     }
 }
@@ -105,5 +119,5 @@ struct MediaTabBarSelectView: View {
 }
 
 #Preview {
-    MediaTabBarSelectView(tabBarSelect: NCMediaSelectTabBar())
+    MediaTabBarSelectView(tabBarSelect: NCMediaSelectTabBar(controller: nil, viewController: UIViewController(), delegate: nil))
 }

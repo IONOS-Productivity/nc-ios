@@ -1,10 +1,7 @@
-//
-//  SetupPasscodeView.swift
-//  Nextcloud
-//
-//  Created by Milen Pivchev on 28.11.24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Milen Pivchev
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
 import UIKit
@@ -15,16 +12,16 @@ import PopupView
 struct SetupPasscodeView: UIViewControllerRepresentable {
     @Binding var isLockActive: Bool
     var changePasscode: Bool = false
-    let maxFailedAttempts = 2 // + 1 = 3... The lib failed attempt counter starts at 0. Why? Who knows.
+    let maxFailedAttempts = 2 // + 1 = 3... The lib's failed attempt counter starts at 0. Why? Who knows.
 
     func makeUIViewController(context: Context) -> UIViewController {
         let laContext = LAContext()
         var error: NSError?
-        if !NCKeychain().passcode.isEmptyOrNil, !changePasscode {
+        if !NCPreferences().passcode.isEmptyOrNil, !changePasscode {
             let passcodeVC = TOPasscodeViewController(passcodeType: .sixDigits, allowCancel: true)
             passcodeVC.keypadButtonShowLettering = false
 
-            if NCKeychain().touchFaceID, laContext.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error), error == nil {
+            if NCPreferences().touchFaceID, laContext.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error), error == nil {
                 switch laContext.biometryType {
                 case .faceID:
                     passcodeVC.biometryType = .faceID
@@ -71,8 +68,10 @@ struct SetupPasscodeView: UIViewControllerRepresentable {
                 context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: NCBrandOptions.shared.brand) { success, _ in
                     DispatchQueue.main.async {
                         if success {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                NCKeychain().passcode = nil
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [self] in
+                                parent.isLockActive = false
+                                NCPreferences().passcode = nil
+
                                 passcodeViewController.dismiss(animated: true)
                             }
                         }
@@ -82,7 +81,7 @@ struct SetupPasscodeView: UIViewControllerRepresentable {
         }
 
         func passcodeSettingsViewController(_ passcodeSettingsViewController: TOPasscodeSettingsViewController, didAttemptCurrentPasscode passcode: String) -> Bool {
-            if passcode == NCKeychain().passcode {
+            if passcode == NCPreferences().passcode {
                 return true
             } else if passcodeSettingsViewController.failedPasscodeAttemptCount == parent.maxFailedAttempts {
                 passcodeSettingsViewController.dismiss(animated: true)
@@ -93,7 +92,7 @@ struct SetupPasscodeView: UIViewControllerRepresentable {
         }
 
         func passcodeSettingsViewController(_ passcodeSettingsViewController: TOPasscodeSettingsViewController, didChangeToNewPasscode passcode: String, of type: TOPasscodeType) {
-            NCKeychain().passcode = passcode
+            NCPreferences().passcode = passcode
             parent.isLockActive = true
             passcodeSettingsViewController.dismiss(animated: true)
         }
@@ -103,9 +102,9 @@ struct SetupPasscodeView: UIViewControllerRepresentable {
         }
 
         func passcodeViewController(_ passcodeViewController: TOPasscodeViewController, isCorrectCode passcode: String) -> Bool {
-            if passcode == NCKeychain().passcode {
+            if passcode == NCPreferences().passcode {
                 parent.isLockActive = false
-                NCKeychain().passcode = nil
+                NCPreferences().passcode = nil
                 return true
             }
 

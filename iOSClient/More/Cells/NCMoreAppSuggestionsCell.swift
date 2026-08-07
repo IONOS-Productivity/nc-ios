@@ -25,9 +25,9 @@ import Foundation
 import UIKit
 import SafariServices
 import SwiftUI
+import NextcloudKit
 
 class NCMoreAppSuggestionsCell: BaseNCMoreCell {
-    @IBOutlet weak var assistantView: UIStackView!
     @IBOutlet weak var talkView: UIStackView!
     @IBOutlet weak var notesView: UIStackView!
     @IBOutlet weak var moreAppsView: UIStackView!
@@ -43,27 +43,22 @@ class NCMoreAppSuggestionsCell: BaseNCMoreCell {
         super.awakeFromNib()
         backgroundColor = .clear
 
-        assistantView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(assistantTapped)))
-        talkView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(talkTapped)))
-        notesView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(notesTapped)))
-        moreAppsView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(moreAppsTapped)))
+        talkView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(talkTapped(_:))))
+        notesView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(notesTapped(_:))))
+        moreAppsView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(moreAppsTapped(_:))))
     }
 
     override func setupCell(account: String, controller: NCMainTabBarController?) {
-        assistantView.isHidden = !NCCapabilities.shared.getCapabilities(account: account).capabilityAssistantEnabled
+        /*
+        guard let capabilities = NCNetworking.shared.capabilities[account] else {
+            return
+        }
+        */
+
         self.controller = controller
     }
 
-    @objc func assistantTapped() {
-        if let viewController = self.window?.rootViewController {
-            let assistant = NCAssistant()
-                .environmentObject(NCAssistantModel(controller: self.controller))
-            let hostingController = UIHostingController(rootView: assistant)
-            viewController.present(hostingController, animated: true, completion: nil)
-        }
-    }
-
-    @objc func talkTapped() {
+    @objc func talkTapped(_ sender: Any?) {
         guard let url = URL(string: NCGlobal.shared.talkSchemeUrl) else { return }
 
         if UIApplication.shared.canOpenURL(url) {
@@ -74,7 +69,7 @@ class NCMoreAppSuggestionsCell: BaseNCMoreCell {
         }
     }
 
-    @objc func notesTapped() {
+    @objc func notesTapped(_ sender: Any?) {
         guard let url = URL(string: NCGlobal.shared.notesSchemeUrl) else { return }
 
         if UIApplication.shared.canOpenURL(url) {
@@ -85,7 +80,7 @@ class NCMoreAppSuggestionsCell: BaseNCMoreCell {
         }
     }
 
-    @objc func moreAppsTapped() {
+    @objc func moreAppsTapped(_ sender: Any?) {
         guard let url = URL(string: NCGlobal.shared.moreAppsUrl) else { return }
         UIApplication.shared.open(url)
     }

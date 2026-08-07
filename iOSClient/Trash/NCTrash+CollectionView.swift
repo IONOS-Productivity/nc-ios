@@ -80,7 +80,17 @@ extension NCTrash: UICollectionViewDataSource {
             gridCell.delegate = self
             cell = gridCell
         }
+
         guard let resultTableTrash = datasource?[indexPath.item] else { return cell }
+
+        let contextMenu = NCContextMenuTrash(objectId: resultTableTrash.fileId, trashController: self)
+        if let listCell = cell as? NCTrashListCell {
+            listCell.buttonMore.menu = contextMenu.viewMenu()
+            listCell.buttonMore.showsMenuAsPrimaryAction = true
+        } else if let gridCell = cell as? NCTrashGridCell {
+            gridCell.buttonMore.menu = contextMenu.viewMenu()
+            gridCell.buttonMore.showsMenuAsPrimaryAction = true
+        }
 
         cell.imageItem.contentMode = .scaleAspectFit
 
@@ -90,13 +100,17 @@ extension NCTrash: UICollectionViewDataSource {
             image = NCUtility().loadImage(named: resultTableTrash.iconName, useTypeIconFile: true, account: resultTableTrash.account)
         }
 
-        if let imageIcon = utility.getImage(ocId: resultTableTrash.fileId, etag: resultTableTrash.fileName, ext: NCGlobal.shared.previewExt512) {
+        if let imageIcon = utility.getImage(ocId: resultTableTrash.fileId,
+                                            etag: resultTableTrash.fileName,
+                                            ext: NCGlobal.shared.previewExt512,
+                                            userId: session.userId,
+                                            urlBase: session.urlBase) {
             image = imageIcon
             cell.imageItem.contentMode = .scaleAspectFill
         } else {
             if resultTableTrash.hasPreview {
                 if NCNetworking.shared.downloadThumbnailTrashQueue.operations.filter({ ($0 as? NCOperationDownloadThumbnailTrash)?.fileId == resultTableTrash.fileId }).isEmpty {
-                    NCNetworking.shared.downloadThumbnailTrashQueue.addOperation(NCOperationDownloadThumbnailTrash(fileId: resultTableTrash.fileId, fileName: resultTableTrash.fileName, account: session.account, collectionView: collectionView))
+                    NCNetworking.shared.downloadThumbnailTrashQueue.addOperation(NCOperationDownloadThumbnailTrash(fileId: resultTableTrash.fileId, fileName: resultTableTrash.fileName, session: session, collectionView: collectionView))
                 }
             }
         }
@@ -109,7 +123,7 @@ extension NCTrash: UICollectionViewDataSource {
         return cell
     }
 
-    func setTextFooter(datasource: Results<tableTrash>) -> String {
+    func setTextFooter(datasource: [tableTrash]) -> String {
         var folders: Int = 0, foldersText = ""
         var files: Int = 0, filesText = ""
         var size: Int64 = 0
@@ -160,7 +174,6 @@ extension NCTrash: UICollectionViewDataSource {
             else { return NCSectionFooter() }
             if let datasource {
                 footer.setTitleLabel(setTextFooter(datasource: datasource))
-                footer.separatorIsHidden(true)
             }
             return footer
         }

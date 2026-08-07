@@ -36,7 +36,6 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
     var filePath = ""
     var titleCurrentFolder = NSLocalizedString("_trash_view_", comment: "")
     var blinkFileId: String?
-    var dataSourceTask: URLSessionTask?
     let utilityFileSystem = NCUtilityFileSystem()
     let database = NCManageDatabase.shared
     let utility = NCUtility()
@@ -48,15 +47,25 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
 	}
     var selectOcId: [String] = []
     var selectionToolbar: HiDriveCollectionViewCommonSelectToolbar!
-    var datasource: Results<tableTrash>?
+    var datasource: [tableTrash]?
     var layoutForView: NCDBLayoutForView?
     var listLayout: NCListLayout!
     var gridLayout: NCGridLayout!
     var layoutKey = NCGlobal.shared.layoutViewTrash
     let refreshControl = UIRefreshControl()
     var filename: String?
+
+    @MainActor
     var session: NCSession.Session {
         NCSession.shared.getSession(controller: tabBarController)
+    }
+
+    var controller: NCMainTabBarController? {
+        self.mainTabBarController
+    }
+
+    var mainNavigationController: HiDriveMainNavigationController? {
+        self.navigationController as? HiDriveMainNavigationController
     }
 
     // MARK: - View Life Cycle
@@ -83,11 +92,13 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
         // Add Refresh Control
         collectionView.refreshControl = refreshControl
         refreshControl.tintColor = NCBrandColor.shared.textColor2
-        refreshControl.addTarget(self, action: #selector(loadListingTrash), for: .valueChanged)
+        refreshControl.action(for: .valueChanged) { _ in
+            Task {
+                await self.loadListingTrash()
+            }
+        }
 
 		updateHeadersView()
-		
-        NotificationCenter.default.addObserver(self, selector: #selector(reloadDataSource), name: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterReloadDataSource), object: nil)
     }
 
 	private func updateHeadersView() {
@@ -109,7 +120,7 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
 		}
 		updateSelectionToolbar()
 	}
-	
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
@@ -128,8 +139,11 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
         setNavigationLeftItems()
 		updateHeadersView()
 		
-        reloadDataSource()
-        loadListingTrash()
+        Task {
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+            await self.reloadDataSource()
+            await loadListingTrash()
+        }
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -140,9 +154,12 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
+        Task {
+            await NCNetworking.shared.networkingTasks.cancel(identifier: "NCTrash")
+        }
+
         // Cancel Queue & Retrieves Properties
         NCNetworking.shared.downloadThumbnailTrashQueue.cancelAll()
-        dataSourceTask?.cancel()
     }
 
     override func viewWillLayoutSubviews() {
@@ -176,9 +193,11 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
 
     // MARK: TAP EVENT
 
-    func tapRestoreListItem(with ocId: String, image: UIImage?, sender: Any) {
+    func tapRestoreListItem(with id: String, image: UIImage?, sender: Any) {
         if !isEditMode {
-            restoreItem(with: ocId)
+            Task {
+                await restoreItem(with: id)
+            }
         } else if let button = sender as? UIView {
             let buttonPosition = button.convert(CGPoint.zero, to: collectionView)
             let indexPath = collectionView.indexPathForItem(at: buttonPosition)
@@ -187,48 +206,50 @@ class NCTrash: UIViewController, NCTrashListCellDelegate, NCTrashGridCellDelegat
     }
 
     func tapMoreListItem(with objectId: String, image: UIImage?, sender: Any) {
-        if !isEditMode {
-            toggleMenuMore(with: objectId, image: image, isGridCell: false)
-        } else if let button = sender as? UIView {
-            let buttonPosition = button.convert(CGPoint.zero, to: collectionView)
-            let indexPath = collectionView.indexPathForItem(at: buttonPosition)
-            collectionView(self.collectionView, didSelectItemAt: indexPath!)
-        } // else: undefined sender
-    }
-
-    func tapMoreGridItem(with objectId: String, image: UIImage?, sender: Any) {
-        if !isEditMode {
-            toggleMenuMore(with: objectId, image: image, isGridCell: true)
-        } else if let button = sender as? UIView {
+        // Menu is now shown via native context menu on the button
+        if isEditMode, let button = sender as? UIView {
             let buttonPosition = button.convert(CGPoint.zero, to: collectionView)
             let indexPath = collectionView.indexPathForItem(at: buttonPosition)
             collectionView(self.collectionView, didSelectItemAt: indexPath!)
         }
     }
 
-    func longPressGridItem(with objectId: String, gestureRecognizer: UILongPressGestureRecognizer) { }
+    func tapMoreGridItem(with objectId: String, image: UIImage?, sender: Any) {
+        if isEditMode, let button = sender as? UIView {
+            let buttonPosition = button.convert(CGPoint.zero, to: collectionView)
+            let indexPath = collectionView.indexPathForItem(at: buttonPosition)
+            collectionView(self.collectionView, didSelectItemAt: indexPath!)
+        }
+    }
 
     func longPressMoreGridItem(with objectId: String, gestureRecognizer: UILongPressGestureRecognizer) { }
 
     // MARK: - DataSource
 
-    @objc func reloadDataSource(withQueryDB: Bool = true) {
-        datasource = self.database.getResultsTrash(filePath: getFilePath(), account: session.account)
-        collectionView.reloadData()
-        updateHeadersView()
+    func reloadDataSource(withQueryDB: Bool = true) async {
+        let results = await self.database.getTableTrashAsync(filePath: getFilePath(), account: session.account)
 
-        guard let blinkFileId, let datasource else { return }
-        for itemIx in 0..<datasource.count where datasource[itemIx].fileId.contains(blinkFileId) {
-            let indexPath = IndexPath(item: itemIx, section: 0)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                UIView.animate(withDuration: 0.3) {
-                    self.collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: false)
-                } completion: { _ in
-                    guard let cell = self.collectionView.cellForItem(at: indexPath) else { return }
-                    cell.backgroundColor = .darkGray
-                    UIView.animate(withDuration: 2) {
-                        cell.backgroundColor = .clear
-                        self.blinkFileId = nil
+        (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
+
+        await MainActor.run {
+            self.datasource = results
+            self.collectionView.reloadData()
+        	self.updateHeadersView()
+
+            guard let blinkFileId = self.blinkFileId else { return }
+
+            for itemIx in 0..<results.count where results[itemIx].fileId.contains(blinkFileId) {
+                let indexPath = IndexPath(item: itemIx, section: 0)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    UIView.animate(withDuration: 0.3) {
+                        self.collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: false)
+                    } completion: { _ in
+                        guard let cell = self.collectionView.cellForItem(at: indexPath) else { return }
+                        cell.backgroundColor = .darkGray
+                        UIView.animate(withDuration: 2) {
+                            cell.backgroundColor = .clear
+                            self.blinkFileId = nil
+                        }
                     }
                 }
             }

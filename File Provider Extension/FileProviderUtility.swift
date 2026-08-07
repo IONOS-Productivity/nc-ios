@@ -1,41 +1,52 @@
-//
-//  FileProviderData.swift
-//  Files
-//
-//  Created by Marino Faggiana on 27/05/18.
-//  Copyright © 2018 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2018 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
+import NextcloudKit
+import FileProvider
 
 class fileProviderUtility: NSObject {
     let fileManager = FileManager()
-    let utilityFileSystem = NCUtilityFileSystem()
-    let database = NCManageDatabase.shared
+
+    func getDocumentStorageURL(for domain: NSFileProviderDomain?, userId: String, urlBase: String) -> URL? {
+        guard let urlBase = NSURL(string: urlBase),
+              let host = urlBase.host else {
+            return nil
+        }
+        // Build the expected relative path used for the domain
+        let relativePath = NCUtilityFileSystem().getPathDomain(userId: userId, host: host)
+
+        // If a valid domain and manager exist, try to get its official documentStorageURL
+        if let domain,
+           let manager = NSFileProviderManager(for: domain) {
+            let managerURL = manager.documentStorageURL
+
+            // If the last path component matches, return the manager's path directly
+            if managerURL.lastPathComponent == relativePath {
+                return managerURL
+            }
+
+            // If it doesn't match (e.g. single-domain fallback), return manually constructed path
+            return NSFileProviderManager.default.documentStorageURL.appendingPathComponent(relativePath)
+        }
+
+        return NSFileProviderManager.default.documentStorageURL.appendingPathComponent(relativePath)
+    }
 
     func getAccountFromItemIdentifier(_ itemIdentifier: NSFileProviderItemIdentifier) -> String? {
         let ocId = itemIdentifier.rawValue
-        return self.database.getMetadataFromOcId(ocId)?.account
+        return NCManageDatabase.shared.getMetadataFromOcId(ocId)?.account
     }
 
     func getTableMetadataFromItemIdentifier(_ itemIdentifier: NSFileProviderItemIdentifier) -> tableMetadata? {
         let ocId = itemIdentifier.rawValue
-        return self.database.getMetadataFromOcId(ocId)
+        return NCManageDatabase.shared.getMetadataFromOcId(ocId)
+    }
+
+    func getTableMetadataFromItemIdentifierAsync(_ itemIdentifier: NSFileProviderItemIdentifier) async -> tableMetadata? {
+        let ocId = itemIdentifier.rawValue
+        return await NCManageDatabase.shared.getMetadataFromOcIdAsync(ocId)
     }
 
     func getItemIdentifier(metadata: tableMetadata) -> NSFileProviderItemIdentifier {
@@ -43,16 +54,49 @@ class fileProviderUtility: NSObject {
     }
 
     func getParentItemIdentifier(metadata: tableMetadata) -> NSFileProviderItemIdentifier? {
-        let homeServerUrl = utilityFileSystem.getHomeServer(session: fileProviderData.shared.session)
-        if let directory = self.database.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", metadata.account, metadata.serverUrl)) {
+        let homeServerUrl = NCUtilityFileSystem().getHomeServer(urlBase: metadata.urlBase, userId: metadata.userId)
+        if let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", metadata.account, metadata.serverUrl)) {
             if directory.serverUrl == homeServerUrl {
                 return NSFileProviderItemIdentifier(NSFileProviderItemIdentifier.rootContainer.rawValue)
             } else {
                 // get the metadata.ocId of parent Directory
-                if let metadata = self.database.getMetadataFromOcId(directory.ocId) {
+                if let metadata = NCManageDatabase.shared.getMetadataFromOcId(directory.ocId) {
                     let identifier = getItemIdentifier(metadata: metadata)
                     return identifier
                 }
+            }
+        }
+        return nil
+    }
+
+    func getParentItemIdentifierAsync(metadata: tableMetadata) async -> NSFileProviderItemIdentifier? {
+        let homeServerUrl = NCUtilityFileSystem().getHomeServer(urlBase: metadata.urlBase, userId: metadata.userId)
+        if let directory = await NCManageDatabase.shared.getTableDirectoryAsync(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", metadata.account, metadata.serverUrl)) {
+            if directory.serverUrl == homeServerUrl {
+                return NSFileProviderItemIdentifier(NSFileProviderItemIdentifier.rootContainer.rawValue)
+            } else {
+                // get the metadata.ocId of parent Directory
+                if let metadata = await NCManageDatabase.shared.getMetadataFromOcIdAsync(directory.ocId) {
+                    let identifier = getItemIdentifier(metadata: metadata)
+                    return identifier
+                }
+            }
+        }
+        return nil
+    }
+
+    func getParentItemIdentifierAsync(session: NCSession.Session, directory: tableDirectory?) async -> NSFileProviderItemIdentifier? {
+        let homeServerUrl = NCUtilityFileSystem().getHomeServer(urlBase: session.urlBase, userId: session.userId)
+        guard let directory else {
+            return nil
+        }
+        if directory.serverUrl == homeServerUrl {
+            return NSFileProviderItemIdentifier(NSFileProviderItemIdentifier.rootContainer.rawValue)
+        } else {
+            // get the metadata.ocId of parent Directory
+            if let metadata = await NCManageDatabase.shared.getMetadataFromOcIdAsync(directory.ocId) {
+                let identifier = getItemIdentifier(metadata: metadata)
+                return identifier
             }
         }
         return nil
@@ -66,53 +110,94 @@ class fileProviderUtility: NSObject {
             guard let metadata = getTableMetadataFromItemIdentifier(parentItemIdentifier) else { return nil }
             predicate = NSPredicate(format: "ocId == %@", metadata.ocId)
         }
-        guard let directory = self.database.getTableDirectory(predicate: predicate) else { return nil }
+        guard let directory = NCManageDatabase.shared.getTableDirectory(predicate: predicate) else { return nil }
         return directory
     }
 
-    func copyFile(_ atPath: String, toPath: String) {
-        if !fileManager.fileExists(atPath: atPath) { return }
-
-        do {
-            try fileManager.removeItem(atPath: toPath)
-        } catch let error {
-            print("Error: \(error.localizedDescription)")
-        }
-        do {
-            try fileManager.copyItem(atPath: atPath, toPath: toPath)
-        } catch let error {
-            print("Error: \(error.localizedDescription)")
-        }
-    }
-
-    func moveFile(_ atPath: String, toPath: String) {
-        if !fileManager.fileExists(atPath: atPath) { return }
-
-        do {
-            try fileManager.removeItem(atPath: toPath)
-        } catch let error {
-            print("Error: \(error.localizedDescription)")
-        }
-        do {
-            try fileManager.moveItem(atPath: atPath, toPath: toPath)
-        } catch let error {
-            print("Error: \(error.localizedDescription)")
-        }
-    }
-
-    func getFileSize(from url: URL) -> Int64? {
-        do {
-            let attributes = try fileManager.attributesOfItem(atPath: url.path)
-
-            if let fileSize = attributes[FileAttributeKey.size] as? Int64 {
-                return fileSize
-            } else {
-                print("Failed to retrieve file size.")
+    func getTableDirectoryFromParentItemIdentifierAsync(_ parentItemIdentifier: NSFileProviderItemIdentifier, account: String, homeServerUrl: String) async -> tableDirectory? {
+        var predicate: NSPredicate
+        if parentItemIdentifier == .rootContainer {
+            predicate = NSPredicate(format: "account == %@ AND serverUrl == %@", account, homeServerUrl)
+        } else {
+            guard let metadata = await getTableMetadataFromItemIdentifierAsync(parentItemIdentifier) else {
                 return nil
             }
-        } catch {
-            print("Error: \(error.localizedDescription)")
+            predicate = NSPredicate(format: "ocId == %@", metadata.ocId)
+        }
+        guard let directory = await NCManageDatabase.shared.getTableDirectoryAsync(predicate: predicate) else {
             return nil
         }
+
+        return directory
+    }
+
+    func createFileName(_ fileName: String, serverUrl: String, account: String) -> String {
+        var resultFileName = fileName
+        var exitLoop = false
+
+        while exitLoop == false {
+            if NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "fileNameView ==[c] %@ AND serverUrl == %@ AND account == %@", resultFileName, serverUrl, account)) != nil {
+                var name = NSString(string: resultFileName).deletingPathExtension
+                let ext = NSString(string: resultFileName).pathExtension
+                let characters = Array(name)
+
+                if characters.count < 2 {
+                    if ext.isEmpty {
+                        resultFileName = name + " " + "1"
+                    } else {
+                        resultFileName = name + " " + "1" + "." + ext
+                    }
+                } else {
+                    let space = characters[characters.count - 2]
+                    let numChar = characters[characters.count - 1]
+                    var num = Int(String(numChar))
+                    if space == " " && num != nil {
+                        name = String(name.dropLast())
+                        num = num! + 1
+                        if ext.isEmpty {
+                            resultFileName = name + "\(num!)"
+                        } else {
+                            resultFileName = name + "\(num!)" + "." + ext
+                        }
+                    } else {
+                        if ext.isEmpty {
+                            resultFileName = name + " " + "1"
+                        } else {
+                            resultFileName = name + " " + "1" + "." + ext
+                        }
+                    }
+                }
+            } else {
+                exitLoop = true
+            }
+        }
+
+        return resultFileName
+    }
+
+    func getVersionBuild() -> String {
+        if let dictionary = Bundle.main.infoDictionary,
+           let version = dictionary["CFBundleShortVersionString"],
+           let build = dictionary["CFBundleVersion"] {
+            return "\(version).\(build)"
+        }
+        return ""
+    }
+
+    func getVersionMaintenance() -> String {
+        if let dictionary = Bundle.main.infoDictionary,
+           let version = dictionary["CFBundleShortVersionString"] {
+            return "\(version)"
+        }
+        return ""
+    }
+
+    func ocIdToFileId(ocId: String?) -> String? {
+        guard let ocId = ocId else { return nil }
+        let items = ocId.components(separatedBy: "oc")
+
+        if items.count < 2 { return nil }
+        guard let intFileId = Int(items[0]) else { return nil }
+        return String(intFileId)
     }
 }

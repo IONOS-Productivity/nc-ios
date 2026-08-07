@@ -13,88 +13,89 @@ import Firebase
 
 class DataProtectionAgreementManager {
     private(set) static var shared = DataProtectionAgreementManager()
-    private var dismissBlock: (() -> Void)?
 
-    var rootViewController: UIViewController
-    
+    private var rootViewController: UIViewController
+
     struct DataProtectionKeys {
         static let agreementWasShown = "data_protection_agreement_was_shown"
     }
-    
+
     private init() {
         rootViewController = DataProtectionHostingController(rootView: DataProtectionAgreementScreen())
     }
-    
+
     func dismissView() {
         guard Thread.current.isMainThread else {
             return DispatchQueue.main.async { [weak self] in
-                self?.rootViewController.dismiss(animated: false)
+                self?.dismissView()
             }
         }
-        
-        rootViewController.dismiss(animated: false)
+
+        rootViewController.dismiss(animated: false) { [weak self] in
+            self?.setupAnalyticsCollection()
+        }
     }
-    
-    func showView(viewController: UIViewController, dismissBlock: @escaping () -> Void) {
+
+    private func showPrivacyAgreementScreen(over viewController: UIViewController) {
         guard Thread.current.isMainThread else {
             return DispatchQueue.main.async { [weak self] in
-                self?.showView(viewController: viewController, dismissBlock: dismissBlock)
+                self?.showPrivacyAgreementScreen(over: viewController)
             }
         }
-        
-        if !rootViewController.isBeingPresented {
-            rootViewController.modalPresentationStyle = .fullScreen
-            viewController.present(rootViewController, animated: false)
+
+        guard rootViewController.presentingViewController != viewController else {
+            return
         }
+
+        rootViewController = DataProtectionHostingController(rootView: DataProtectionAgreementScreen())
+        rootViewController.modalPresentationStyle = .fullScreen
+        viewController.present(rootViewController, animated: false)
     }
-    
+
     func showAgreement(viewController: UIViewController) {
         let wasAgreementShown = UserDefaults.standard.bool(forKey: DataProtectionKeys.agreementWasShown)
         if !wasAgreementShown {
-            showView(viewController: viewController) { [weak self] in
-                self?.setupAnalyticsCollection()
-            }
+            showPrivacyAgreementScreen(over: viewController)
         }
     }
-    
-    func setupAnalyticsCollection(){
+
+    func setupAnalyticsCollection() {
         let isAllowed = isAllowedAnalysisOfDataCollection()
         Analytics.setAnalyticsCollectionEnabled(isAllowed)
         Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(isAllowed)
     }
-    
+
     func acceptAgreement() {
         agreementWasShown(true)
         askForTrackingPermission { [weak self] _ in
             self?.dismissView()
         }
     }
-    
+
     func saveSettings() {
         agreementWasShown(true)
         dismissView()
     }
-    
+
     func rejectAgreement() {
         agreementWasShown(true)
         askForTrackingPermission { [weak self] granted in
             if granted {
                 self?.redirectToSettings()
-            }
-            else {
+            } else {
                 self?.dismissView()
             }
         }
     }
-    
+
     func onAccountCreated() {
         agreementWasShown(false)
     }
-    
+
     private func agreementWasShown(_ wasShown: Bool) {
         UserDefaults.standard.set(wasShown, forKey: DataProtectionKeys.agreementWasShown)
     }
-    
+
     func allowAnalysisOfDataCollection(_ allowAnalysisOfDataCollection: Bool, redirectToSettings: (() -> Void)?) {
         askForTrackingPermission { granted in
             if granted != allowAnalysisOfDataCollection {
@@ -102,11 +103,11 @@ class DataProtectionAgreementManager {
             }
         }
     }
-    
+
     func isAllowedAnalysisOfDataCollection() -> Bool {
         return ATTrackingManager.trackingAuthorizationStatus == .authorized
     }
-    
+
     private func askForTrackingPermission(completion: ((_ isPermissionGranted: Bool) -> Void)?) {
         switch ATTrackingManager.trackingAuthorizationStatus {
         case .notDetermined:    handleNotDetermined(completion: completion)
@@ -116,18 +117,18 @@ class DataProtectionAgreementManager {
         @unknown default:       return
         }
     }
-    
+
     private func handleNotDetermined(completion: ((_ isPermissionGranted: Bool) -> Void)?) {
         ATTrackingManager.requestTrackingAuthorization { [weak self] _ in
             self?.askForTrackingPermission(completion: completion)
         }
     }
-    
+
     private func redirectToSettings() {
         let alert = UIAlertController(title: NSLocalizedString("_alert_tracking_access", comment: ""), message: nil, preferredStyle: .alert)
-        
+
         alert.addAction(UIAlertAction(title: NSLocalizedString("_cancel_", comment: ""), style: .cancel, handler: { _ in }))
-        
+
         alert.addAction(UIAlertAction(title: NSLocalizedString("_settings_", comment: ""), style: .default, handler: { (_) in
             DispatchQueue.main.async {
                 if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
@@ -135,7 +136,7 @@ class DataProtectionAgreementManager {
                 }
             }
         }))
-        
+
         DispatchQueue.main.async { [weak self] in
             self?.rootViewController.present(alert, animated: false)
         }

@@ -16,18 +16,18 @@ enum FileActionsHeaderSelectionState {
 
 class FileActionsHeader: UIView {
 	@IBOutlet weak var contentView: UIView!
-	
+
 	// MARK: - non-editign mode view
 	@IBOutlet weak private var vHeaderNonEditingMode: UIView?
 	@IBOutlet weak private var btnSort: UIButton?
 	@IBOutlet weak private var btnSelect: UIButton?
 	@IBOutlet weak private var btnViewMode: UIButton?
-	    
+
     @IBAction func onBtnSelectTap(_ sender: Any) {
 		setIsEditingMode(isEditingMode: true)
 		onSelectModeChange?(true)
 	}
-	
+
 	// MARK: - editign mode view
 	@IBOutlet weak private var vHeaderEditingMode: UIView?
 	@IBOutlet weak private var btnSelectAll: UIButton?
@@ -37,27 +37,27 @@ class FileActionsHeader: UIView {
 	private var grayButtonTintColor: UIColor {
         UIColor(resource: .FileActionsHeader.grayButtonTint)
 	}
-	
+
 	@IBAction func onBtnSelectAllTap(_ sender: Any) {
 		onSelectAll?()
 	}
-	
+
 	@IBAction func onBtnCloseSelectionTap(_ sender: Any) {
 		setIsEditingMode(isEditingMode: false)
 		onSelectModeChange?(false)
 	}
-	
-	
+
+
 	override init(frame: CGRect) {
 		super.init(frame: frame)
 		commonInit()
 	}
-	
+
 	required init?(coder: NSCoder) {
 		super.init(coder: coder)
 		commonInit()
 	}
-	
+
 	private func commonInit() {
 		Bundle.main.loadNibNamed(String(describing:FileActionsHeader.self),
 										 owner: self,
@@ -67,19 +67,19 @@ class FileActionsHeader: UIView {
 		contentView.frame = bounds
 		contentView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 	}
-	
+
 	// MARK: - public
 	func enableSorting(enable: Bool) {
 		btnSort?.isHidden = !enable
 	}
-    
+
     func enableSelection(enable: Bool) {
         btnSelect?.isHidden = !enable
     }
-	
+
 	var onSelectModeChange: ((_ isSelectionMode: Bool) -> Void)?
 	var onSelectAll: (() -> Void)?
-	
+
 	func setSortingMenu(sortingMenuElements: [UIMenuElement], title: String?, image: UIImage?) {
 		btnSort?.menu = UIMenu(children: sortingMenuElements)
 		btnSort?.showsMenuAsPrimaryAction = true
@@ -87,27 +87,27 @@ class FileActionsHeader: UIView {
 		btnSort?.setImage(image?.templateRendered(), for: .normal)
 		btnSort?.semanticContentAttribute = UIApplication.shared.userInterfaceLayoutDirection == .rightToLeft ? .forceLeftToRight : .forceRightToLeft
 	}
-	
+
 	func setViewModeMenu(viewMenuElements: [UIMenuElement], image: UIImage?) {
 		btnViewMode?.menu = UIMenu(children: viewMenuElements)
 		btnViewMode?.showsMenuAsPrimaryAction = true
 		btnViewMode?.setImage(image?.templateRendered(), for: .normal)
 	}
-    
+
     func showViewModeButton(_ show: Bool) {
         btnViewMode?.isHidden = !show
     }
-	
+
 	func setIsEditingMode(isEditingMode: Bool) {
 		vHeaderEditingMode?.isHidden = !isEditingMode
 		vHeaderNonEditingMode?.isHidden = isEditingMode
 	}
-	
+
 	func setSelectionState(selectionState: FileActionsHeaderSelectionState) {
 		var textDescription = ""
         var imageResource: ImageResource = .FileSelection.listItemDeselected
         var selectAllImageColor: UIColor = .clear
-		
+
 		// MARK: Files Header
 		switch selectionState {
 		case .none:
@@ -125,7 +125,7 @@ class FileActionsHeader: UIView {
 		}
 
 		lblSelectionDescription?.text = textDescription
-		
+
 		var selectAllImage = UIImage(resource: imageResource)
         var closeImage = UIImage(resource: .FileSelection.selectionModeClose)
 
@@ -142,7 +142,7 @@ class FileActionsHeader: UIView {
 			return String.localizedStringWithFormat(NSLocalizedString("_select_selectionLabel_manyItemsSelected_", tableName: nil, bundle: Bundle.main, value: "%@ items selected", comment: ""), "\(count)")
 		}
 	}
-	
+
 	override func awakeFromNib() {
 		super.awakeFromNib()
 		if let selectionButtonWidth = btnSelect?.bounds.width {

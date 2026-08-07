@@ -1,27 +1,9 @@
-//
-//  NCBrandColor.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 24/04/17.
-//  Copyright (c) 2017 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2017 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
+import NextcloudKit
 
 let userAgent: String = {
     let appVersion: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String
@@ -33,10 +15,11 @@ class NCBrandOptions: @unchecked Sendable {
     static let shared = NCBrandOptionsIONOS()
 
     var brand: String = "Nextcloud"
-    var textCopyrightNextcloudiOS: String = "Nextcloud Hydrogen for iOS %@ © 2025"
+    var brandUserAgent: String = ""
+    var textCopyrightNextcloudiOS: String = "Nextcloud Matheria for iOS %@ © 2026"
     var textCopyrightNextcloudServer: String = "Nextcloud Server %@"
     var loginBaseUrl: String = "https://cloud.nextcloud.com"
-    var pushNotificationServerProxy: String = "https://push-notifications.nextcloud.com"
+    var pushNotificationServerProxy: String = ""
     var linkLoginHost: String = "https://nextcloud.com/install"
     var linkloginPreferredProviders: String = "https://nextcloud.com/signup-ios"
     var webLoginAutenticationProtocol: String = "nc://"                                        // example "abc://"
@@ -65,22 +48,26 @@ class NCBrandOptions: @unchecked Sendable {
     var disable_openin_file: Bool = false                                                       // Don't touch me !!
     var disable_crash_service: Bool = false
     var disable_log: Bool = false
-    var disable_mobileconfig: Bool = false
+    var disable_mobileconfig: Bool = false  
     var disable_show_more_nextcloud_apps_in_settings: Bool = false
     var doNotAskPasscodeAtStartup: Bool = false
     var disable_source_code_in_settings: Bool = false
     var enforce_passcode_lock = false
+    var enforce_privacyScreenEnabled = false
 
-    // (name: "Name 1", url: "https://cloud.nextcloud.com"),(name: "Name 2", url: "https://cloud.nextcloud.com")
+    // Example: (name: "Name 1", url: "https://cloud.nextcloud.com"),(name: "Name 2", url: "https://cloud.nextcloud.com")
     var enforce_servers: [(name: String, url: String)] = []
 
     // Internal option behaviour
     var cleanUpDay: Int = 0                                                                     // Set default "Delete all cached files older than" possible days value are: 0, 1, 7, 30, 90, 180, 365
 
     // Max request/download/upload concurrent
-    let httpMaximumConnectionsPerHost: Int = 6
-    let httpMaximumConnectionsPerHostInDownload: Int = 6
-    let httpMaximumConnectionsPerHostInUpload: Int = 6
+    let httpMaximumConnectionsPerHost: Int = 8
+    let httpMaximumConnectionsPerHostInDownload: Int = 8
+    let httpMaximumConnectionsPerHostInUpload: Int = 8
+
+    // Max request/download/upload process
+    let numMaximumProcess: Int = 20
 
     // Number of failed attempts after reset app
     let resetAppPasscodeAttempts: Int = 10
@@ -120,22 +107,40 @@ class NCBrandOptions: @unchecked Sendable {
             }
         }
 
-#if DEBUG
-        pushNotificationServerProxy = "https://c0004.customerpush.nextcloud.com"
-#endif
+        if pushNotificationServerProxy.isEmpty,
+            brand == "Nextcloud" {
+            pushNotificationServerProxy = "https://push-notifications.nextcloud.com"
+            // DEBUG SERVER PUSH
+            // pushNotificationServerProxy = "https://c0004.customerpush.nextcloud.com"
+        }
     }
 
     @objc func getUserAgent() -> String {
         return userAgent
+    }
+
+    func isServerVersion(_ capabilities: NKCapabilities.Capabilities,
+                         greaterOrEqualTo major: Int,
+                         _ minor: Int,
+                         _ micro: Int) -> Bool {
+
+        let server = (
+            capabilities.serverVersionMajor,
+            capabilities.serverVersionMinor,
+            capabilities.serverVersionMicro
+        )
+
+        let required = (major, minor, micro)
+
+        return server >= required
     }
 }
 
 class NCBrandColor: @unchecked Sendable {
     static let shared = NCBrandColorIONOS()
 
-    /// This is rewrited from customet theme, default is Nextcloud color
-    ///
-    let customer: UIColor = UIColor(red: 0.0 / 255.0, green: 130.0 / 255.0, blue: 201.0 / 255.0, alpha: 1.0)         // BLU NC : #0082c9
+    // This is rewrited from customet theme, default is Nextcloud color
+    let customer: UIColor = UIColor(red: 0.0 / 255.0, green: 130.0 / 255.0, blue: 201.0 / 255.0, alpha: 1.0)         // Nextcloud : #0082C9
     var customerText: UIColor = .white
 
     // INTERNAL DEFINE COLORS
@@ -144,7 +149,6 @@ class NCBrandColor: @unchecked Sendable {
     private var themingColorText = ThreadSafeDictionary<String, UIColor>()
 
     var userColors: [CGColor] = []
-    let nextcloud: UIColor = UIColor(red: 0.0 / 255.0, green: 130.0 / 255.0, blue: 201.0 / 255.0, alpha: 1.0)
     let yellowFavorite: UIColor = UIColor(red: 248.0 / 255.0, green: 205.0 / 255.0, blue: 70.0 / 255.0, alpha: 1.0)
     let iconImageColor: UIColor = .label
     let iconImageColor2: UIColor = .secondaryLabel
@@ -225,7 +229,7 @@ class NCBrandColor: @unchecked Sendable {
     }
 
     @discardableResult
-    func settingThemingColor(account: String) -> Bool {
+    func settingThemingColor(account: String, capabilities: NKCapabilities.Capabilities) -> Bool {
         let darker: CGFloat = 30    // %
         let lighter: CGFloat = 30   // %
         var colorThemingColor: UIColor?
@@ -233,9 +237,9 @@ class NCBrandColor: @unchecked Sendable {
         var colorThemingColorText: UIColor?
 
         if NCBrandOptions.shared.use_themingColor {
-            let themingColor = NCCapabilities.shared.getCapabilities(account: account).capabilityThemingColor
-            let themingColorElement = NCCapabilities.shared.getCapabilities(account: account).capabilityThemingColorElement
-            let themingColorText = NCCapabilities.shared.getCapabilities(account: account).capabilityThemingColorText
+            let themingColor = capabilities.themingColor
+            let themingColorElement = capabilities.themingColorElement
+            let themingColorText = capabilities.themingColorText
 
             // THEMING COLOR
             if themingColor.first == "#" {
@@ -303,7 +307,6 @@ class NCBrandColor: @unchecked Sendable {
         }
 
         if self.themingColor[account] != colorThemingColor || self.themingColorElement[account] != colorThemingColorElement || self.themingColorText[account] != colorThemingColorText {
-
             self.themingColor[account] = colorThemingColor
             self.themingColorElement[account] = colorThemingColorElement
             self.themingColorText[account] = colorThemingColorText

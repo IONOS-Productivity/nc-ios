@@ -32,12 +32,21 @@ class NCShareDownloadLimitTableViewController: UITableViewController {
     /// Default value for limits as possibly provided by the server capabilities.
     ///
     var defaultLimit: Int {
-        NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityFileSharingDownloadLimitDefaultLimit
+        let capabilities = NCNetworking.shared.capabilities[metadata.account] ?? NKCapabilities.Capabilities()
+        return capabilities.fileSharingDownloadLimitDefaultLimit
     }
 
+    @IBOutlet var allowedDownloadsCell: UITableViewCell!
+    @IBOutlet var limitDownloadCell: UITableViewCell!
     @IBOutlet var limitSwitch: UISwitch!
     @IBOutlet var limitTextField: UITextField!
 
+	override func viewDidLoad() {
+		super.viewDidLoad()
+		tableView.backgroundColor = UIColor(resource: .Share.Advanced.background)
+		tableView.separatorColor = UIColor(resource: .Share.Advanced.tableCellSeparator)
+	}
+	
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
@@ -47,6 +56,14 @@ class NCShareDownloadLimitTableViewController: UITableViewController {
         } else {
             limitSwitch.isOn = false
         }
+
+        var allowedDownloadsCellConfiguration = UIListContentConfiguration.cell()
+        allowedDownloadsCellConfiguration.text = NSLocalizedString("_share_allowed_downloads_", comment: "")
+        allowedDownloadsCell.contentConfiguration = allowedDownloadsCellConfiguration
+
+        var limitDownloadCellConfiguration = UIListContentConfiguration.cell()
+        limitDownloadCellConfiguration.text = NSLocalizedString("_share_limit_download_", comment: "")
+        limitDownloadCell.contentConfiguration = limitDownloadCellConfiguration
     }
 
     @IBAction func switchDownloadLimit(_ sender: UISwitch) {
@@ -75,7 +92,9 @@ class NCShareDownloadLimitTableViewController: UITableViewController {
             return
         }
 
-        if let enteredValue = Int(text) {
+        let maxLimit = 1_000_000_000
+
+        if let enteredValue = Int(text), enteredValue > 0, enteredValue <= maxLimit {
             downloadLimit = .limited(limit: enteredValue, count: 0)
         } else {
             downloadLimit = .limited(limit: defaultLimit, count: 0)

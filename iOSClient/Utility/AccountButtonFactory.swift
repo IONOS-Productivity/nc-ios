@@ -31,16 +31,16 @@ class AccountButtonFactory {
         self.presentVC = presentVC
         self.onMenuOpened = onMenuOpened
     }
-    
-    func createAccountButton() -> UIBarButtonItem {
+
+    @MainActor
+    func createAccountButton() async -> UIBarButtonItem {
         let session = NCSession.shared.getSession(controller: controller)
-        guard let tableAccount = self.database.getTableAccount(predicate: NSPredicate(format: "account == %@", session.account)) else {
+        guard let tableAccount = await self.database.getTableAccountAsync(predicate: NSPredicate(format: "account == %@", session.account)) else {
             return UIBarButtonItem()
         }
         let image = utility.loadUserImage(for: tableAccount.account, displayName: tableAccount.displayName, urlBase: tableAccount.urlBase)
         let accountButton = AccountSwitcherButton(type: .custom)
-        let accounts = NCManageDatabase.shared.getAllAccountOrderAlias()
-        
+
         accountButton.setImage(image, for: .normal)
         accountButton.setImage(image, for: .highlighted)
         accountButton.semanticContentAttribute = .forceLeftToRight
@@ -56,13 +56,15 @@ class AccountButtonFactory {
 }
 
 extension AccountButtonFactory: NCAccountSettingsModelDelegate {
-    func accountSettingsDidDismiss(tableAccount: tableAccount?, controller: NCMainTabBarController?) {
+    func accountSettingsDidDismiss(tblAccount tableAccount: tableAccount?, controller: NCMainTabBarController?) {
         let session = NCSession.shared.getSession(controller: controller)
         let currentAccount = session.account
         if database.getAllTableAccount().isEmpty {
             appDelegate.openLogin(selector: NCGlobal.shared.introLogin)
         } else if let account = tableAccount?.account, account != currentAccount {
-            NCAccount().changeAccount(account, userProfile: nil, controller: controller) { }
+            Task {
+                await NCAccount().changeAccount(account, userProfile: nil, controller: controller)
+            }
         }
     }
 }

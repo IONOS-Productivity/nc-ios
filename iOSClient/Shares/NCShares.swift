@@ -1,30 +1,14 @@
-//
-//  NCShares.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 20/10/2020.
-//  Copyright © 2020 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2020 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 import NextcloudKit
 
 class NCShares: NCCollectionViewCommon {
+    @MainActor private var fileIds: Set<String> = []
+
+    private var backgroundTask: Task<Void, Never>?
 
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -43,67 +27,117 @@ class NCShares: NCCollectionViewCommon {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        reloadDataSource()
+        Task {
+            await reloadDataSource()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        getServerData()
+        Task {
+            await getServerData()
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        Task {
+            await stopSyncMetadata()
+            await NCNetworking.shared.networkingTasks.cancel(identifier: "NCShares")
+            backgroundTask?.cancel()
+        }
     }
 
     // MARK: - DataSource
 
-    override func reloadDataSource() {
-        var ocId: [String] = []
-        let sharess = self.database.getTableShares(account: session.account)
-
-        for share in sharess {
-            if let result = self.database.getResultMetadata(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@ AND fileName == %@", session.account, share.serverUrl, share.fileName)) {
-                if !(ocId.contains { $0 == result.ocId }) {
-                    ocId.append(result.ocId)
-                }
-            } else {
-                let serverUrlFileName = share.serverUrl + "/" + share.fileName
-                NCNetworking.shared.readFile(serverUrlFileName: serverUrlFileName, account: session.account) { task in
-                    self.dataSourceTask = task
-                    if self.dataSource.isEmpty() {
-                        self.collectionView.reloadData()
-                    }
-                } completion: { _, metadata, _ in
-                    if let metadata {
-                        self.database.addMetadata(metadata)
-                        if !(ocId.contains { $0 == metadata.ocId }) {
-                            ocId.append(metadata.ocId)
-                        }
-                    }
-                }
-            }
+    override func reloadDataSource() async {
+        if fileIds.isEmpty {
+            let shares = await self.database.getTableSharesAsync(account: self.session.account)
+            fileIds = Set(shares.compactMap { String($0.fileSource) })
         }
+        let metadatas = await database.getMetadatasAsync(predicate: NSPredicate(format: "fileId IN %@", fileIds),
+                                                         withLayout: layoutForView,
+                                                         withAccount: session.account)
 
-        let metadatas = self.database.getResultsMetadatasPredicate(NSPredicate(format: "ocId IN %@", ocId), layoutForView: layoutForView)
+        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas,
+                                                     layoutForView: layoutForView,
+                                                     account: session.account)
 
-        self.dataSource = NCCollectionViewDataSource(metadatas: metadatas, layoutForView: layoutForView)
+        await super.reloadDataSource()
 
-        super.reloadDataSource()
+        cachingAsync(metadatas: metadatas)
     }
 
-    override func getServerData() {
-        NextcloudKit.shared.readShares(parameters: NKShareParameter(), account: session.account) { task in
-            self.dataSourceTask = task
+    override func getServerData(forced: Bool = false) async {
+        // If is already in-flight, do nothing
+        if await NCNetworking.shared.networkingTasks.isReading(identifier: "NCShares") {
+            return
+        }
+
+        startGUIGetServerData()
+
+        let resultsReadShares = await NextcloudKit.shared.readSharesAsync(parameters: NKShareParameter(), account: session.account) { task in
+            Task {
+                await NCNetworking.shared.networkingTasks.track(identifier: "NCShares", task: task)
+            }
             if self.dataSource.isEmpty() {
                 self.collectionView.reloadData()
             }
-        } completion: { account, shares, _, error in
-            if error == .success {
-                self.database.deleteTableShare(account: account)
-                if let shares = shares, !shares.isEmpty {
-                    let home = self.utilityFileSystem.getHomeServer(session: self.session)
-                    self.database.addShare(account: account, home: home, shares: shares)
-                }
-                self.reloadDataSource()
+        }
+
+        guard resultsReadShares.error == .success else {
+            self.stopGUIGetServerData()
+            await self.reloadDataSource()
+            return
+        }
+
+        await self.database.deleteTableShareAsync(account: session.account)
+
+        if let shares = resultsReadShares.shares, !shares.isEmpty {
+            let home = self.utilityFileSystem.getHomeServer(session: self.session)
+            await self.database.addShareAsync(account: session.account, home: home, shares: shares)
+        }
+
+        self.backgroundTask = Task.detached(priority: .utility) { [weak self] in
+            guard let self = self
+            else {
+                return
             }
-            self.refreshControl.endRefreshing()
+            _ = await MainActor.run {
+                self.fileIds.removeAll()
+            }
+            let sharess = await self.database.getTableSharesAsync(account: self.session.account)
+
+            for share in sharess {
+                let fileId = "\(share.fileSource)"
+                let predicate = await NSPredicate(format: "account == %@ AND fileId == %@", session.account, fileId)
+                if await self.database.metadataExistsAsync(predicate: predicate) {
+                    _ = await MainActor.run {
+                        self.fileIds.insert(fileId)
+                    }
+                } else {
+                    let serverUrlFileName = NCUtilityFileSystem().createServerUrl(serverUrl: share.serverUrl, fileName: share.fileName)
+                    let resultReadShare = await NCNetworking.shared.readFileAsync(serverUrlFileName: serverUrlFileName, account: session.account)
+                    if resultReadShare.error == .success, let metadata = resultReadShare.metadata {
+                        let fileId = metadata.fileId
+                        self.database.addMetadata(metadata)
+                        _ = await MainActor.run {
+                            self.fileIds.insert(fileId)
+                        }
+                    }
+                }
+                if Task.isCancelled {
+                    return
+                }
+            }
+
+            Task {
+                await self.stopGUIGetServerData()
+                await self.reloadDataSource()
+                await self.startSyncMetadata(metadatas: self.dataSource.getMetadatas())
+            }
         }
     }
 }

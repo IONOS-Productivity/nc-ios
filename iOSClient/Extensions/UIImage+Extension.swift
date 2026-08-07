@@ -26,6 +26,24 @@ import UIKit
 import Accelerate
 
 extension UIImage {
+    /// Returns a raster-resized copy of the image at the specified size,
+    /// preserving the original scale and renderingMode.
+    ///
+    /// - Parameter size: Target size in points.
+    /// - Returns: A resized UIImage.
+    func rasterResized(to size: CGSize) -> UIImage {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = self.scale
+        format.opaque = false
+
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+
+        return renderer.image { _ in
+            self.draw(in: CGRect(origin: .zero, size: size))
+        }
+        .withRenderingMode(self.renderingMode)
+    }
+
     func resizeImage(size: CGSize, isAspectRation: Bool = true) -> UIImage? {
         let originRatio = self.size.width / self.size.height
         let newRatio = size.width / size.height
@@ -41,14 +59,16 @@ extension UIImage {
             }
         }
 
-        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-        self.draw(in: CGRect(origin: .zero, size: newSize))
-        defer { UIGraphicsEndImageContext() }
-        return UIGraphicsGetImageFromCurrentImageContext()
+        let format = UIGraphicsImageRendererFormat.default()
+        format.opaque = false
+        format.scale = 1.0
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+        return renderer.image { _ in
+            self.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 
     func fixedOrientation() -> UIImage? {
-
         guard imageOrientation != UIImage.Orientation.up else {
             // This is default orientation, don't need to do anything
             return self.copy() as? UIImage
@@ -218,14 +238,13 @@ extension UIImage {
         return newImage
     }
 
-    func colorizeFolder(metadata: tableMetadata, tableDirectory: tableDirectory? = nil) -> UIImage {
-        let serverUrl = metadata.serverUrl + "/" + metadata.fileName
+    func colorizeFolder(metadata: tableMetadata, tblDirectory: tableDirectory? = nil) -> UIImage {
         var image = self
-        if let tableDirectory = tableDirectory {
-            if let hex = tableDirectory.colorFolder, let color = UIColor(hex: hex) {
+        if let tblDirectory {
+            if let hex = tblDirectory.colorFolder, let color = UIColor(hex: hex) {
                 image = self.withTintColor(color, renderingMode: .alwaysOriginal)
             }
-        } else if let tableDirectory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", metadata.account, serverUrl)), let hex = tableDirectory.colorFolder, let color = UIColor(hex: hex) {
+        } else if let tblDirectory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", metadata.account, metadata.serverUrlFileName)), let hex = tblDirectory.colorFolder, let color = UIColor(hex: hex) {
             image = self.withTintColor(color, renderingMode: .alwaysOriginal)
         }
         return image

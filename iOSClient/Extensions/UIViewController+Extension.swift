@@ -24,9 +24,10 @@
 
 import Foundation
 import UIKit
+import MessageUI
+import NextcloudKit
 
 extension UIViewController {
-
     // https://stackoverflow.com/questions/6131205/how-to-find-topmost-view-controller-on-ios
     @objc func topMostViewController() -> UIViewController {
         // Handling Modal views
@@ -63,32 +64,37 @@ extension UIViewController {
             return false
         }
     }
-    
+
     var mainTabBarController: NCMainTabBarController? {
-        self.view.window?.rootViewController as? NCMainTabBarController
+        if let tabBarController = self.tabBarController as? NCMainTabBarController {
+            return tabBarController
+        }
+        return self.view.window?.rootViewController as? NCMainTabBarController
     }
-    
-    var sceneIdentifier: String? {
-        return (self.view.window?.windowScene?.delegate as? SceneDelegate)?.sceneIdentifier
-    }
-	
+
 	func setNavigationBarLogo() {
 		let logo = UIImage(resource: .ionosEasyStorageLogo)
 			.withTintColor(UIColor(resource: .NavigationBar.logoTint))
 		let imageView = UIImageView(image: logo)
-		
+
 		let originalSize = logo.size
 		let multiplier = 0.89
 		imageView.translatesAutoresizingMaskIntoConstraints = false
 		navigationItem.titleView = imageView
-		
+
 		NSLayoutConstraint.activate([
 			imageView.widthAnchor.constraint(equalToConstant: originalSize.width * multiplier),
 			imageView.heightAnchor.constraint(equalToConstant: originalSize.height * multiplier)
 		])
 	}
-    
+
     func isCurrentScreenInMainTabBar() -> Bool {
         return self.tabBarController is NCMainTabBarController
+    }
+}
+
+extension UIViewController: @retroactive MFMailComposeViewControllerDelegate {
+    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true)
     }
 }

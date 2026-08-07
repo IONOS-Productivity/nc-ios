@@ -1,48 +1,30 @@
-//
-//  ToolbarWidgetView.swift
-//  Widget
-//
-//  Created by Marino Faggiana on 25/08/22.
-//  Copyright © 2022 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 STRATO GmbH
+// SPDX-FileCopyrightText: 2022 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import SwiftUI
 import WidgetKit
 
 struct ToolbarWidgetView: View {
-
     var entry: ToolbarDataEntry
 
+    @ViewBuilder
     var body: some View {
+        mainContent
+            .containerBackground(Color(.background), for: .widget)
+    }
 
+    private var mainContent: some View {
         let parameterLink = "&user=\(entry.userId)&url=\(entry.url)"
         let linkNoAction: URL = URL(string: NCGlobal.shared.widgetActionNoAction + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionNoAction + parameterLink)! : URL(string: NCGlobal.shared.widgetActionNoAction)!
         let linkActionUploadAsset: URL = URL(string: NCGlobal.shared.widgetActionUploadAsset + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionUploadAsset + parameterLink)! : URL(string: NCGlobal.shared.widgetActionUploadAsset)!
         let linkActionScanDocument: URL = URL(string: NCGlobal.shared.widgetActionScanDocument + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionScanDocument + parameterLink)! : URL(string: NCGlobal.shared.widgetActionScanDocument)!
         let linkActionVoiceMemo: URL = URL(string: NCGlobal.shared.widgetActionVoiceMemo + parameterLink) != nil ? URL(string: NCGlobal.shared.widgetActionVoiceMemo + parameterLink)! : URL(string: NCGlobal.shared.widgetActionVoiceMemo)!
 
-        GeometryReader { geo in
-
+        return GeometryReader { geo in
             ZStack(alignment: .topLeading) {
-				
                 HStack(spacing: 0) {
-					
 					let height: CGFloat = 60
                     let width = geo.size.width / 3
 
@@ -68,7 +50,7 @@ struct ToolbarWidgetView: View {
                             .scaledToFit()
                             .frame(width: width, height: height)
                     })
-					
+
 					Link(destination: entry.isPlaceholder ? linkNoAction : linkActionVoiceMemo, label: {
 						Image(uiImage: UIImage(resource: .mic))
 							.resizable()

@@ -35,56 +35,69 @@ class tableRecommendedFiles: Object {
 }
 
 extension NCManageDatabase {
-    func createRecommendedFiles(account: String, recommendations: [NKRecommendation]) {
-        do {
-            let realm = try Realm()
 
-            try realm.write {
-                // Removed all objct for account
-                let results = realm.objects(tableRecommendedFiles.self).filter("account == %@", account)
+    // MARK: - Realm write
 
-                realm.delete(results)
+    /// Asynchronously deletes existing recommended files for the given account and writes new ones into the Realm database.
+    /// - Parameters:
+    ///   - account: The account identifier to filter existing objects.
+    ///   - recommendations: The array of new recommended files to insert.
+    /// - Returns: Void. Executed inside a Realm write transaction on a background serial queue.
+    func createRecommendedFilesAsync(account: String, recommendations: [NKRecommendation]) async {
+        await core.performRealmWriteAsync { realm in
+            // Remove all existing recommended files for the given account
+            let results = realm.objects(tableRecommendedFiles.self)
+                .filter("account == %@", account)
+            realm.delete(results)
 
-                // Added the new recommendations
-                for recommendation in recommendations {
-                    let recommendedFile = tableRecommendedFiles(account: account, id: recommendation.id, timestamp: recommendation.timestamp, name: recommendation.name, directory: recommendation.directory, extensionType: recommendation.extensionType, mimeType: recommendation.mimeType, hasPreview: recommendation.hasPreview, reason: recommendation.reason)
-                    realm.add(recommendedFile)
-                }
+            // Insert new recommended files
+            for recommendation in recommendations {
+                let recommendedFile = tableRecommendedFiles(account: account,
+                                                            id: recommendation.id,
+                                                            timestamp: recommendation.timestamp,
+                                                            name: recommendation.name,
+                                                            directory: recommendation.directory,
+                                                            extensionType: recommendation.extensionType,
+                                                            mimeType: recommendation.mimeType,
+                                                            hasPreview: recommendation.hasPreview,
+                                                            reason: recommendation.reason
+                )
+                realm.add(recommendedFile)
             }
-        } catch let error {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not write to database: \(error)")
         }
     }
+
+    /// Asynchronously deletes all `tableRecommendedFiles` entries for a given account from the Realm database.
+    /// - Parameters:
+    ///   - account: The account identifier whose recommended files should be deleted.
+    ///   - async: Whether the Realm write should be executed asynchronously (default is true).
+    func deleteAllRecommendedFilesAsync(account: String) async {
+        await core.performRealmWriteAsync { realm in
+            let results = realm.objects(tableRecommendedFiles.self)
+                .filter("account == %@", account)
+            realm.delete(results)
+        }
+    }
+
+    // MARK: - Realm read
 
     func getRecommendedFiles(account: String) -> [tableRecommendedFiles] {
-        var recommendedFiles: [tableRecommendedFiles] = []
+        core.performRealmRead { realm in
+            let results = realm.objects(tableRecommendedFiles.self)
+                .filter("account == %@", account)
+                .sorted(byKeyPath: "timestamp", ascending: false)
 
-        do {
-            let realm = try Realm()
-            let results = realm.objects(tableRecommendedFiles.self).filter("account == %@", account).sorted(byKeyPath: "timestamp", ascending: false)
-            for result in results {
-                if let metadata = realm.objects(tableMetadata.self).filter("fileId == %@", result.id).first {
-                    if metadata.status == NCGlobal.shared.metadataStatusWaitDelete { continue }
-                    recommendedFiles.append(tableRecommendedFiles.init(value: result))
+            return results.compactMap { result in
+                let metadata = realm.objects(tableMetadata.self)
+                    .filter("fileId == %@", result.id)
+                    .first
+
+                guard let metadata, metadata.status != NCGlobal.shared.metadataStatusWaitDelete else {
+                    return nil
                 }
+
+                return tableRecommendedFiles(value: result)
             }
-            return recommendedFiles
-        } catch let error {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not access database: \(error)")
-        }
-
-        return []
-    }
-
-    func deleteAllRecommendedFiles(account: String) {
-        do {
-            let realm = try Realm()
-
-            try realm.write {
-                realm.delete(realm.objects(tableRecommendedFiles.self).filter("account == %@", account))
-            }
-        } catch let error {
-            NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] Could not access database: \(error)")
-        }
+        } ?? []
     }
 }

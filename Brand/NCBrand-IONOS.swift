@@ -12,10 +12,10 @@ import UIKit
 class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 
 	private let custom_brand = "IONOS HiDrive Next"
-	private let custom_textCopyrightNextcloudiOS = "HiDrive Next iOS %@ © 2025"
-	private let custom_loginBaseUrl = "https://storage.ionos.fr"
-	private let custom_privacy = "https://wl.hidrive.com/easy/ios/privacy.html"
+	private let custom_textCopyrightNextcloudiOS = "HiDrive Next iOS %@ © 2026"
 	private let custom_sourceCode = "https://wl.hidrive.com/easy/0181"
+    private var loginConfiguration: LoginConfiguration?
+    static var staticLinksConfiguration: StaticLinksConfiguration?
 
 	
 	//MARK: - override custom values if not default (changed by Brander)
@@ -33,7 +33,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	override var textCopyrightNextcloudiOS: String {
 		get {
-			if super.textCopyrightNextcloudiOS == "Nextcloud Hydrogen for iOS %@ © 2025" {
+			if super.textCopyrightNextcloudiOS == "Nextcloud Matheria for iOS %@ © 2026" {
 				return custom_textCopyrightNextcloudiOS
 			}
 			return super.textCopyrightNextcloudiOS
@@ -45,10 +45,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	override var loginBaseUrl: String {
 		get {
-			if super.loginBaseUrl == "https://cloud.nextcloud.com" {
-				return custom_loginBaseUrl
-			}
-			return super.loginBaseUrl
+            return self.loginConfiguration!.loginUrl
 		}
 		set {
 			super.loginBaseUrl = newValue
@@ -57,10 +54,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	override var privacy: String {
 		get {
-			if super.privacy == "https://nextcloud.com/privacy" {
-				return custom_privacy
-			}
-			return super.privacy
+            return NCBrandOptionsIONOS.staticLinksConfiguration!.privacyPolicyUrl
 		}
 		set {
 			super.privacy = newValue
@@ -70,7 +64,7 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	override var sourceCode: String {
 		get {
 			if super.sourceCode == "https://github.com/nextcloud/ios" {
-				return custom_brand
+				return custom_sourceCode
 			}
 			return super.sourceCode
 		}
@@ -81,10 +75,15 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 	
 	//MARK: -
 	override init() {
-		super.init()
+        super.init()
+
 		disable_intro = true
 		disable_request_login_url = true
 		disable_crash_service = true
+
+        let marketsConfiguration = MarketsConfigurationLoader.loadConfiguration()
+        loginConfiguration = marketsConfiguration.login.filter{  $0.language.lowercased() == deviceLanguage().lowercased() }.first ?? marketsConfiguration.login.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
+        NCBrandOptionsIONOS.staticLinksConfiguration = marketsConfiguration.staticLinks.filter{  $0.language.lowercased() == language().lowercased() }.first ?? marketsConfiguration.staticLinks.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
 
 #if ALPHA
 		capabilitiesGroup = "group.com.viseven.ionos.easystorage"
@@ -96,11 +95,19 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 		capabilitiesGroup = "group.com.viseven.ionos.easystorage"
 #endif
 	}
+
+    private func deviceLanguage() -> String {
+        DeviceRegionDeterminer().getDeviceLanguage() ?? MarketsConfiguration.fallback
+    }
+
+    private func language() -> String {
+        Bundle.main.preferredLocalizations.first ?? MarketsConfiguration.fallback
+    }
 }
 
 extension NCBrandOptions {
-	var acknowloedgements: String {
-		"https://wl.hidrive.com/easy/0171"
+	var acknowledgements: String {
+        NCBrandOptionsIONOS.staticLinksConfiguration!.acknowledgementsUrl
 	}
 }
 

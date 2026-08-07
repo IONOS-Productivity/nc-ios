@@ -29,7 +29,6 @@ protocol NCTrashGridCellDelegate: AnyObject {
 }
 
 class NCTrashGridCell: UICollectionViewCell, NCTrashCellProtocol {
-
     @IBOutlet weak var imageItem: UIImageView!
     @IBOutlet weak var imageSelect: UIImageView!
     @IBOutlet weak var labelTitle: UILabel!
@@ -82,17 +81,13 @@ class NCTrashGridCell: UICollectionViewCell, NCTrashCellProtocol {
             UIAccessibilityCustomAction(
                 name: NSLocalizedString("_more_", comment: ""),
                 target: self,
-                selector: #selector(touchUpInsideMore))
+                selector: #selector(touchUpInsideMore(_:)))
         ]
     }
 
     func setButtonMore(image: UIImage) {
         buttonMore.setImage(image, for: .normal)
         setA11yActions()
-    }
-
-    func hideButtonMore(_ status: Bool) {
-        buttonMore.isHidden = status
     }
 
     func selected(_ status: Bool, isEditMode: Bool, account: String) {

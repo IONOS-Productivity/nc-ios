@@ -1,27 +1,7 @@
-//
-//  NCIntroViewController.swift
-//  Nextcloud
-//
-//  Created by Philippe Weidmann on 24.12.19.
-//  Copyright © 2019 Philippe Weidmann. All rights reserved.
-//  Copyright © 2019 Marino Faggiana All rights reserved.
-//
-//  Author Philippe Weidmann
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2019 Marino Faggiana
+// SPDX-FileCopyrightText: 2019 Philippe Weidmann
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import UIKit
 
@@ -33,6 +13,8 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
     @IBOutlet weak var pageControl: UIPageControl!
 
     weak var delegate: NCIntroViewController?
+    // Controller
+    var controller: NCMainTabBarController?
 
     private let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     private let titles = [NSLocalizedString("_intro_1_title_", comment: ""), NSLocalizedString("_intro_2_title_", comment: ""), NSLocalizedString("_intro_3_title_", comment: ""), NSLocalizedString("_intro_4_title_", comment: "")]
@@ -40,6 +22,7 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
     private var timer: Timer?
     private var textColor: UIColor = .white
     private var textColorOpponent: UIColor = .black
+    private var activeLoginProvider: NCLoginProvider?
 
     // MARK: - View Life Cycle
 
@@ -68,21 +51,24 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
         self.navigationController?.view.backgroundColor = NCBrandColor.shared.customer
         self.navigationController?.navigationBar.tintColor = textColor
 
+        if !NCManageDatabase.shared.getAllTableAccount().isEmpty {
+            let navigationItemCancel = UIBarButtonItem(image: UIImage(systemName: "xmark"), style: .plain, target: self, action: #selector(actionCancel(_:)))
+            navigationItemCancel.tintColor = textColor
+            navigationItem.leftBarButtonItem = navigationItemCancel
+        }
+
         pageControl.currentPageIndicatorTintColor = textColor
         pageControl.pageIndicatorTintColor = .lightGray
 
-        buttonLogin.layer.cornerRadius = 20
+        buttonLogin.layer.cornerRadius = 8
         buttonLogin.setTitleColor(NCBrandColor.shared.customer, for: .normal)
         buttonLogin.backgroundColor = textColor
         buttonLogin.setTitle(NSLocalizedString("_log_in_", comment: ""), for: .normal)
 
-        buttonSignUp.layer.cornerRadius = 20
-        buttonSignUp.layer.borderColor = textColor.cgColor
-        buttonSignUp.layer.borderWidth = 1.0
+        buttonSignUp.layer.cornerRadius = 8
         buttonSignUp.setTitleColor(textColor, for: .normal)
-        buttonSignUp.backgroundColor = NCBrandColor.shared.customer
+        buttonSignUp.backgroundColor = textColor.withAlphaComponent(0.2)
         buttonSignUp.titleLabel?.adjustsFontSizeToFitWidth = true
-        buttonSignUp.titleEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
         buttonSignUp.setTitle(NSLocalizedString("_sign_up_", comment: ""), for: .normal)
 
         buttonHost.layer.cornerRadius = 20
@@ -97,42 +83,7 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
 
         view.backgroundColor = NCBrandColor.shared.customer
 
-        NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: NCGlobal.shared.notificationCenterChangeUser), object: nil, queue: nil) { notification in
-            if let userInfo = notification.userInfo,
-               let account = userInfo["account"] as? String {
-                let window = UIApplication.shared.firstWindow
-                if let controller = window?.rootViewController as? NCMainTabBarController {
-                    controller.account = account
-                    self.dismiss(animated: true)
-                } else {
-                    if let controller = UIStoryboard(name: "Main", bundle: nil).instantiateInitialViewController() as? NCMainTabBarController {
-                        controller.account = account
-                        controller.modalPresentationStyle = .fullScreen
-                        controller.view.alpha = 0
-
-                        window?.rootViewController = controller
-                        window?.makeKeyAndVisible()
-
-                        if let scene = window?.windowScene {
-                            SceneManager.shared.register(scene: scene, withRootViewController: controller)
-                        }
-
-                        UIView.animate(withDuration: 0.5) {
-                            controller.view.alpha = 1
-                        }
-                    }
-                }
-            }
-        }
-
-        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: nil) { _ in
-            self.timer?.invalidate()
-            self.timer = nil
-        }
-
-        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: nil) { _ in
-            self.timer = Timer.scheduledTimer(timeInterval: 4, target: self, selector: (#selector(NCIntroViewController.autoScroll)), userInfo: nil, repeats: true)
-        }
+        self.timer = Timer.scheduledTimer(timeInterval: 4, target: self, selector: (#selector(self.autoScroll(_:))), userInfo: nil, repeats: true)
     }
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -145,19 +96,21 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+
         timer?.invalidate()
         timer = nil
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
+
         coordinator.animate(alongsideTransition: nil) { _ in
             self.pageControl?.currentPage = 0
             self.introCollectionView?.collectionViewLayout.invalidateLayout()
         }
     }
 
-    @objc func autoScroll() {
+    @objc func autoScroll(_ sender: Any?) {
         if pageControl.currentPage + 1 >= titles.count {
             pageControl.currentPage = 0
         } else {
@@ -189,7 +142,7 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        timer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: (#selector(NCIntroViewController.autoScroll)), userInfo: nil, repeats: true)
+        timer = Timer.scheduledTimer(timeInterval: 4, target: self, selector: (#selector(autoScroll(_:))), userInfo: nil, repeats: true)
         pageControl.currentPage = Int(scrollView.contentOffset.x) / Int(scrollView.frame.width)
     }
 
@@ -198,12 +151,26 @@ class NCIntroViewController: UIViewController, UICollectionViewDataSource, UICol
         timer = nil
     }
 
+    // MARK: - Action
+
+    @objc func actionCancel(_ sender: Any?) {
+        dismiss(animated: true) { }
+    }
+
     @IBAction func login(_ sender: Any) {
-        appDelegate.openLogin(selector: NCGlobal.shared.introLogin)
+        if let viewController = UIStoryboard(name: "NCLogin", bundle: nil).instantiateViewController(withIdentifier: "NCLogin") as? NCLogin {
+            viewController.controller = self.controller
+            self.navigationController?.pushViewController(viewController, animated: true)
+        }
     }
 
     @IBAction func signupWithProvider(_ sender: Any) {
-        appDelegate.openLogin(selector: NCGlobal.shared.introSignUpWithProvider)
+        let loginProvider = NCLoginProvider()
+        loginProvider.controller = self.controller
+        loginProvider.initialURLString = NCBrandOptions.shared.linkloginPreferredProviders
+        loginProvider.presentingViewController = self
+        loginProvider.startAuthentication()
+        self.activeLoginProvider = loginProvider
     }
 
     @IBAction func host(_ sender: Any) {

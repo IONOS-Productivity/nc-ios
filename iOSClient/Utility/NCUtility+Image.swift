@@ -1,34 +1,15 @@
-//
-//  NCUtility+Image.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 06/11/23.
-//  Copyright © 2023 Marino Faggiana. All rights reserved.
-//  Copyright © 2024 STRATO GmbH
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2023 Marino Faggiana
+// SPDX-FileCopyrightText: 2024 STRATO GmbH
+// SPDX-License-Identifier: GPL-3.0-or-later
 
+import Foundation
 import UIKit
 import NextcloudKit
 import PDFKit
 import Accelerate
 import CoreMedia
 import Photos
-import SVGKit
 
 extension NCUtility {
     func loadImage(named imageName: String, colors: [UIColor]? = nil, size: CGFloat? = nil, useTypeIconFile: Bool = false, account: String? = nil) -> UIImage {
@@ -36,18 +17,18 @@ extension NCUtility {
 
         if useTypeIconFile {
             switch imageName {
-            case NKCommon.TypeIconFile.audio.rawValue: image = UIImage(systemName: "waveform", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
-            case NKCommon.TypeIconFile.code.rawValue: image = UIImage(systemName: "ellipsis.curlybraces", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
-            case NKCommon.TypeIconFile.compress.rawValue: image = UIImage(systemName: "doc.zipper", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
-            case NKCommon.TypeIconFile.directory.rawValue: image = UIImage(named: "folder")! .image(color: NCBrandColor.shared.getElement(account: account), size: UIScreen.main.bounds.width / 2)
-            case NKCommon.TypeIconFile.document.rawValue: image = UIImage(systemName: "doc.richtext", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.documentIconColor]))
-            case NKCommon.TypeIconFile.image.rawValue: image = UIImage(systemName: "photo", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
-            case NKCommon.TypeIconFile.movie.rawValue: image = UIImage(systemName: "video", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
-            case NKCommon.TypeIconFile.pdf.rawValue: image = UIImage(named: "file_pdf")!
-            case NKCommon.TypeIconFile.ppt.rawValue: image = UIImage(systemName: "play.rectangle", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.presentationIconColor]))
-            case NKCommon.TypeIconFile.txt.rawValue: image = UIImage(systemName: "doc.text", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
-            case NKCommon.TypeIconFile.url.rawValue: image = UIImage(systemName: "network", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
-            case NKCommon.TypeIconFile.xls.rawValue: image = UIImage(systemName: "tablecells", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.spreadsheetIconColor]))
+            case NKTypeIconFile.audio.rawValue: image = UIImage(systemName: "waveform", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
+            case NKTypeIconFile.code.rawValue: image = UIImage(systemName: "ellipsis.curlybraces", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
+            case NKTypeIconFile.compress.rawValue: image = UIImage(systemName: "doc.zipper", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
+            case NKTypeIconFile.directory.rawValue: image = UIImage(named: "folder")! .image(color: NCBrandColor.shared.getElement(account: account), size: UIScreen.main.bounds.width / 2)
+            case NKTypeIconFile.document.rawValue: image = UIImage(systemName: "doc.richtext", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.documentIconColor]))
+            case NKTypeIconFile.image.rawValue: image = UIImage(systemName: "photo", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
+            case NKTypeIconFile.video.rawValue: image = UIImage(systemName: "video", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
+            case NKTypeIconFile.pdf.rawValue: image = UIImage(named: "file_pdf")!
+            case NKTypeIconFile.ppt.rawValue: image = UIImage(systemName: "play.rectangle", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.presentationIconColor]))
+            case NKTypeIconFile.txt.rawValue: image = UIImage(systemName: "doc.text", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
+            case NKTypeIconFile.url.rawValue: image = UIImage(systemName: "network", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
+            case NKTypeIconFile.xls.rawValue: image = UIImage(systemName: "tablecells", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.spreadsheetIconColor]))
             default: image = UIImage(resource: .fileUnsupported)
             }
         }
@@ -82,8 +63,8 @@ extension NCUtility {
             return UIImage(systemName: "doc")!
         }
     }
-    
-    private var userImage: UIImage {
+
+    var userImage: UIImage {
         UIImage(resource: .userAvatar)
     }
 
@@ -111,14 +92,17 @@ extension NCUtility {
     }
 
     func createImageFileFrom(metadata: tableMetadata) {
-        if metadata.classFile != NKCommon.TypeClassFile.image.rawValue, metadata.classFile != NKCommon.TypeClassFile.video.rawValue { return }
+        if metadata.classFile != NKTypeClassFile.image.rawValue, metadata.classFile != NKTypeClassFile.video.rawValue { return }
         var image: UIImage?
-        let fileNamePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView)
+        let fileNamePath = utilityFileSystem.getDirectoryProviderStorageOcId(metadata.ocId,
+                                                                             fileName: metadata.fileNameView,
+                                                                             userId: metadata.userId,
+                                                                             urlBase: metadata.urlBase)
 
         if image == nil {
-            if metadata.classFile == NKCommon.TypeClassFile.image.rawValue {
+            if metadata.classFile == NKTypeClassFile.image.rawValue {
                 image = UIImage(contentsOfFile: fileNamePath)
-            } else if metadata.classFile == NKCommon.TypeClassFile.video.rawValue {
+            } else if metadata.classFile == NKTypeClassFile.video.rawValue {
                 let videoPath = NSTemporaryDirectory() + "tempvideo.mp4"
                 utilityFileSystem.linkItem(atPath: fileNamePath, toPath: videoPath)
                 image = imageFromVideo(url: URL(fileURLWithPath: videoPath), at: 0)
@@ -127,47 +111,53 @@ extension NCUtility {
 
         guard let image else { return }
 
-        createImageStandard(ocId: metadata.ocId, etag: metadata.etag, image: image)
+        createImageStandard(ocId: metadata.ocId, etag: metadata.etag, image: image, userId: metadata.userId, urlBase: metadata.urlBase)
     }
 
     func createImageFileFrom(data: Data, metadata: tableMetadata) {
-        createImageFileFrom( data: data, ocId: metadata.ocId, etag: metadata.etag)
+        createImageFileFrom(data: data, ocId: metadata.ocId, etag: metadata.etag, userId: metadata.userId, urlBase: metadata.urlBase)
     }
 
-    func createImageFileFrom(data: Data, ocId: String, etag: String) {
-        guard let image = UIImage(data: data) else { return }
-        let fileNamePath1024 = self.utilityFileSystem.getDirectoryProviderStorageImageOcId(ocId, etag: etag, ext: global.previewExt1024)
+    func createImageFileFrom(data: Data, ocId: String, etag: String, userId: String, urlBase: String) {
+        guard let image = UIImage(data: data) else {
+            return
+        }
+        let fileNamePath1024 = self.utilityFileSystem.getDirectoryProviderStorageImageOcId(ocId,
+                                                                                           etag: etag,
+                                                                                           ext: global.previewExt1024,
+                                                                                           userId: userId,
+                                                                                           urlBase: urlBase)
 
         do {
             try data.write(to: URL(fileURLWithPath: fileNamePath1024), options: .atomic)
         } catch { }
 
-        createImageStandard(ocId: ocId, etag: etag, image: image)
+        createImageStandard(ocId: ocId, etag: etag, image: image, userId: userId, urlBase: urlBase)
     }
 
-    private func createImageStandard(ocId: String, etag: String, image: UIImage) {
+    private func createImageStandard(ocId: String, etag: String, image: UIImage, userId: String, urlBase: String) {
         let ext = [global.previewExt1024, global.previewExt512, global.previewExt256]
         let size = [global.size1024, global.size512, global.size256]
         let compressionQuality = [0.5, 0.6, 0.7]
 
         for i in 0..<ext.count {
-            if !utilityFileSystem.fileProviderStorageImageExists(ocId, etag: etag, ext: ext[i]),
+            if !utilityFileSystem.fileProviderStorageImageExists(ocId, etag: etag, ext: ext[i], userId: userId, urlBase: urlBase),
                let image = image.resizeImage(size: size[i]),
                let data = image.jpegData(compressionQuality: compressionQuality[i]) {
                 do {
-                    let fileNamePath = utilityFileSystem.getDirectoryProviderStorageImageOcId(ocId, etag: etag, ext: ext[i])
+                    let fileNamePath = utilityFileSystem.getDirectoryProviderStorageImageOcId(ocId, etag: etag, ext: ext[i], userId: userId, urlBase: urlBase)
                     try data.write(to: URL(fileURLWithPath: fileNamePath))
                 } catch { }
             }
         }
     }
 
-    func getImage(ocId: String, etag: String, ext: String) -> UIImage? {
-        return UIImage(contentsOfFile: self.utilityFileSystem.getDirectoryProviderStorageImageOcId(ocId, etag: etag, ext: ext))
+    func getImage(ocId: String, etag: String, ext: String, userId: String, urlBase: String) -> UIImage? {
+        return UIImage(contentsOfFile: self.utilityFileSystem.getDirectoryProviderStorageImageOcId(ocId, etag: etag, ext: ext, userId: userId, urlBase: urlBase))
     }
 
-    func existsImage(ocId: String, etag: String, ext: String) -> Bool {
-        return FileManager().fileExists(atPath: self.utilityFileSystem.getDirectoryProviderStorageImageOcId(ocId, etag: etag, ext: ext))
+    func existsImage(ocId: String, etag: String, ext: String, userId: String, urlBase: String) -> Bool {
+        return FileManager().fileExists(atPath: self.utilityFileSystem.getDirectoryProviderStorageImageOcId(ocId, etag: etag, ext: ext, userId: userId, urlBase: urlBase))
     }
 
     func imageFromVideo(url: URL, at time: TimeInterval, completion: @escaping (UIImage?) -> Void) {
@@ -260,96 +250,112 @@ extension NCUtility {
         return avatarImage
     }
 
-    func convertSVGtoPNGWriteToUserData(svgUrlString: String, fileName: String? = nil, width: CGFloat? = nil, rewrite: Bool, account: String, id: Int? = nil, completion: @escaping (_ imageNamePath: String?, _ id: Int?) -> Void) {
-        var fileNamePNG = ""
-        guard let svgUrlString = svgUrlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-              let iconURL = URL(string: svgUrlString) else {
-            return completion(nil, id)
+#if !EXTENSION
+    func convertSVGtoPNGWriteToUserData(serverUrl: String,
+                                        size: CGFloat = 256,
+                                        rewrite: Bool,
+                                        trimTransparentPixels: Bool = true,
+                                        account: String,
+                                        id: Int? = nil) async -> (image: UIImage?, id: Int?) {
+        var serverUrl = serverUrl
+        if let url = serverUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+            serverUrl = URL(string: url)?.absoluteString ?? serverUrl
         }
-        if let fileName = fileName {
-            fileNamePNG = fileName
-        } else {
-            fileNamePNG = iconURL.deletingPathExtension().lastPathComponent + ".png"
-        }
-        let imageNamePath = utilityFileSystem.directoryUserData + "/" + fileNamePNG
+        let fileNamePNG = utilityFileSystem.replaceExtension(fileName: URL(fileURLWithPath: serverUrl).lastPathComponent, with: "png")
+        let pathPNG = utilityFileSystem.createServerUrl(serverUrl: utilityFileSystem.directoryUserData, fileName: fileNamePNG)
 
-        if !FileManager.default.fileExists(atPath: imageNamePath) || rewrite == true {
-            NextcloudKit.shared.downloadContent(serverUrl: iconURL.absoluteString, account: account) { _, responseData, error in
-                if error == .success, let data = responseData?.data {
-                    if let image = UIImage(data: data) {
-                        var newImage: UIImage = image
+        if !FileManager.default.fileExists(atPath: pathPNG) || rewrite {
+            let results = await NextcloudKit.shared.downloadContentAsync(serverUrl: serverUrl, account: account) { task in
+                Task {
+                    let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: account,
+                                                                                                path: serverUrl,
+                                                                                                name: "downloadContent")
+                    await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+                }
+            }
+            guard results.error == .success,
+                  let data = results.responseData?.data else {
+                return(nil, id)
+            }
 
-                        if width != nil {
+            // is an image
+            if let image = UIImage(data: data) {
+                let ratio = image.size.height / image.size.width
+                let size = CGSize(width: size, height: size * ratio)
+                let renderFormat = UIGraphicsImageRendererFormat.default()
+                renderFormat.opaque = false
+                let renderer = UIGraphicsImageRenderer(size: CGSize(width: size.width, height: size.height), format: renderFormat)
+                let newImage = renderer.image { _ in
+                    image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+                }
+                guard let pngImageData = newImage.pngData() else {
+                    return(nil, id)
+                }
 
-                            let ratio = image.size.height / image.size.width
-                            let newSize = CGSize(width: width!, height: width! * ratio)
-
-                            let renderFormat = UIGraphicsImageRendererFormat.default()
-                            renderFormat.opaque = false
-                            let renderer = UIGraphicsImageRenderer(size: CGSize(width: newSize.width, height: newSize.height), format: renderFormat)
-                            newImage = renderer.image { _ in
-                                image.draw(in: CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height))
-                            }
-                        }
-                        guard let pngImageData = newImage.pngData() else {
-                            return completion(nil, id)
-                        }
-                        try? pngImageData.write(to: URL(fileURLWithPath: imageNamePath))
-
-                        return completion(imageNamePath, id)
-                    } else {
-                        guard let svgImage: SVGKImage = SVGKImage(data: data) else {
-                            return completion(nil, id)
-                        }
-
-                        if width != nil {
-                            let scale = svgImage.size.height / svgImage.size.width
-                            svgImage.size = CGSize(width: width!, height: width! * scale)
-                        }
-                        guard let image: UIImage = svgImage.uiImage else {
-                            return completion(nil, id)
-                        }
-                        guard let pngImageData = image.pngData() else {
-                            return completion(nil, id)
-                        }
-
-                        try? pngImageData.write(to: URL(fileURLWithPath: imageNamePath))
-
-                        return completion(imageNamePath, id)
-                    }
-                } else {
-                    return completion(nil, id)
+                do {
+                    try pngImageData.write(to: URL(fileURLWithPath: pathPNG))
+                    return(newImage, id)
+                } catch {
+                    return(nil, id)
                 }
             }
 
+            // is a SVG
+            do {
+                let image = try await NCSVGRenderer().renderSVGToUIImage(svgData: data, size: CGSize(width: size, height: size), trimTransparentPixels: trimTransparentPixels)
+                guard let image,
+                      let pngImageData = image.pngData() else {
+                        return(nil, id)
+                }
+                try pngImageData.write(to: URL(fileURLWithPath: pathPNG))
+                return(image, id)
+            } catch {
+                return(nil, id)
+            }
         } else {
-            return completion(imageNamePath, id)
+            do {
+                let data = try Data(contentsOf: URL(fileURLWithPath: pathPNG))
+                return(UIImage(data: data), id)
+            } catch {
+                return(nil, id)
+            }
         }
     }
+#endif
 
-    func getUserStatus(userIcon: String?, userStatus: String?, userMessage: String?) -> (statusImage: UIImage?, statusMessage: String, descriptionMessage: String) {
+    func getUserStatus(userIcon: String?, userStatus: String?, userMessage: String?) -> (statusImage: UIImage?, statusImageColor: UIColor, statusMessage: String, descriptionMessage: String) {
         var statusImage: UIImage?
+        var statusImageColor: UIColor = .black
         var statusMessage: String = ""
         var descriptionMessage: String = ""
         var messageUserDefined: String = ""
 
         if userStatus?.lowercased() == "online" {
-            statusImage = loadImage(named: "circle_fill", colors: [UIColor(red: 103.0 / 255.0, green: 176.0 / 255.0, blue: 134.0 / 255.0, alpha: 1.0)])
+            statusImage = UIImage(systemName: "checkmark.circle.fill")?.withTintColor(.systemGreen).withRenderingMode(.alwaysOriginal)
+            statusImageColor = UIColor.systemGreen
             messageUserDefined = NSLocalizedString("_online_", comment: "")
         }
         if userStatus?.lowercased() == "away" {
-            statusImage = loadImage(named: "userStatusAway", colors: [UIColor(red: 233.0 / 255.0, green: 166.0 / 255.0, blue: 75.0 / 255.0, alpha: 1.0)])
+            statusImage = UIImage(systemName: "clock.fill")?.withTintColor(.systemYellow).withRenderingMode(.alwaysOriginal)
+            statusImageColor = UIColor.systemYellow
             messageUserDefined = NSLocalizedString("_away_", comment: "")
         }
         if userStatus?.lowercased() == "dnd" {
-            statusImage = loadImage(named: "userStatusDnd")
+            statusImage = UIImage(systemName: "minus.circle.fill")?.withTintColor(.systemRed).withRenderingMode(.alwaysOriginal)
+            statusImageColor = UIColor.systemRed
             messageUserDefined = NSLocalizedString("_dnd_", comment: "")
             descriptionMessage = NSLocalizedString("_dnd_description_", comment: "")
         }
         if userStatus?.lowercased() == "offline" || userStatus?.lowercased() == "invisible" {
-            statusImage = UIImage(named: "userStatusOffline")!.withTintColor(.init(named: "SystemBackgroundInverted")!)
+            statusImage = UIImage(systemName: "circle")?.withTintColor(.init(named: "SystemBackgroundInverted")!).withRenderingMode(.alwaysOriginal)
+            statusImageColor = .init(named: "SystemBackgroundInverted")!
             messageUserDefined = NSLocalizedString("_invisible_", comment: "")
             descriptionMessage = NSLocalizedString("_invisible_description_", comment: "")
+        }
+        if userStatus?.lowercased() == "busy" {
+            statusImage = UIImage(systemName: "circle.fill")?.withTintColor(.systemRed).withRenderingMode(.alwaysOriginal)
+            statusImageColor = UIColor.systemRed
+            messageUserDefined = NSLocalizedString("_busy_", comment: "")
         }
 
         if let userIcon = userIcon {
@@ -358,12 +364,14 @@ extension NCUtility {
         if let userMessage = userMessage {
             statusMessage += userMessage
         }
+
         statusMessage = statusMessage.trimmingCharacters(in: .whitespaces)
+
         if statusMessage.isEmpty {
             statusMessage = messageUserDefined
         }
 
-        return(statusImage, statusMessage, descriptionMessage)
+        return(statusImage, statusImageColor, statusMessage, descriptionMessage)
     }
 
     func memorySizeOfImage(_ image: UIImage) -> Int {

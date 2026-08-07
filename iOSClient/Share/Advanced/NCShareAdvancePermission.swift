@@ -24,63 +24,9 @@
 
 import UIKit
 import NextcloudKit
-import SVGKit
 import CloudKit
 
 class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDelegate, NCShareNavigationTitleSetting {
-    func dismissShareAdvanceView(shouldSave: Bool) {
-        guard shouldSave else {
-            guard oldTableShare?.hasChanges(comparedTo: share) != false else {
-                navigationController?.popViewController(animated: true)
-                return
-            }
-
-            let alert = UIAlertController(
-                title: NSLocalizedString("_cancel_request_", comment: ""),
-                message: NSLocalizedString("_discard_changes_info_", comment: ""),
-                preferredStyle: .alert)
-
-            alert.addAction(UIAlertAction(
-                title: NSLocalizedString("_discard_changes_", comment: ""),
-                style: .destructive,
-                handler: { _ in self.navigationController?.popViewController(animated: true) }))
-
-            alert.addAction(UIAlertAction(title: NSLocalizedString("_continue_editing_", comment: ""), style: .default))
-            alert.view.backgroundColor = NCBrandColor.shared.appBackgroundColor
-            self.present(alert, animated: true)
-
-            return
-        }
-
-        Task {
-            // TODO: Apply share token to download limit object
-
-            if isNewShare {
-                let serverUrl = metadata.serverUrl + "/" + metadata.fileName
-
-                if share.shareType != NCShareCommon().SHARE_TYPE_LINK, metadata.e2eEncrypted,
-                   NCCapabilities.shared.getCapabilities(account: metadata.account).capabilityE2EEApiVersion == NCGlobal.shared.e2eeVersionV20 {
-
-                    if NCNetworkingE2EE().isInUpload(account: metadata.account, serverUrl: serverUrl) {
-                        let error = NKError(errorCode: NCGlobal.shared.errorE2EEUploadInProgress, errorDescription: NSLocalizedString("_e2e_in_upload_", comment: ""))
-                        return NCContentPresenter().showInfo(error: error)
-                    }
-
-                    let error = await NCNetworkingE2EE().uploadMetadata(serverUrl: serverUrl, addUserId: share.shareWith, removeUserId: nil, account: metadata.account)
-
-                    if error != .success {
-                        return NCContentPresenter().showError(error: error)
-                    }
-                }
-
-                networking?.createShare(share, downloadLimit: self.downloadLimit)
-            } else {
-                networking?.updateShare(share, downloadLimit: self.downloadLimit)
-            }
-        }
-
-        navigationController?.popViewController(animated: true)
-    }
 
     let database = NCManageDatabase.shared
 
@@ -107,6 +53,7 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
     /// This can only be created after the share has been actually created due to its requirement of the share token provided by the server.
     ///
     var downloadLimit: DownloadLimitViewModel = .unlimited
+    var downloadLimitChanged: Bool = false
 
     var shareConfig: NCShareConfig!
     var networking: NCShareNetworking?
@@ -128,7 +75,7 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
                         self.downloadLimit = .limited(limit: limit.limit, count: limit.count)
                     }
                 } catch {
-                    NextcloudKit.shared.nkCommonInstance.writeLog("[ERROR] There was an error while fetching the download limit for share with token \(persistedShare.token)!")
+                    nkLog(error: "There was an error while fetching the download limit for share with token \(persistedShare.token)!")
                 }
             }
         }
@@ -138,7 +85,7 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
         
         self.setNavigationTitle()
         self.navigationItem.hidesBackButton = true
-        self.navigationController?.setNavigationBarAppearance(backround: UIColor(resource: .Share.Advanced.background))
+        self.navigationController?.setNavigationBarAppearance(backgroundColor: UIColor(resource: .Share.Advanced.background))
         
         // disbale pull to dimiss
         isModalInPresentation = true
@@ -180,7 +127,7 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         if section == 0 {
-            return NSLocalizedString("_permissions_", comment: "")
+            return NSLocalizedString("_custom_permissions_", comment: "")
         } else if section == 1 {
             return NSLocalizedString("_advanced_", comment: "")
         } else { return nil }
@@ -208,8 +155,8 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0 {
             // check reshare permission, if restricted add note
-            let maxPermission = metadata.directory ? NCPermissions().permissionMaxFolderShare : NCPermissions().permissionMaxFileShare
-            return shareConfig.resharePermission != maxPermission ? shareConfig.permissions.count + 1 : shareConfig.permissions.count
+            let maxPermission = metadata.directory ? NCSharePermissions.permissionMaxFolderShare : NCSharePermissions.permissionMaxFileShare
+            return shareConfig.sharePermission != maxPermission ? shareConfig.permissions.count + 1 : shareConfig.permissions.count
         } else if section == 1 {
             return shareConfig.advanced.count
         } else { return 0 }
@@ -238,7 +185,7 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         guard let cellConfig = shareConfig.config(for: indexPath) else { return }
-        guard let cellConfig = cellConfig as? NCShareDetails else {
+        guard let cellConfig = cellConfig as? NCAdvancedPermission else {
             cellConfig.didSelect(for: share)
             tableView.reloadData()
             return
@@ -289,7 +236,65 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
                 tableView.reloadData()
             }
             self.present(alertController, animated: true)
+        case .downloadAndSync:
+            share.downloadAndSync.toggle()
+            tableView.reloadData()
         }
+    }
+
+    func dismissShareAdvanceView(shouldSave: Bool) {
+        guard shouldSave else {
+            guard oldTableShare?.hasChanges(comparedTo: share) != false else {
+                navigationController?.popViewController(animated: true)
+                return
+            }
+
+            let alert = UIAlertController(
+                title: NSLocalizedString("_cancel_request_", comment: ""),
+                message: NSLocalizedString("_discard_changes_info_", comment: ""),
+                preferredStyle: .alert)
+
+            alert.addAction(UIAlertAction(
+                title: NSLocalizedString("_discard_changes_", comment: ""),
+                style: .destructive,
+                handler: { _ in self.navigationController?.popViewController(animated: true) }))
+
+            alert.addAction(UIAlertAction(title: NSLocalizedString("_continue_editing_", comment: ""), style: .default))
+            self.present(alert, animated: true)
+
+            return
+        }
+
+        Task {
+            if (share.shareType == NKShare.ShareType.publicLink.rawValue || share.shareType == NKShare.ShareType.email.rawValue) && NCSharePermissions.hasPermissionToShare(share.permissions) {
+                share.permissions = share.permissions - NKShare.Permission.share.rawValue
+            }
+
+            if isNewShare {
+                let capabilities = await NKCapabilities.shared.getCapabilities(for: metadata.account)
+
+                if share.shareType != NKShare.ShareType.publicLink.rawValue, metadata.e2eEncrypted,
+                   NCGlobal.shared.isE2eeVersion2(capabilities.e2EEApiVersion) {
+
+                    if await NCNetworkingE2EE().isInUpload(account: metadata.account, serverUrl: metadata.serverUrlFileName) {
+                        let error = NKError(errorCode: NCGlobal.shared.errorE2EEUploadInProgress, errorDescription: NSLocalizedString("_e2e_in_upload_", comment: ""))
+                        return NCContentPresenter().showInfo(error: error)
+                    }
+
+                    let error = await NCNetworkingE2EE().uploadMetadata(serverUrl: metadata.serverUrlFileName, addUserId: share.shareWith, removeUserId: nil, account: metadata.account)
+
+                    if error != .success {
+                        return NCContentPresenter().showError(error: error)
+                    }
+                }
+
+                networking?.createShare(share, downloadLimit: self.downloadLimit)
+            } else {
+                networking?.updateShare(share, downloadLimit: self.downloadLimit, changeDownloadLimit: downloadLimitChanged)
+            }
+        }
+
+        navigationController?.popViewController(animated: true)
     }
 }
 
@@ -298,5 +303,6 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
 extension NCShareAdvancePermission: NCShareDownloadLimitTableViewControllerDelegate {
     func didSetDownloadLimit(_ downloadLimit: DownloadLimitViewModel) {
         self.downloadLimit = downloadLimit
+        self.downloadLimitChanged = true
     }
 }

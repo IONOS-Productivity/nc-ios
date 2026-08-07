@@ -1,25 +1,6 @@
-//
-//  NCCollectionViewDownloadThumbnail.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 14/03/24.
-//  Copyright © 2024 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2024 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
 import UIKit
@@ -41,50 +22,50 @@ class NCCollectionViewDownloadThumbnail: ConcurrentOperation, @unchecked Sendabl
     }
 
     override func start() {
-        guard !isCancelled else { return self.finish() }
-        var etagResource: String?
-
-        if utilityFileSystem.fileProviderStorageImageExists(metadata.ocId, etag: metadata.etag) {
-            etagResource = metadata.etagResource
+        guard !isCancelled else {
+            return self.finish()
         }
 
-        NextcloudKit.shared.downloadPreview(fileId: metadata.fileId,
-                                            etag: etagResource,
-                                            account: self.metadata.account,
-                                            options: NKRequestOptions(queue: NextcloudKit.shared.nkCommonInstance.backgroundQueue)) { _, _, _, etag, responseData, error in
-
-            if error == .success, let data = responseData?.data, let collectionView = self.collectionView {
-
-                NCManageDatabase.shared.setMetadataEtagResource(ocId: self.metadata.ocId, etagResource: etag)
+        Task {
+            let resultsPreview = await NextcloudKit.shared.downloadPreviewAsync(fileId: metadata.fileId, etag: metadata.etag, account: metadata.account) { task in
+                Task {
+                    let identifier = await NCNetworking.shared.networkingTasks.createIdentifier(account: self.metadata.account,
+                                                                                                path: self.metadata.fileId,
+                                                                                                name: "DownloadPreview")
+                    await NCNetworking.shared.networkingTasks.track(identifier: identifier, task: task)
+                }
+            }
+            if resultsPreview.error == .success,
+               let data = resultsPreview.responseData?.data,
+               let collectionView = self.collectionView {
                 NCUtility().createImageFileFrom(data: data, metadata: self.metadata)
-                let image = self.utility.getImage(ocId: self.metadata.ocId, etag: self.metadata.etag, ext: self.ext)
+                let image = self.utility.getImage(ocId: self.metadata.ocId, etag: self.metadata.etag, ext: self.ext, userId: self.metadata.userId, urlBase: self.metadata.urlBase)
 
-                DispatchQueue.main.async {
-                    for case let cell as NCCellProtocol in collectionView.visibleCells where cell.fileOcId == self.metadata.ocId {
-                        if let filePreviewImageView = cell.filePreviewImageView {
-                            filePreviewImageView.contentMode = .scaleAspectFill
+                Task { @MainActor in
+                    for case let cell as NCCellMainProtocol in collectionView.visibleCells where cell.metadata?.ocId == self.metadata.ocId {
+                        if let previewImage = cell.previewImg {
+                            previewImage.contentMode = .scaleAspectFill
 
                             if self.metadata.hasPreviewBorder {
-                                filePreviewImageView.layer.borderWidth = 0.2
-                                filePreviewImageView.layer.borderColor = UIColor.systemGray3.cgColor
+                                previewImage.layer.borderWidth = 0.2
+                                previewImage.layer.borderColor = UIColor.systemGray3.cgColor
                             }
 
-                            if let photoCell = (cell as? NCPhotoCell),
-                               photoCell.bounds.size.width > 100 {
-                                    cell.hideButtonMore(false)
-                                    cell.hideImageStatus(false)
-                            }
-
-                            UIView.transition(with: filePreviewImageView,
-                                              duration: 0.75,
-                                              options: .transitionCrossDissolve,
-                                              animations: { filePreviewImageView.image = image },
-                                              completion: nil)
+                            UIView.transition(
+                                with: previewImage,
+                                duration: 0.75,
+                                options: .transitionCrossDissolve,
+                                animations: {
+                                    previewImage.image = image
+                                },
+                                completion: nil
+                            )
                             break
                         }
                     }
                 }
             }
+
             self.finish()
         }
     }

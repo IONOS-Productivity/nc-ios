@@ -22,24 +22,13 @@
 
 import UIKit
 import DropDown
+import NextcloudKit
 
-class NCShareCommon: NSObject {
+enum NCShareCommon {
+    static let itemTypeFile = "file"
+    static let itemTypeFolder = "folder"
 
-    // swiftlint:disable identifier_name
-    let SHARE_TYPE_USER = 0
-    let SHARE_TYPE_GROUP = 1
-    let SHARE_TYPE_LINK = 3
-    let SHARE_TYPE_EMAIL = 4
-    let SHARE_TYPE_CONTACT = 5
-    let SHARE_TYPE_REMOTE = 6
-    let SHARE_TYPE_CIRCLE = 7
-    let SHARE_TYPE_GUEST = 8
-    let SHARE_TYPE_REMOTE_GROUP = 9
-    let SHARE_TYPE_ROOM = 10
-    // swiftlint:enable identifier_name
-
-    func createLinkAvatar(imageName: String, colorCircle: UIColor) -> UIImage? {
-
+    static func createLinkAvatar(imageName: String, colorCircle: UIColor) -> UIImage? {
         let size: CGFloat = 200
 
         let bottomImage = UIImage(named: "circle_fill")!.image(color: colorCircle, size: size / 2)
@@ -53,7 +42,7 @@ class NCShareCommon: NSObject {
         return image
     }
 
-    func copyLink(link: String, viewController: UIViewController, sender: Any) {
+    static func copyLink(link: String, viewController: UIViewController, sender: Any) {
         let objectsToShare = [link]
 
         let activityViewController = UIActivityViewController(activityItems: objectsToShare, applicationActivities: nil)
@@ -69,28 +58,21 @@ class NCShareCommon: NSObject {
         }
     }
 
-    func getImageShareType(shareType: Int) -> UIImage? {
+    static func getImageShareType(shareType: Int) -> UIImage? {
+        typealias type = NKShare.ShareType
 
         switch shareType {
-        case SHARE_TYPE_USER:
-            return UIImage(named: "shareTypeUser")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
-        case self.SHARE_TYPE_GROUP:
+        case type.group.rawValue:
             return UIImage(named: "shareTypeGroup")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
-        case self.SHARE_TYPE_LINK:
+        case type.publicLink.rawValue:
             return UIImage(named: "shareTypeLink")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
-        case self.SHARE_TYPE_EMAIL:
+        case type.email.rawValue:
             return UIImage(named: "shareTypeEmail")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
-        case self.SHARE_TYPE_CONTACT:
-            return UIImage(named: "shareTypeUser")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
-        case self.SHARE_TYPE_REMOTE:
-            return UIImage(named: "shareTypeUser")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
-        case self.SHARE_TYPE_CIRCLE:
-            return UIImage(named: "shareTypeCircles")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
-        case self.SHARE_TYPE_GUEST:
-            return UIImage(named: "shareTypeUser")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
-        case self.SHARE_TYPE_REMOTE_GROUP:
+        case type.team.rawValue:
+            return UIImage(named: "shareTypeTeam")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
+        case type.federatedGroup.rawValue:
             return UIImage(named: "shareTypeGroup")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
-        case self.SHARE_TYPE_ROOM:
+        case type.talkConversation.rawValue:
             return UIImage(named: "shareTypeRoom")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)
         default:
             return UIImage(named: "shareTypeUser")?.withTintColor(NCBrandColor.shared.textColor, renderingMode: .alwaysOriginal)

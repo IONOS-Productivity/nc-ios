@@ -1,32 +1,14 @@
-//
-//  NCUtilityFileSystem.swift
-//  Nextcloud
-//
-//  Created by Marino Faggiana on 28/05/2020.
-//  Copyright © 2020 Marino Faggiana. All rights reserved.
-//
-//  Author Marino Faggiana <marino.faggiana@nextcloud.com>
-//
-//  This program is free software: you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation, either version 3 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: 2020 Marino Faggiana
+// SPDX-License-Identifier: GPL-3.0-or-later
 
-import UIKit
-import NextcloudKit
+import Foundation
 import PhotosUI
 
 final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
     let fileManager = FileManager()
+    private let fileIO = DispatchQueue(label: "FileManager.Delete", qos: .utility)
+
     var directoryGroup: String {
         return fileManager.containerURL(forSecurityApplicationGroupIdentifier: NCBrandOptions.shared.capabilitiesGroup)?.path ?? ""
     }
@@ -63,21 +45,62 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         }
         return path
     }
-    var directoryProviderStorage: String {
-        guard let directoryGroup = fileManager.containerURL(forSecurityApplicationGroupIdentifier: NCBrandOptions.shared.capabilitiesGroup) else { return "" }
+
+    // MARK: -
+
+    func getPathDomain(userId: String, host: String) -> String {
+        let path = "\(userId)-\(host)"
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: ".", with: "-")
+            .replacingOccurrences(of: "@", with: "-")
+            .lowercased()
+        return path
+    }
+
+    func getDirectoryProviderStorage() -> String {
+        guard let directoryGroup = fileManager.containerURL(forSecurityApplicationGroupIdentifier: NCBrandOptions.shared.capabilitiesGroup) else {
+            return ""
+        }
         let path = directoryGroup.appendingPathComponent(NCGlobal.shared.directoryProviderStorage).path
         if !fileManager.fileExists(atPath: path) {
             do {
                 try fileManager.createDirectory(atPath: path, withIntermediateDirectories: true)
-            } catch { print("Error: \(error)") }
+            } catch {
+                print(error)
+            }
         }
         return path
     }
 
-    // MARK: -
+    /// Returns a stable document storage path as String, based on the shared App Group and domain info.
+    /// Useful for storing per-domain data (DB, cache, etc.) accessible from both app and File Provider extension.
+    func getDocumentStorage(userId: String, urlBase: String) -> String {
+        guard let groupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: NCBrandOptions.shared.capabilitiesGroup),
+              let urlBase = NSURL(string: urlBase),
+              let host = urlBase.host else {
+            return ""
+        }
+        let relativePath = NCUtilityFileSystem().getPathDomain(userId: userId, host: host)
+        let path = groupURL
+                .appendingPathComponent(NCGlobal.shared.directoryProviderStorage, isDirectory: true)
+                .appendingPathComponent(relativePath, isDirectory: true)
+                .path
 
-    func getDirectoryProviderStorageOcId(_ ocId: String) -> String {
-        let path = directoryProviderStorage + "/" + ocId
+        // Create directory if needed
+        if !FileManager.default.fileExists(atPath: path) {
+            do {
+                try FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true)
+            } catch {
+                print(error)
+                return ""
+            }
+        }
+
+        return path
+    }
+
+    func getDirectoryProviderStorageOcId(_ ocId: String, userId: String, urlBase: String) -> String {
+        let path = getDocumentStorage(userId: userId, urlBase: urlBase) + "/" + ocId
         if !fileManager.fileExists(atPath: path) {
             do {
                 try fileManager.createDirectory(atPath: path, withIntermediateDirectories: true)
@@ -86,26 +109,105 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         return path
     }
 
-    @objc func getDirectoryProviderStorageOcId(_ ocId: String, fileNameView: String) -> String {
-        let path = getDirectoryProviderStorageOcId(ocId) + "/" + fileNameView
+    @discardableResult
+    @objc func getDirectoryProviderStorageOcId(_ ocId: String, fileName: String, userId: String, urlBase: String) -> String {
+        let path = getDirectoryProviderStorageOcId(ocId, userId: userId, urlBase: urlBase) + "/" + fileName
         if !fileManager.fileExists(atPath: path) {
             fileManager.createFile(atPath: path, contents: nil)
         }
         return path
     }
 
-    func getDirectoryProviderStorageImageOcId(_ ocId: String, etag: String, ext: String) -> String {
-        return getDirectoryProviderStorageOcId(ocId) + "/" + etag + ext
+    func getDirectoryProviderStorageImageOcId(_ ocId: String, etag: String, ext: String, userId: String, urlBase: String) -> String {
+        return getDirectoryProviderStorageOcId(ocId, userId: userId, urlBase: urlBase) + "/" + etag + ext
+    }
+
+    func getHomeServer(session: NCSession.Session) -> String {
+        return getHomeServer(urlBase: session.urlBase, userId: session.userId)
+    }
+
+    func getHomeServer(urlBase: String, userId: String) -> String {
+        return urlBase + "/remote.php/dav/files/" + userId
+    }
+
+    func getPath(path: String, user: String, fileName: String? = nil) -> String {
+        var path = path.replacingOccurrences(of: "/remote.php/dav/files/" + user, with: "")
+        if let fileName = fileName {
+            path += fileName
+        }
+        return path
+    }
+
+    func createServerUrl(serverUrl: String, fileName: String) -> String {
+        if fileName.isEmpty {
+            return serverUrl
+        } else if serverUrl.last == "/" {
+            return serverUrl + fileName
+        } else {
+            return serverUrl + "/" + fileName
+        }
+    }
+
+    /// Constructs the relative path of a file by removing the home server URL prefix.
+    ///
+    /// - Parameters:
+    ///   - fileName: The name of the file
+    ///   - serverUrl: The full server URL where the file is located.
+    ///   - session: The user NCSession.
+    /// - Returns: The relative path from the user's home directory (e.g., `"someFolder/Image.png"`).
+    ///
+    /// Example:
+    /// ```swift
+    /// // Input: fileName = "Image.png"
+    /// //        serverUrl = "https://instance.com/remote.php/dav/files/user1/someFolder"
+    /// // Output: "someFolder/Image.png"
+    /// let path = getRelativeFilePath("Image.png", serverUrl: serverUrl, session: session)
+    /// ```
+    func getRelativeFilePath(_ fileName: String, serverUrl: String, session: NCSession.Session) -> String {
+        let home = getHomeServer(session: session)
+        var fileNamePath = serverUrl.replacingOccurrences(of: home, with: "") + "/" + fileName
+        if fileNamePath.first == "/" {
+            fileNamePath.removeFirst()
+        }
+        return fileNamePath
+    }
+
+    /// Constructs the relative path of a file by removing the home server URL prefix.
+    ///
+    /// - Parameters:
+    ///   - fileName: The name of the file
+    ///   - serverUrl: The full server URL where the file is located.
+    ///   - urlBase: The base URL of the server instance.
+    ///   - userId: The user identifier.
+    /// - Returns: The relative path from the user's home directory (e.g., `"someFolder/Image.png"`).
+    ///
+    /// Example:
+    /// ```swift
+    /// // Input: fileName = "Image.png"
+    /// //        serverUrl = "https://instance.com/remote.php/dav/files/user1/someFolder"
+    /// // Output: "someFolder/Image.png"
+    /// let path = getRelativeFilePath("Image.png", serverUrl: serverUrl, urlBase: urlBase, userId: userId)
+    /// ```
+    func getRelativeFilePath(_ fileName: String, serverUrl: String, urlBase: String, userId: String) -> String {
+        let home = getHomeServer(urlBase: urlBase, userId: userId)
+        var fileNamePath = serverUrl.replacingOccurrences(of: home, with: "") + "/" + fileName
+        if fileNamePath.first == "/" {
+            fileNamePath.removeFirst()
+        }
+        return fileNamePath
     }
 
     func fileProviderStorageExists(_ metadata: tableMetadata) -> Bool {
-        let fileNamePath = getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileName)
-        let fileNameViewPath = getDirectoryProviderStorageOcId(metadata.ocId, fileNameView: metadata.fileNameView)
+        let fileNamePath = getDirectoryProviderStorageOcId(metadata.ocId, fileName: metadata.fileName, userId: metadata.userId, urlBase: metadata.urlBase)
+        let fileNameViewPath = getDirectoryProviderStorageOcId(metadata.ocId, fileName: metadata.fileNameView, userId: metadata.userId, urlBase: metadata.urlBase)
         do {
             let fileNameAttribute = try fileManager.attributesOfItem(atPath: fileNamePath)
             let fileNameSize: UInt64 = fileNameAttribute[FileAttributeKey.size] as? UInt64 ?? 0
             let fileNameViewAttribute = try fileManager.attributesOfItem(atPath: fileNameViewPath)
             let fileNameViewSize: UInt64 = fileNameViewAttribute[FileAttributeKey.size] as? UInt64 ?? 0
+#if EXTENSION_FILE_PROVIDER_EXTENSION
+            return (fileNameViewSize == metadata.size) && metadata.size > 0
+#else
             if metadata.isDirectoryE2EE == true {
                 if (fileNameSize == metadata.size || fileNameViewSize == metadata.size) && fileNameViewSize > 0 {
                     return true
@@ -115,12 +217,13 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
             } else {
                 return (fileNameViewSize == metadata.size) && metadata.size > 0
             }
+#endif
         } catch { print("Error: \(error)") }
         return false
     }
 
-    func fileProviderStorageSize(_ ocId: String, fileNameView: String) -> UInt64 {
-        let fileNamePath = getDirectoryProviderStorageOcId(ocId, fileNameView: fileNameView)
+    func fileProviderStorageSize(_ ocId: String, fileName: String, userId: String, urlBase: String) -> UInt64 {
+        let fileNamePath = getDirectoryProviderStorageOcId(ocId, fileName: fileName, userId: userId, urlBase: urlBase)
         do {
             let fileNameAttribute = try fileManager.attributesOfItem(atPath: fileNamePath)
             let fileNameSize: UInt64 = fileNameAttribute[FileAttributeKey.size] as? UInt64 ?? 0
@@ -129,8 +232,8 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         return 0
     }
 
-    func fileProviderStorageImageExists(_ ocId: String, etag: String, ext: String) -> Bool {
-        let fileNamePath = getDirectoryProviderStorageImageOcId(ocId, etag: etag, ext: ext)
+    func fileProviderStorageImageExists(_ ocId: String, etag: String, ext: String, userId: String, urlBase: String) -> Bool {
+        let fileNamePath = getDirectoryProviderStorageImageOcId(ocId, etag: etag, ext: ext, userId: userId, urlBase: urlBase)
         do {
             let fileNamePathAttribute = try fileManager.attributesOfItem(atPath: fileNamePath)
             let fileSize: UInt64 = fileNamePathAttribute[FileAttributeKey.size] as? UInt64 ?? 0
@@ -143,13 +246,161 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         return false
     }
 
-    func fileProviderStorageImageExists(_ ocId: String, etag: String) -> Bool {
-        if fileProviderStorageImageExists(ocId, etag: etag, ext: NCGlobal.shared.previewExt1024),
-           fileProviderStorageImageExists(ocId, etag: etag, ext: NCGlobal.shared.previewExt512),
-           fileProviderStorageImageExists(ocId, etag: etag, ext: NCGlobal.shared.previewExt256) {
+    func fileProviderStorageImageExists(_ ocId: String, etag: String, userId: String, urlBase: String) -> Bool {
+        if fileProviderStorageImageExists(ocId, etag: etag, ext: NCGlobal.shared.previewExt1024, userId: userId, urlBase: urlBase),
+           fileProviderStorageImageExists(ocId, etag: etag, ext: NCGlobal.shared.previewExt512, userId: userId, urlBase: urlBase),
+           fileProviderStorageImageExists(ocId, etag: etag, ext: NCGlobal.shared.previewExt256, userId: userId, urlBase: urlBase) {
             return true
         }
         return false
+    }
+
+    // MARK: -
+
+    @discardableResult
+    func moveFile(atPath: String, toPath: String) -> Bool {
+        if atPath == toPath {
+            return true
+        }
+
+        do {
+            if FileManager.default.fileExists(atPath: toPath) {
+                try FileManager.default.removeItem(atPath: toPath)
+            }
+            try FileManager.default.moveItem(atPath: atPath, toPath: toPath)
+        } catch {
+            print(error)
+            return false
+        }
+        return true
+    }
+
+    @discardableResult
+    func copyFile(atPath: String, toPath: String) -> Bool {
+        if atPath == toPath {
+            return true
+        }
+
+        do {
+            if FileManager.default.fileExists(atPath: toPath) {
+                try FileManager.default.removeItem(atPath: toPath)
+            }
+            try FileManager.default.copyItem(atPath: atPath, toPath: toPath)
+            return true
+        } catch {
+            print(error)
+            return false
+        }
+    }
+
+    func linkItem(atPath: String, toPath: String) {
+        try? FileManager.default.removeItem(atPath: toPath)
+        try? FileManager.default.linkItem(atPath: atPath, toPath: toPath)
+    }
+
+    // MARK: -
+
+    /// Asynchronously returns the size (in bytes) of the file at the given path.
+    /// - Parameter path: Full file system path as a String.
+    /// - Returns: Size in bytes, or `0` if the file doesn't exist or can't be accessed.
+    func fileSizeAsync(atPath path: String) async -> Int64 {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                do {
+                    let attributes = try FileManager.default.attributesOfItem(atPath: path)
+                    if let size = attributes[.size] as? NSNumber {
+                        continuation.resume(returning: size.int64Value)
+                    } else {
+                        continuation.resume(returning: 0)
+                    }
+                } catch {
+                    continuation.resume(returning: 0)
+                }
+            }
+        }
+    }
+
+    /// Moves a file from one path to another, overwriting the destination if it exists.
+    /// - Parameters:
+    ///   - atPath: The source file path.
+    ///   - toPath: The destination file path.
+    func moveFileAsync(atPath: String, toPath: String) async {
+        if atPath == toPath {
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                do {
+                    if FileManager.default.fileExists(atPath: toPath) {
+                        try FileManager.default.removeItem(atPath: toPath)
+                    }
+                    try FileManager.default.moveItem(atPath: atPath, toPath: toPath)
+                } catch {
+                    print("Error moving \(atPath) -> \(toPath): \(error)")
+                }
+                continuation.resume()
+            }
+        }
+    }
+
+    func removeFile(atPath path: String) {
+        fileIO.async {
+            do {
+                try FileManager.default.removeItem(atPath: path)
+            } catch {
+                print(error)
+            }
+        }
+    }
+
+    func replaceExtension(fileName: String, with newExtension: String) -> String {
+        URL(fileURLWithPath: fileName)
+            .deletingPathExtension()
+            .appendingPathExtension(newExtension)
+            .lastPathComponent
+    }
+
+    func replaceExtension(fileNamePath: String, with newExtension: String) -> String {
+        let url = URL(fileURLWithPath: fileNamePath)
+            .deletingPathExtension()
+            .appendingPathExtension(newExtension)
+        return url.path
+    }
+
+    func getFileCreationDate(filePath: String) -> NSDate? {
+        do {
+            let attributes = try fileManager.attributesOfItem(atPath: filePath)
+            return attributes[FileAttributeKey.creationDate] as? NSDate
+        } catch {
+            print(error)
+        }
+        return nil
+    }
+
+    func getFileSize(filePath: String) -> Int64 {
+        guard FileManager.default.fileExists(atPath: filePath)
+        else {
+            return 0
+        }
+
+        do {
+            let attributes = try fileManager.attributesOfItem(atPath: filePath)
+            return attributes[FileAttributeKey.size] as? Int64 ?? 0
+        } catch {
+            print(error)
+            return 0
+        }
+    }
+
+    func getFileModificationDate(filePath: String) -> NSDate? {
+        do {
+            let attributes = try fileManager.attributesOfItem(atPath: filePath)
+            return attributes[FileAttributeKey.modificationDate] as? NSDate
+        } catch {
+            print(error)
+        }
+        return nil
     }
 
     func createDirectoryStandard() {
@@ -158,7 +409,6 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         let appDatabaseNextcloud = directoryGroup + "/" + NCGlobal.shared.appDatabaseNextcloud
         if !fileManager.fileExists(atPath: appDatabaseNextcloud) { try? fileManager.createDirectory(atPath: appDatabaseNextcloud, withIntermediateDirectories: true) }
         if !fileManager.fileExists(atPath: directoryUserData) { try? fileManager.createDirectory(atPath: directoryUserData, withIntermediateDirectories: true) }
-        if !fileManager.fileExists(atPath: directoryProviderStorage) { try? fileManager.createDirectory(atPath: directoryProviderStorage, withIntermediateDirectories: true) }
         let appScan = directoryGroup + "/" + NCGlobal.shared.appScan
         if !fileManager.fileExists(atPath: appScan) { try? fileManager.createDirectory(atPath: appScan, withIntermediateDirectories: true) }
         if !fileManager.fileExists(atPath: NSTemporaryDirectory()) { try? fileManager.createDirectory(atPath: NSTemporaryDirectory(), withIntermediateDirectories: true) }
@@ -182,11 +432,21 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
     }
 
     func removeGroupDirectoryProviderStorage() {
-        try? fileManager.removeItem(atPath: directoryProviderStorage)
+        let path = getDirectoryProviderStorage()
+        try? fileManager.removeItem(atPath: path)
     }
 
     func removeDocumentsDirectory() {
-        try? fileManager.removeItem(atPath: directoryDocuments)
+        do {
+            let contents = try fileManager.contentsOfDirectory(atPath: directoryDocuments)
+
+            for file in contents {
+                let fullPath = (directoryDocuments as NSString).appendingPathComponent(file)
+                try fileManager.removeItem(atPath: fullPath)
+            }
+        } catch {
+            print(error)
+        }
     }
 
     func removeTemporaryDirectory() {
@@ -204,206 +464,13 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         } catch { print("Error: \(error)") }
     }
 
-    func isDirectoryE2EE(serverUrl: String, account: String) -> Bool {
-        return isDirectoryE2EE(session: NCSession.shared.getSession(account: account), serverUrl: serverUrl)
-    }
-
-    func isDirectoryE2EE(file: NKFile) -> Bool {
-        let session = NCSession.Session(account: file.account, urlBase: file.urlBase, user: file.user, userId: file.userId)
-        return isDirectoryE2EE(session: session, serverUrl: file.serverUrl)
-    }
-
-    func isDirectoryE2EE(session: NCSession.Session, serverUrl: String) -> Bool {
-        if serverUrl == getHomeServer(session: session) || serverUrl == ".." { return false }
-        if let directory = NCManageDatabase.shared.getTableDirectory(account: session.account, serverUrl: serverUrl) {
-            return directory.e2eEncrypted
-        }
-        return false
-    }
-
-    func isDirectoryE2EETop(account: String, serverUrl: String) -> Bool {
-        guard let serverUrl = serverUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return false }
-
-        if let url = URL(string: serverUrl)?.deletingLastPathComponent(),
-           let serverUrl = String(url.absoluteString.dropLast()).removingPercentEncoding {
-            if let directory = NCManageDatabase.shared.getTableDirectory(account: account, serverUrl: serverUrl) {
-                return !directory.e2eEncrypted
-            }
-        }
-        return true
-    }
-
-    func getDirectoryE2EETop(serverUrl: String, account: String) -> tableDirectory? {
-        guard var serverUrl = serverUrl.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-        var top: tableDirectory?
-
-        while let url = URL(string: serverUrl)?.deletingLastPathComponent(),
-              let serverUrlencoding = serverUrl.removingPercentEncoding,
-              let directory = NCManageDatabase.shared.getTableDirectory(account: account, serverUrl: serverUrlencoding) {
-
-            if directory.e2eEncrypted {
-                top = directory
-            } else {
-                return top
-            }
-
-            serverUrl = String(url.absoluteString.dropLast())
-        }
-
-        return top
-    }
-
-    // MARK: -
-
-    func getFileSize(filePath: String) -> Int64 {
-        do {
-            let attributes = try fileManager.attributesOfItem(atPath: filePath)
-            return attributes[FileAttributeKey.size] as? Int64 ?? 0
-        } catch {
-            print(error)
-        }
-        return 0
-    }
-
-    func getFileModificationDate(filePath: String) -> NSDate? {
-        do {
-            let attributes = try fileManager.attributesOfItem(atPath: filePath)
-            return attributes[FileAttributeKey.modificationDate] as? NSDate
-        } catch {
-            print(error)
-        }
-        return nil
-    }
-
-    func getFileCreationDate(filePath: String) -> NSDate? {
-        do {
-            let attributes = try fileManager.attributesOfItem(atPath: filePath)
-            return attributes[FileAttributeKey.creationDate] as? NSDate
-        } catch {
-            print(error)
-        }
-        return nil
-    }
-
-    func writeFile(fileURL: URL, text: String) -> Bool {
-        do {
-            try FileManager.default.removeItem(at: fileURL)
-        } catch {
-            print(error)
-        }
-
-        do {
-            try text.write(to: fileURL, atomically: true, encoding: .utf8)
-            return true
-        } catch {
-            print(error)
-            return false
-        }
-    }
-
-    func removeFile(atPath: String) {
-        do {
-            try FileManager.default.removeItem(atPath: atPath)
-        } catch {
-            print(error)
-        }
-    }
-
-    @discardableResult
-    func moveFile(atPath: String, toPath: String) -> Bool {
-        if atPath == toPath { return true }
-
-        do {
-            try FileManager.default.removeItem(atPath: toPath)
-        } catch {
-            print(error)
-        }
-
-        do {
-            try FileManager.default.copyItem(atPath: atPath, toPath: toPath)
-            try FileManager.default.removeItem(atPath: atPath)
-            return true
-        } catch {
-            print(error)
-            return false
-        }
-    }
-
-    @discardableResult
-    func copyFile(atPath: String, toPath: String) -> Bool {
-        if atPath == toPath { return true }
-
-        do {
-            try FileManager.default.removeItem(atPath: toPath)
-        } catch {
-            print(error)
-        }
-
-        do {
-            try FileManager.default.copyItem(atPath: atPath, toPath: toPath)
-            return true
-        } catch {
-            print(error)
-            return false
-        }
-    }
-
-    @discardableResult
-    func copyFile(at: URL, to: URL) -> Bool {
-        if at == to { return true }
-
-        do {
-            try FileManager.default.removeItem(at: to)
-        } catch {
-            print(error)
-        }
-
-        do {
-            try FileManager.default.copyItem(at: at, to: to)
-            return true
-        } catch {
-            print(error)
-            return false
-        }
-    }
-
-    func moveFileInBackground(atPath: String, toPath: String) {
-        if atPath == toPath { return }
-        DispatchQueue.global().async {
-            try? FileManager.default.removeItem(atPath: toPath)
-            try? FileManager.default.copyItem(atPath: atPath, toPath: toPath)
-            try? FileManager.default.removeItem(atPath: atPath)
-        }
-    }
-
-    func linkItem(atPath: String, toPath: String) {
-        try? FileManager.default.removeItem(atPath: toPath)
-        try? FileManager.default.linkItem(atPath: atPath, toPath: toPath)
-    }
-
-    // MARK: - 
-
-    func getHomeServer(session: NCSession.Session) -> String {
-        return getHomeServer(urlBase: session.urlBase, userId: session.userId)
-    }
-
-    func getHomeServer(urlBase: String, userId: String) -> String {
-        return urlBase + "/remote.php/dav/files/" + userId
-    }
-
-    func getPath(path: String, user: String, fileName: String? = nil) -> String {
-        var path = path.replacingOccurrences(of: "/remote.php/dav/files/" + user, with: "")
-        if let fileName = fileName {
-            path += fileName
-        }
-        return path
-    }
-
-    func deleteLastPath(serverUrlPath: String, home: String? = nil) -> String? {
+    func serverDirectoryUp(serverUrl: String, home: String) -> String? {
         var returnString: String?
-        if home == serverUrlPath { return serverUrlPath }
+        if home == serverUrl {
+            return serverUrl
+        }
 
-        if let serverUrlPath = serverUrlPath.urlEncoded, let url = URL(string: serverUrlPath) {
+        if let serverUrl = serverUrl.urlEncoded, let url = URL(string: serverUrl) {
             if let path = url.deletingLastPathComponent().absoluteString.removingPercentEncoding {
                 if path.last == "/" {
                     returnString = String(path.dropLast())
@@ -415,28 +482,9 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         return returnString
     }
 
-    func stringAppendServerUrl(_ serverUrl: String, addFileName: String) -> String {
-        if addFileName.isEmpty {
-            return serverUrl
-        } else if serverUrl.last == "/" {
-            return serverUrl + addFileName
-        } else {
-            return serverUrl + "/" + addFileName
-        }
-    }
-
-    func getFileNamePath(_ fileName: String, serverUrl: String, session: NCSession.Session) -> String {
-        let home = getHomeServer(session: session)
-        var fileNamePath = serverUrl.replacingOccurrences(of: home, with: "") + "/" + fileName
-        if fileNamePath.first == "/" {
-            fileNamePath.removeFirst()
-        }
-        return fileNamePath
-    }
-
     func createFileName(_ fileName: String, fileDate: Date, fileType: PHAssetMediaType, notUseMask: Bool = false) -> String {
         var fileName = fileName
-        let keychain = NCKeychain()
+        let keychain = NCPreferences()
         var addFileNameType: Bool = keychain.fileNameType
         let useFileNameOriginal: Bool = keychain.fileNameOriginal
         var numberFileName: String = ""
@@ -452,9 +500,9 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         }
 
         /// Get counter
-        if fileName.count > 8 {
-            let index = fileName.index(fileName.startIndex, offsetBy: 4)
-            numberFileName = String(fileName[index..<fileName.index(index, offsetBy: 4)])
+        if let range = fileName.range(of: "\\d+", options: .regularExpression) {
+            let numericPart = String(fileName[range])
+            numberFileName = numericPart
         } else {
             numberFileName = keychain.incrementalNumber
         }
@@ -530,12 +578,140 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         return fileName
     }
 
+    func createFileNameDate(_ fileName: String, ext: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yy-MM-dd HH-mm-ss"
+        let fileNameDate = formatter.string(from: Date())
+
+        if fileName.isEmpty, !ext.isEmpty {
+            return fileNameDate + "." + ext
+        } else if !fileName.isEmpty, ext.isEmpty {
+            return fileName + " " + fileNameDate
+        } else if fileName.isEmpty, ext.isEmpty {
+            return fileNameDate
+        } else {
+            return fileName + " " + fileNameDate + "." + ext
+        }
+    }
+
+    func transformedSize(_ bytes: Int64) -> String {
+        let formatter: ByteCountFormatter = ByteCountFormatter()
+        formatter.countStyle = .binary
+        return formatter.string(fromByteCount: bytes)
+    }
+
+    private func enumerateFilesAsync(at url: URL, includingPropertiesForKeys keys: [URLResourceKey]? = nil) async -> [URL] {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .utility).async {
+                var urls: [URL] = []
+                if let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: keys, options: []) {
+                    for case let fileURL as URL in enumerator {
+                        urls.append(fileURL)
+                    }
+                }
+                continuation.resume(returning: urls)
+            }
+        }
+    }
+
+    func clearCacheDirectory(_ directory: String) {
+        if let cacheURL = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first {
+            do {
+                let directoryURL = cacheURL.appendingPathComponent(directory, isDirectory: true)
+                let directoryContents = try fileManager.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil, options: [])
+                for file in directoryContents {
+                    do {
+                        try fileManager.removeItem(at: file)
+                    } catch let error as NSError {
+                        debugPrint("Ooops! Something went wrong: \(error)")
+                    }
+                }
+            } catch let error as NSError {
+                print(error.localizedDescription)
+            }
+        }
+    }
+
+    func isDirectoryE2EE(serverUrl: String, urlBase: String, userId: String, account: String) -> Bool {
+        guard serverUrl != getHomeServer(urlBase: urlBase, userId: userId) else {
+            return false
+        }
+        if let metadata = NCManageDatabase.shared.getMetadataDirectory(serverUrl: serverUrl, account: account) {
+            return metadata.e2eEncrypted
+        }
+        return false
+    }
+
+    func isDirectoryE2EEAsync(serverUrl: String, urlBase: String, userId: String, account: String) async -> Bool {
+        guard serverUrl != getHomeServer(urlBase: urlBase, userId: userId) else {
+            return false
+        }
+        if let metadata = await NCManageDatabase.shared.getMetadataDirectoryAsync(serverUrl: serverUrl, account: account) {
+            return metadata.e2eEncrypted
+        }
+        return false
+    }
+    /// Traverses up the directory hierarchy from the given URL and returns the topmost directory
+    /// that is marked as end-to-end encrypted (`e2eEncrypted == true`).
+    /// The search stops when a non-encrypted parent is found or when the root is reached.
+    /// - Parameters:
+    ///   - serverUrl: The full URL of the starting directory (may include trailing slash).
+    ///   - account: The account identifier used to query metadata.
+    /// - Returns: The topmost `tableMetadata` that is end-to-end encrypted, or `nil` if none is found.
+    func getMetadataE2EETopAsync(serverUrl: String, session: NCSession.Session) async -> tableMetadata? {
+        let homeServer = getHomeServer(session: session)
+        guard var url = URL(string: serverUrl) else {
+            return nil
+        }
+        var top: tableMetadata?
+
+        while true {
+            var urlString = url.absoluteString
+
+            // Remove trailing slash if present to conform to metadata key format
+            if urlString.hasSuffix("/") {
+                urlString.removeLast()
+            }
+            // Decode the URL to match Realm keys
+            guard let decodedUrlString = urlString.removingPercentEncoding else {
+                return top
+            }
+
+            // Query metadata for current directory
+            if let metadata = NCManageDatabase.shared.getMetadataDirectory(serverUrl: decodedUrlString, account: session.account) {
+                if metadata.e2eEncrypted {
+                    top = metadata
+                } else {
+                    return top
+                }
+            } else {
+                return top
+            }
+
+            // Move to the parent directory
+            let parent = url.deletingLastPathComponent()
+
+            // Check if we reached the homeServer (decoded too)
+            let normalizedParent = parent.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            guard let decodedParent = normalizedParent.removingPercentEncoding else {
+                break
+            }
+            if decodedParent == homeServer {
+                break
+            }
+
+            url = parent
+        }
+
+        return top
+    }
+
     func createFileName(_ fileName: String, serverUrl: String, account: String) -> String {
         var resultFileName = fileName
         var exitLoop = false
 
         while exitLoop == false {
-            if NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "fileNameView == %@ AND serverUrl == %@ AND account == %@", resultFileName, serverUrl, account)) != nil {
+            if NCManageDatabase.shared.getMetadata(predicate: NSPredicate(format: "fileNameView ==[c] %@ AND serverUrl == %@ AND account == %@", resultFileName, serverUrl, account)) != nil {
                 var name = NSString(string: resultFileName).deletingPathExtension
                 let ext = NSString(string: resultFileName).pathExtension
                 let characters = Array(name)
@@ -574,112 +750,60 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
         return resultFileName
     }
 
-    func createFileNameDate(_ fileName: String, ext: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yy-MM-dd HH-mm-ss"
-        let fileNameDate = formatter.string(from: Date())
-
-        if fileName.isEmpty, !ext.isEmpty {
-            return fileNameDate + "." + ext
-        } else if !fileName.isEmpty, ext.isEmpty {
-            return fileName + " " + fileNameDate
-        } else if fileName.isEmpty, ext.isEmpty {
-            return fileNameDate
-        } else {
-            return fileName + " " + fileNameDate + "." + ext
+    func cleanUpAsync() async {
+        let days = TimeInterval(NCPreferences().cleanUpDay)
+        if days == 0 {
+            return
         }
-    }
-
-    func getDirectorySize(directory: String) -> Int64 {
-        let url = URL(fileURLWithPath: directory)
+        let database = NCManageDatabase.shared
+        let minimumDate = Date().addingTimeInterval(-days * 24 * 60 * 60)
+        let url = URL(fileURLWithPath: getDirectoryProviderStorage())
+        var offlineDir: [String] = []
         let manager = FileManager.default
-        var totalSize: Int64 = 0
 
-        if let enumerator = manager.enumerator(at: url, includingPropertiesForKeys: [.isRegularFileKey], options: []) {
-            for case let fileURL as URL in enumerator {
-                if let attributes = try? manager.attributesOfItem(atPath: fileURL.path) {
-                    if let size = attributes[.size] as? Int64 {
-                        totalSize += size
-                    }
-                }
+        let tblDirectories = await database.getTablesDirectoryAsync(predicate: NSPredicate(format: "offline == true"), sorted: "serverUrl", ascending: true)
+        for tblDirectory in tblDirectories {
+            if let tblMetadata = await database.getMetadataFromOcIdAsync(tblDirectory.ocId) {
+                offlineDir.append(self.getDirectoryProviderStorageOcId(tblMetadata.ocId, userId: tblMetadata.userId, urlBase: tblMetadata.urlBase))
             }
         }
 
-        return totalSize
-    }
+        let tblLocalFiles = await NCManageDatabase.shared.getTableLocalFilesAsync(predicate: NSPredicate(format: "offline == false"), sorted: "lastOpeningDate", ascending: true)
 
-    func transformedSize(_ bytes: Int64) -> String {
-        let formatter: ByteCountFormatter = ByteCountFormatter()
-        formatter.countStyle = .binary
-        return formatter.string(fromByteCount: bytes)
-    }
-
-    func cleanUp(directory: String, days: TimeInterval) {
-        DispatchQueue.global().async {
-            if days == 0 { return}
-            let minimumDate = Date().addingTimeInterval(-days * 24 * 60 * 60)
-            let url = URL(fileURLWithPath: directory)
-            var offlineDir: [String] = []
-
-            if let directories = NCManageDatabase.shared.getTablesDirectory(predicate: NSPredicate(format: "offline == true"), sorted: "serverUrl", ascending: true) {
-                for directory: tableDirectory in directories {
-                    offlineDir.append(self.getDirectoryProviderStorageOcId(directory.ocId))
+        let fileURLs = await enumerateFilesAsync(at: url, includingPropertiesForKeys: [.isRegularFileKey])
+        for fileURL in fileURLs {
+            if let attributes = try? manager.attributesOfItem(atPath: fileURL.path) {
+                if attributes[.size] as? Double == 0 { continue }
+                if attributes[.type] as? FileAttributeType == FileAttributeType.typeDirectory { continue }
+                // check directory offline
+                let filter = offlineDir.filter({ fileURL.path.hasPrefix($0)})
+                if !filter.isEmpty {
+                    continue
                 }
-            }
-            let resultsLocalFile = NCManageDatabase.shared.getResultsTableLocalFile(predicate: NSPredicate(format: "offline == false"), sorted: "lastOpeningDate", ascending: true)
-
-            let manager = FileManager.default
-            if let enumerator = manager.enumerator(at: url, includingPropertiesForKeys: [.isRegularFileKey], options: []) {
-                for case let fileURL as URL in enumerator {
-                    if let attributes = try? manager.attributesOfItem(atPath: fileURL.path) {
-                        if attributes[.size] as? Double == 0 { continue }
-                        if attributes[.type] as? FileAttributeType == FileAttributeType.typeDirectory { continue }
-                        // check directory offline
-                        let filter = offlineDir.filter({ fileURL.path.hasPrefix($0)})
-                        if !filter.isEmpty { continue }
-                        // -----------------------
-                        if let modificationDate = attributes[.modificationDate] as? Date,
-                           modificationDate < minimumDate {
-                            let fileName = fileURL.lastPathComponent
-                            if fileName.hasSuffix(NCGlobal.shared.previewExt256) || fileName.hasSuffix(NCGlobal.shared.previewExt512) || fileName.hasSuffix(NCGlobal.shared.previewExt1024) {
-                                try? manager.removeItem(atPath: fileURL.path)
-                            }
-                        }
-                        // -----------------------
-                        let folderURL = fileURL.deletingLastPathComponent()
-                        let ocId = folderURL.lastPathComponent
-                        if let result = resultsLocalFile?.filter({ $0.ocId == ocId }).first, (result.lastOpeningDate as Date) < minimumDate {
-                            do {
-                                try manager.removeItem(atPath: fileURL.path)
-                            } catch { }
-                            manager.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
-                            NCManageDatabase.shared.deleteLocalFileOcId(ocId)
-                        }
+                // -----------------------
+                if let modificationDate = attributes[.modificationDate] as? Date,
+                   modificationDate < minimumDate {
+                    let fileName = fileURL.lastPathComponent
+                    if fileName.hasSuffix(NCGlobal.shared.previewExt256) || fileName.hasSuffix(NCGlobal.shared.previewExt512) || fileName.hasSuffix(NCGlobal.shared.previewExt1024) {
+                        try? manager.removeItem(atPath: fileURL.path)
                     }
                 }
-            }
-        }
-    }
-
-    func clearCacheDirectory(_ directory: String) {
-        if let cacheURL = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first {
-            do {
-                let directoryURL = cacheURL.appendingPathComponent(directory, isDirectory: true)
-                let directoryContents = try fileManager.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil, options: [])
-                for file in directoryContents {
+                // -----------------------
+                let folderURL = fileURL.deletingLastPathComponent()
+                let ocId = folderURL.lastPathComponent
+                if let tblLocalFile = tblLocalFiles.filter({ $0.ocId == ocId }).first,
+                    (tblLocalFile.lastOpeningDate as Date) < minimumDate {
                     do {
-                        try fileManager.removeItem(at: file)
-                    } catch let error as NSError {
-                        debugPrint("Ooops! Something went wrong: \(error)")
-                    }
+                        try manager.removeItem(atPath: fileURL.path)
+                    } catch { }
+                    manager.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
+                    await NCManageDatabase.shared.deleteLocalFileAsync(id: ocId)
                 }
-            } catch let error as NSError {
-                print(error.localizedDescription)
             }
         }
     }
 
-    func createGranularityPath(asset: PHAsset? = nil, serverUrl: String? = nil) -> String {
+    func createGranularityPath(asset: PHAsset? = nil, serverUrlBase: String? = nil) -> String {
         let autoUploadSubfolderGranularity = NCManageDatabase.shared.getAccountAutoUploadSubfolderGranularity()
         let dateFormatter = DateFormatter()
         let date = asset?.creationDate ?? Date()
@@ -699,10 +823,23 @@ final class NCUtilityFileSystem: NSObject, @unchecked Sendable {
             path = "\(year)/\(month)"
         }
 
-        if let serverUrl {
-            return serverUrl + "/" + path
+        if let serverUrlBase {
+            return serverUrlBase + "/" + path
         } else {
             return path
         }
+    }
+
+    func extractFileIdFromFPath(from urlString: String?) -> String? {
+        guard let urlString,
+              var url = URL(string: urlString) else {
+            return nil
+        }
+        if url.lastPathComponent.isEmpty {
+            url.deleteLastPathComponent()
+        }
+        let id = url.lastPathComponent
+        let parent = url.deletingLastPathComponent().lastPathComponent
+        return parent == "f" ? id : nil
     }
 }

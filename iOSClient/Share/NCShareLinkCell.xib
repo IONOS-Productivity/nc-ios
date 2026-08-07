@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
-    <device id="retina4_7" orientation="portrait" appearance="dark"/>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="24506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -85,6 +84,24 @@
                                 <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <stackView opaque="NO" contentMode="scaleToFill" spacing="3" translatesAutoresizingMaskIntoConstraints="NO" id="ggt-WQ-HTl">
+                                <rect key="frame" x="0.0" y="21" width="123" height="15"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" tag="101" contentMode="left" horizontalHuggingPriority="252" verticalHuggingPriority="252" horizontalCompressionResistancePriority="752" verticalCompressionResistancePriority="752" text="label quick status" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jPw-cb-4gO">
+                                        <rect key="frame" x="0.0" y="0.0" width="106" height="15"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                        <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="249" horizontalCompressionResistancePriority="751" verticalCompressionResistancePriority="751" image="arrowtriangle.down.circle" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="AuV-M5-NJl">
+                                        <rect key="frame" x="109" y="0.0" width="14" height="14.5"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="15" id="Aha-lq-v22"/>
+                                        </constraints>
+                                        <preferredSymbolConfiguration key="preferredSymbolConfiguration" configurationType="pointSize" pointSize="12"/>
+                                    </imageView>
+                                </subviews>
+                            </stackView>
                         </subviews>
                     </stackView>
                 </subviews>
@@ -96,21 +113,25 @@
                     <constraint firstItem="qDs-UG-Mn7" firstAttribute="centerY" secondItem="3Oe-gU-3Nk" secondAttribute="centerY" id="ZrD-Aw-xkx"/>
                     <constraint firstItem="OQv-Vf-bvD" firstAttribute="centerY" secondItem="3Oe-gU-3Nk" secondAttribute="centerY" id="eLc-gk-xAr"/>
                     <constraint firstItem="Wxr-1B-Czy" firstAttribute="leading" secondItem="qDs-UG-Mn7" secondAttribute="trailing" constant="8" id="nXI-b3-EJM"/>
-                    <constraint firstItem="Wxr-1B-Czy" firstAttribute="top" secondItem="3Oe-gU-3Nk" secondAttribute="top" id="vxe-9X-O1f"/>
+                    <constraint firstItem="Wxr-1B-Czy" firstAttribute="top" secondItem="3Oe-gU-3Nk" secondAttribute="top" constant="12" id="vxe-9X-O1f"/>
                 </constraints>
             </tableViewCellContentView>
             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
             <connections>
                 <outlet property="copyButton" destination="xaz-vY-Jzu" id="pMt-Zu-ORX"/>
                 <outlet property="descriptionLabel" destination="WJj-9P-3bn" id="QC7-SX-O3M"/>
+                <outlet property="imageDownArrow" destination="AuV-M5-NJl" id="LzO-Sj-euf"/>
                 <outlet property="imageItem" destination="qDs-UG-Mn7" id="jxL-r7-BVs"/>
+                <outlet property="labelQuickStatus" destination="jPw-cb-4gO" id="d04-3F-WYS"/>
                 <outlet property="labelTitle" destination="otH-mT-7Z4" id="f9z-Oa-OiR"/>
                 <outlet property="menuButton" destination="J1z-RG-U4A" id="VCC-y1-LRK"/>
+                <outlet property="statusStackView" destination="ggt-WQ-HTl" id="MwF-B6-5r0"/>
             </connections>
             <point key="canvasLocation" x="-124.8" y="268.51574212893553"/>
         </tableViewCell>
     </objects>
     <resources>
+        <image name="arrowtriangle.down.circle" catalog="system" width="128" height="123"/>
         <image name="document.on.document" catalog="system" width="116" height="128"/>
         <image name="ellipsis" catalog="system" width="128" height="37"/>
         <image name="share/linkCircleFill" width="32" height="32"/>
@@ -118,10 +139,10 @@
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="secondaryLabelColor">
-            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="tertiaryLabelColor">
-            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.29803921568627451" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.29803921570000003" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

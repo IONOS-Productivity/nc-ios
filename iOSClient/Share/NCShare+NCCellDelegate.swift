@@ -29,11 +29,10 @@ extension NCShare: NCShareLinkCellDelegate, NCShareUserCellDelegate {
     func copyInternalLink(sender: Any) {
         guard let metadata = self.metadata else { return }
 
-        let serverUrlFileName = metadata.serverUrl + "/" + metadata.fileName
-        NCNetworking.shared.readFile(serverUrlFileName: serverUrlFileName, account: metadata.account) { _, metadata, error in
+        NCNetworking.shared.readFile(serverUrlFileName: metadata.serverUrlFileName, account: metadata.account) { _, metadata, _, error in
             if error == .success, let metadata = metadata {
                 let internalLink = metadata.urlBase + "/index.php/f/" + metadata.fileId
-                self.shareCommon.copyLink(link: internalLink, viewController: self, sender: sender)
+                NCShareCommon.copyLink(link: internalLink, viewController: self, sender: sender)
             } else {
                 NCContentPresenter().showError(error: error)
             }
@@ -44,26 +43,24 @@ extension NCShare: NCShareLinkCellDelegate, NCShareUserCellDelegate {
         guard let tableShare = tableShare else {
             return copyInternalLink(sender: sender)
         }
-        shareCommon.copyLink(link: tableShare.url, viewController: self, sender: sender)
+        NCShareCommon.copyLink(link: tableShare.url, viewController: self, sender: sender)
     }
 
     func tapMenu(with tableShare: tableShare?, sender: Any) {
-        if let tableShare = tableShare {
-            self.toggleShareMenu(for: tableShare)
-        } else {
+        // Menu is now shown via native context menu on the button
+        // Only handle the case where there's no tableShare (add new link)
+        if tableShare == nil {
             self.makeNewLinkShare()
         }
     }
 
-    func showProfile(with tableShare: tableShare?, sender: Any) {
-        guard let tableShare else { return }
-        showProfileMenu(userId: tableShare.shareWith, session: session)
+    func tapProfileMenu(with tableShare: tableShare?) -> UIMenu? {
+        guard let tableShare else { return nil }
+        return NCContextMenuProfile(userId: tableShare.shareWith, session: session, viewController: self).viewMenu()
     }
 
-    func quickStatus(with tableShare: tableShare?, sender: Any) {
-        guard let tableShare,
-              let metadata,
-              tableShare.shareType != NCPermissions().permissionDefaultFileRemoteShareNoSupportShareOption else { return }
-        self.toggleUserPermissionMenu(isDirectory: metadata.directory, tableShare: tableShare)
+    func tapQuickStatus(with tableShare: tableShare?, sender: Any) {
+        guard let tableShare else { return }
+        presentQuickStatusActionSheet(for: tableShare, sender: sender)
     }
 }
