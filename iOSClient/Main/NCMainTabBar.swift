@@ -30,12 +30,28 @@ class NCMainTabBar: UITabBar {
     private let heightForDevicesWithRectCornersDisplay: CGFloat = 64.0
 
     private var fillColor: UIColor!
-    private var shapeLayer: CALayer?
     private let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     private let centerButtonY: CGFloat = -28
+    private let centerButtonHeight: CGFloat = 57
     public var color = NCBrandColor.shared.customer
 
     private var menuPlus: NCContextMenuPlus?
+
+    // Tags for the views WE own. Never touch other subviews:
+    // on iOS 26 they contain the Liquid Glass platter with the item views.
+    private let backgroundTag = 98
+    private let centerButtonTag = 99
+
+    private var configuredItems: [UITabBarItem] = []
+
+    /// true when running on iOS 26+ with the new Liquid Glass design active
+    private var usesLiquidGlass: Bool {
+        if #available(iOS 26.0, *) {
+            let compat = Bundle.main.object(forInfoDictionaryKey: "UIDesignRequiresCompatibility") as? Bool ?? false
+            return !compat
+        }
+        return false
+    }
 
     override open func sizeThatFits(_ size: CGSize) -> CGSize {
         guard !UIDevice.current.hasComplexSaveArea else {
@@ -52,7 +68,7 @@ class NCMainTabBar: UITabBar {
     }
 
     public var menuRect: CGRect {
-        let tabBarItemWidth = Int(self.frame.size.width) / (self.items?.count ?? 0)
+        let tabBarItemWidth = Int(self.frame.size.width) / max(self.items?.count ?? 1, 1)
         let rect = CGRect(x: 0, y: -5, width: tabBarItemWidth, height: Int(self.frame.size.height))
         return rect
     }
@@ -62,13 +78,23 @@ class NCMainTabBar: UITabBar {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
 
+        if !usesLiquidGlass {
+            // Hide the system background so our notched shape is visible.
+            let appearance = UITabBarAppearance()
+            appearance.configureWithTransparentBackground()
+            standardAppearance = appearance
+            scrollEdgeAppearance = appearance
+        }
+
         changeTheming()
     }
 
     @objc func changeTheming() {
-        layer.shadowOffset = CGSize(width: 0, height: 0)
-        layer.shadowRadius = 2.0
-        layer.shadowOpacity = 0.5
+        if !usesLiquidGlass {
+            layer.shadowOffset = CGSize(width: 0, height: 0)
+            layer.shadowRadius = 2.0
+            layer.shadowOpacity = 0.5
+        }
         tintColor = UIColor(resource: .Tabbar.activeItem)
     }
 
@@ -78,41 +104,18 @@ class NCMainTabBar: UITabBar {
         }
         set {
             fillColor = newValue
-            self.setNeedsDisplay()
+            self.setNeedsLayout()
         }
     }
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        let button = self.viewWithTag(99)
-        if self.bounds.contains(point) || (button != nil && button!.frame.contains(point)) {
+        if self.bounds.contains(point) {
             return true
-        } else {
-            return false
         }
-    }
-
-    override func draw(_ rect: CGRect) {
-        self.subviews.forEach({ $0.removeFromSuperview() })
-
-        addShape()
-        createButtons()
-    }
-
-    private func addShape() {
-        let backgroundView = UIView(frame: self.bounds)
-        backgroundView.backgroundColor = customBackgroundColor
-
-        let maskLayer = CAShapeLayer()
-        maskLayer.path = createPath()
-
-        backgroundView.layer.mask = maskLayer
-        self.addSubview(backgroundView)
-    }
-
-    private func setupSizeClasses() {
-        if #available(iOS 17.0, *) {
-            traitOverrides.horizontalSizeClass = .compact
+        if let button = self.viewWithTag(centerButtonTag), button.frame.contains(point) {
+            return true
         }
+        return false
     }
 
     override var traitCollection: UITraitCollection {
@@ -120,119 +123,161 @@ class NCMainTabBar: UITabBar {
         return UITraitCollection(traitsFrom: [super.traitCollection, UITraitCollection(horizontalSizeClass: .compact)])
     }
 
+    // MARK: - Layout
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        configureItemsIfNeeded()
+        layoutBackgroundShape()
+        layoutCenterButton()
+    }
+
+    private func layoutBackgroundShape() {
+        // With Liquid Glass the system draws the glass background; don't cover it.
+        guard !usesLiquidGlass else {
+            viewWithTag(backgroundTag)?.removeFromSuperview()
+            return
+        }
+
+        let backgroundView: UIView
+        if let existing = viewWithTag(backgroundTag) {
+            backgroundView = existing
+        } else {
+            backgroundView = UIView()
+            backgroundView.tag = backgroundTag
+            backgroundView.isUserInteractionEnabled = false
+            insertSubview(backgroundView, at: 0)
+        }
+
+        backgroundView.frame = bounds
+        backgroundView.backgroundColor = customBackgroundColor
+
+        let maskLayer = (backgroundView.layer.mask as? CAShapeLayer) ?? CAShapeLayer()
+        maskLayer.path = createPath()
+        backgroundView.layer.mask = maskLayer
+    }
+
     private func createPath() -> CGPath {
 
         let height: CGFloat = 28
         let margin: CGFloat = 6
         let path = UIBezierPath()
-        let centerWidth = self.frame.width / 2
+        let centerWidth = self.bounds.width / 2
 
         path.move(to: CGPoint(x: 0, y: 0)) // start top left
         path.addLine(to: CGPoint(x: (centerWidth - height - margin), y: 0)) // the beginning of the trough
         // first curve down
-        path.addArc(withCenter: CGPoint(x: centerWidth, y: 0), radius: height + margin, startAngle: CGFloat(180 * Double.pi / 180), endAngle: CGFloat(0 * Double.pi / 180), clockwise: false)
+        path.addArc(withCenter: CGPoint(x: centerWidth, y: 0), radius: height + margin, startAngle: .pi, endAngle: 0, clockwise: false)
         // complete the rect
-        path.addLine(to: CGPoint(x: self.frame.width, y: 0))
-        path.addLine(to: CGPoint(x: self.frame.width, y: self.frame.height))
-        path.addLine(to: CGPoint(x: 0, y: self.frame.height))
+        path.addLine(to: CGPoint(x: self.bounds.width, y: 0))
+        path.addLine(to: CGPoint(x: self.bounds.width, y: self.bounds.height))
+        path.addLine(to: CGPoint(x: 0, y: self.bounds.height))
         path.close()
 
         return path.cgPath
     }
 
-    private func createButtons() {
+    // MARK: - Items
+
+    private func configureItemsIfNeeded() {
+        guard let items, items.count >= 5, items != configuredItems else { return }
+        configuredItems = items
 
         // File
-        if let item = items?[0] {
-            item.title = NSLocalizedString("_home_", comment: "")
-            item.image = UIImage(named: "home")
-            item.selectedImage = item.image
-        }
+        items[0].title = NSLocalizedString("_home_", comment: "")
+        items[0].image = UIImage(named: "home")
+        items[0].selectedImage = items[0].image
 
         // Media
-        if let item = items?[1] {
-            item.title = NSLocalizedString("_media_", comment: "")
-            item.image = UIImage(named: "media")
-            item.selectedImage = item.image
-        }
+        items[1].title = NSLocalizedString("_media_", comment: "")
+        items[1].image = UIImage(named: "media")
+        items[1].selectedImage = items[1].image
 
-        // +
-        let imagePlus = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(scale: .large))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [.white]))
-        if let item = items?[2] {
-            item.title = ""
-            item.image = nil
-            item.isEnabled = false
-        }
+        // + (placeholder under the center button)
+        items[2].title = ""
+        items[2].image = nil
+        items[2].isEnabled = false
 
         // Shares
-        if let item = items?[3] {
-            item.title = NSLocalizedString("_list_shares_", comment: "")
-            item.image = UIImage(named: "shares")
-            item.selectedImage = item.image
-        }
+        items[3].title = NSLocalizedString("_list_shares_", comment: "")
+        items[3].image = UIImage(named: "shares")
+        items[3].selectedImage = items[3].image
 
         // Favorite
-        if let item = items?[4] {
-            item.title = NSLocalizedString("_favorites_", comment: "")
-            item.image = UIImage(named: "favorites")
-            item.selectedImage = item.image
-        }
+        items[4].title = NSLocalizedString("_favorites_", comment: "")
+        items[4].image = UIImage(named: "favorites")
+        items[4].selectedImage = items[4].image
+    }
 
-        // Center button
+    // MARK: - Center button
 
-        if let centerButton = self.viewWithTag(99) {
-            centerButton.removeFromSuperview()
-        }
+    private func layoutCenterButton() {
+        let centerButton = (viewWithTag(centerButtonTag) as? UIButton) ?? makeCenterButton()
 
-        let centerButtonHeight: CGFloat = 57
-        let centerButton = UIButton(frame: CGRect(x: (self.bounds.width / 2) - (centerButtonHeight / 2), y: centerButtonY, width: centerButtonHeight, height: centerButtonHeight))
+        centerButton.frame = CGRect(x: (bounds.width / 2) - (centerButtonHeight / 2),
+                                    y: centerButtonY,
+                                    width: centerButtonHeight,
+                                    height: centerButtonHeight)
+        centerButton.layer.cornerRadius = centerButtonHeight / 2.0
 
+        // Keep it above the system (glass) views
+        bringSubviewToFront(centerButton)
+    }
+
+    private func makeCenterButton() -> UIButton {
+        let imagePlus = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(scale: .large))?
+            .applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [.white]))
+
+        let centerButton = UIButton(type: .custom)
         centerButton.setTitle("", for: .normal)
         centerButton.setImage(imagePlus, for: .normal)
         centerButton.backgroundColor = UIColor(resource: .Tabbar.fabButton)
         centerButton.tintColor = UIColor.white
-        centerButton.tag = 99
+        centerButton.tag = centerButtonTag
         centerButton.accessibilityLabel = NSLocalizedString("_accessibility_add_upload_", comment: "")
-        centerButton.layer.cornerRadius = centerButton.frame.size.width / 2.0
         centerButton.layer.masksToBounds = false
         centerButton.layer.shadowOffset = CGSize(width: 0, height: 0)
         centerButton.layer.shadowRadius = 3.0
         centerButton.layer.shadowOpacity = 0.5
-        centerButton.action(for: .touchUpInside) { _ in
-            if let controller = self.window?.rootViewController as? NCMainTabBarController {
-                let serverUrl = controller.currentServerUrl()
-                if let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", NCSession.shared.getSession(controller: controller).account, serverUrl)) {
-                    if !directory.permissions.contains("CK") {
-                        let error = NKError(errorCode: NCGlobal.shared.errorInternalError, errorDescription: "_no_permission_add_file_")
-                        NCContentPresenter().showWarning(error: error)
+
+        centerButton.action(for: .touchUpInside) { [weak self, weak centerButton] _ in
+            guard let self, let centerButton,
+                  let controller = self.window?.rootViewController as? NCMainTabBarController else { return }
+
+            let serverUrl = controller.currentServerUrl()
+            if let directory = NCManageDatabase.shared.getTableDirectory(predicate: NSPredicate(format: "account == %@ AND serverUrl == %@", NCSession.shared.getSession(controller: controller).account, serverUrl)) {
+                if !directory.permissions.contains("CK") {
+                    let error = NKError(errorCode: NCGlobal.shared.errorInternalError, errorDescription: "_no_permission_add_file_")
+                    NCContentPresenter().showWarning(error: error)
+                    return
+                }
+            }
+
+            let fileFolderPath = NCUtilityFileSystem().getRelativeFilePath("", serverUrl: serverUrl, session: NCSession.shared.getSession(controller: controller))
+            let fileFolderName = (serverUrl as NSString).lastPathComponent
+            Task {
+                if let capabilities = await NCManageDatabase.shared.getCapabilities(account: controller.account) {
+
+                    if !FileNameValidator.checkFolderPath(fileFolderPath, account: controller.account, capabilities: capabilities) {
+                        controller.present(UIAlertController.warning(message: "\(String(format: NSLocalizedString("_file_name_validator_error_reserved_name_", comment: ""), fileFolderName)) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
+
                         return
                     }
-                }
 
-                let fileFolderPath = NCUtilityFileSystem().getRelativeFilePath("", serverUrl: serverUrl, session: NCSession.shared.getSession(controller: controller))
-                let fileFolderName = (serverUrl as NSString).lastPathComponent
-                Task {
-                    if let capabilities = await NCManageDatabase.shared.getCapabilities(account: controller.account) {
-
-                        if !FileNameValidator.checkFolderPath(fileFolderPath, account: controller.account, capabilities: capabilities) {
-                            controller.present(UIAlertController.warning(message: "\(String(format: NSLocalizedString("_file_name_validator_error_reserved_name_", comment: ""), fileFolderName)) \(NSLocalizedString("_please_rename_file_", comment: ""))"), animated: true)
-
-                            return
-                        }
-
-                        if self.menuPlus == nil {
-                            self.menuPlus = NCContextMenuPlus(menuButton: centerButton, controller: controller)
-                        } else {
-                            self.menuPlus?.menuButton = centerButton
-                        }
-                        let session = NCSession.shared.getSession(account: controller.account)
-                        await self.menuPlus?.create(session: session)
+                    if self.menuPlus == nil {
+                        self.menuPlus = NCContextMenuPlus(menuButton: centerButton, controller: controller)
+                    } else {
+                        self.menuPlus?.menuButton = centerButton
                     }
+                    let session = NCSession.shared.getSession(account: controller.account)
+                    await self.menuPlus?.create(session: session)
                 }
             }
         }
 
-        self.addSubview(centerButton)
+        addSubview(centerButton)
+        return centerButton
     }
 
     func getHeight() -> CGFloat {
