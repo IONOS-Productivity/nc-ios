@@ -160,6 +160,19 @@ class NCMainTabBarController: UITabBarController {
 }
 
 extension NCMainTabBarController: UITabBarControllerDelegate {
+
+    private static let menuPlusPlaceholderIndex = 2
+
+    func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
+        // On iOS 26 (Liquid Glass) a disabled UITabBarItem can still be selected
+        // by tapping or dragging over it, so block the placeholder here.
+        if let index = tabBarController.viewControllers?.firstIndex(of: viewController),
+           index == Self.menuPlusPlaceholderIndex {
+            return false
+        }
+        return true
+    }
+
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
         if previousIndex == tabBarController.selectedIndex {
             scrollToTop(viewController: viewController)

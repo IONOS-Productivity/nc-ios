@@ -8,10 +8,14 @@ import NextcloudKit
 
 class NCContextMenuPlus: NSObject {
     weak var menuButton: UIButton?
+    /// Optional separate view to present the menu from. When set, the visible
+    /// menuButton is never hidden by UIKit while the menu is shown.
+    weak var menuAnchor: UIButton?
     weak var controller: NCMainTabBarController?
 
-    init(menuButton: UIButton? = nil, controller: NCMainTabBarController?) {
+    init(menuButton: UIButton? = nil, menuAnchor: UIButton? = nil, controller: NCMainTabBarController?) {
         self.menuButton = menuButton
+        self.menuAnchor = menuAnchor
         self.controller = controller
     }
 
@@ -83,16 +87,15 @@ class NCContextMenuPlus: NSObject {
         let plusMenu = UIMenu(children: [menuAction])
 
         if let menuButton {
-            if #available(iOS 14.0, *) {
-                menuButton.menu = plusMenu
-                menuButton.showsMenuAsPrimaryAction = true
-                menuButton.performPrimaryAction()
-            }
-            // E2EE Offile disable
-            if !isNetworkReachable, isDirectoryE2EE {
-                menuButton.isEnabled = false
-            } else {
-                menuButton.isEnabled = true
+            // E2EE Offline disable
+            let isEnabled = !(!isNetworkReachable && isDirectoryE2EE)
+            menuButton.isEnabled = isEnabled
+
+            if isEnabled {
+                let presenter = menuAnchor ?? menuButton
+                presenter.menu = plusMenu
+                presenter.showsMenuAsPrimaryAction = true
+                presenter.performPrimaryAction()
             }
         }
     }
