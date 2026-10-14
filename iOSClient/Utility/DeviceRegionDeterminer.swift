@@ -28,11 +28,16 @@ struct DeviceRegionDeterminer {
         return nil
     }
 
-    func getDeviceLanguage () -> String? {
+    func getDeviceLanguageCode() -> String? {
         let localeIdentifier = Locale.current.identifier
         let locale = Locale(identifier: localeIdentifier)
-        let languageCode = locale.language.languageCode?.identifier
-        return languageCode?.uppercased()
+        return locale.language.languageCode?.identifier
+    }
+
+    func getDeviceLanguageRegion() -> String? {
+        let localeIdentifier = Locale.current.identifier
+        let locale = Locale(identifier: localeIdentifier)
+        return locale.language.region?.identifier
     }
 
     private func extractRegion(from identifier: String) -> String? {
