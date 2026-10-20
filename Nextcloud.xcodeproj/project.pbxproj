@@ -169,6 +169,12 @@
 		D5E1D5002CF4EB3900813AB6 /* DataProtectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E1D4FF2CF4EB3900813AB6 /* DataProtectionModel.swift */; };
 		D5E1D5042CF665C100813AB6 /* DataProtectionHostingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E1D5032CF665C100813AB6 /* DataProtectionHostingController.swift */; };
 		D5EB5DD42F490D2F009D88B1 /* NCContextMenuPlayerTracks.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5EB5DD32F490D2E009D88B1 /* NCContextMenuPlayerTracks.swift */; };
+		D5F18CF13087DD8700CC562E /* marketsConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = D521B9EB2FD1F6AF00202351 /* marketsConfig.json */; };
+		D5F18CF23087DD8700CC562E /* marketsConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = D521B9EB2FD1F6AF00202351 /* marketsConfig.json */; };
+		D5F18CF33087DD8700CC562E /* marketsConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = D521B9EB2FD1F6AF00202351 /* marketsConfig.json */; };
+		D5F18CF43087DD8700CC562E /* marketsConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = D521B9EB2FD1F6AF00202351 /* marketsConfig.json */; };
+		D5F18CF53087DD8700CC562E /* marketsConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = D521B9EB2FD1F6AF00202351 /* marketsConfig.json */; };
+		D5F18CF63087DD8700CC562E /* marketsConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = D521B9EB2FD1F6AF00202351 /* marketsConfig.json */; };
 		F310B1EF2BA862F1001C42F5 /* NCViewerMedia+VisionKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = F310B1EE2BA862F1001C42F5 /* NCViewerMedia+VisionKit.swift */; };
 		F317C82E2E844C5300761AEA /* ClientIntegrationUIViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F317C82D2E844C5300761AEA /* ClientIntegrationUIViewer.swift */; };
 		F32FADA92D1176E3007035E2 /* UIButton+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F32FADA82D1176DE007035E2 /* UIButton+Extension.swift */; };
@@ -3901,6 +3907,7 @@
 				62A63F302C8AF7730048653E /* Colors.xcassets in Resources */,
 				F7E4022F2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
 				F746EC53273906C50052598D /* NCViewCertificateDetails.storyboard in Resources */,
+				D5F18CF63087DD8700CC562E /* marketsConfig.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3934,6 +3941,7 @@
 				F7E4022E2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
 				0F9E787E2DD77EB8007980BF /* Colors.xcassets in Resources */,
 				AA517B812D660EFE00F8D37C /* Localizable.stringsdict in Resources */,
+				D5F18CF53087DD8700CC562E /* marketsConfig.json in Resources */,
 				F722F0112CFF569500065FB5 /* MainInterface.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3957,6 +3965,7 @@
 				F76C26A62850D3A500E42BDF /* Images.xcassets in Resources */,
 				F714805E262ED52900693E51 /* NCSectionFooter.xib in Resources */,
 				F700222D1EC479840080073F /* Custom.xcassets in Resources */,
+				D5F18CF33087DD8700CC562E /* marketsConfig.json in Resources */,
 				F7FDFF702E437E55000D7688 /* NCAccountRequest.storyboard in Resources */,
 				F79ED0F22D2FCA6A00A389D9 /* NCRecommendationsCell.xib in Resources */,
 			);
@@ -3973,6 +3982,7 @@
 				F7E4022A2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
 				425F57B02D2E83DB006D5FD1 /* IonosImages.xcassets in Resources */,
 				AA517B832D660EFE00F8D37C /* Localizable.stringsdict in Resources */,
+				D5F18CF13087DD8700CC562E /* marketsConfig.json in Resources */,
 				0F9E787F2DD77ECE007980BF /* Custom.xcassets in Resources */,
 				F7346E2328B0FEBA006CE2D2 /* Assets.xcassets in Resources */,
 			);
@@ -3985,6 +3995,7 @@
 				0F9E787D2DD77EB8007980BF /* Colors.xcassets in Resources */,
 				F7E4022D2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
 				F746EC52273906C40052598D /* NCViewCertificateDetails.storyboard in Resources */,
+				D5F18CF43087DD8700CC562E /* marketsConfig.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4083,6 +4094,7 @@
 				0F9E78822DD77F0A007980BF /* Colors.xcassets in Resources */,
 				0F9E78802DD77ECE007980BF /* Custom.xcassets in Resources */,
 				F7E4022B2BA85D1D007E5609 /* PrivacyInfo.xcprivacy in Resources */,
+				D5F18CF23087DD8700CC562E /* marketsConfig.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5134,7 +5146,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NC DEBUG";
@@ -5157,7 +5169,6 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = R7V5Z67X53;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/Alpha/iOSClient.plist";
-				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Ad Hoc Easy Storage";
@@ -5814,7 +5825,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_SWIFT_FLAGS = "-D BETA";
 				SDKROOT = iphoneos;
@@ -5844,7 +5855,6 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/Beta/iOSClient.plist";
-				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = de.strato.ionos.easystorage.beta;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Ad Hoc Easy Storage Beta";
@@ -6217,7 +6227,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_SWIFT_FLAGS = "-D APPSTORE";
 				SDKROOT = iphoneos;
@@ -6247,7 +6257,6 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/AppStore/iOSClient.plist";
-				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.ionos.hidrivenext;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "AppStore com.ionos.hidrivenext";
@@ -6812,7 +6821,6 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = R7V5Z67X53;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/iOSClient.plist";
-				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Develop com.viseven.ionos.easystorage";
@@ -6838,7 +6846,6 @@
 				CURRENT_PROJECT_VERSION = 28;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/Brand/iOSClient.plist";
-				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.viseven.ionos.easystorage;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Ad Hoc Easy Storage";
@@ -6993,7 +7000,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NC DEBUG";
@@ -7056,7 +7063,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NC";
