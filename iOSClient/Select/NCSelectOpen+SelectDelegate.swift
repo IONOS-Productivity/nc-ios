@@ -85,7 +85,7 @@ final class NCSelectOpen: NCSelectDelegate {
         navigationController?.modalPresentationStyle = .formSheet
 
         if let navigationController = navigationController {
-            controller?.present(navigationController, animated: true, completion: nil)
+            controller?.currentViewController()?.present(navigationController, animated: true, completion: nil)
         }
     }
 }

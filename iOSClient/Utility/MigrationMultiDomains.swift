@@ -18,15 +18,16 @@ struct MigrationMultiDomains: View {
 
     var body: some View {
         ZStack {
-            Color(NCBrandColor.shared.customer)
+            Image(.gradientBackground)
+                .resizable()
                 .ignoresSafeArea()
             VStack(spacing: 20) {
                 Spacer()
 
-                Image(systemName: "externaldrive.fill.badge.icloud")
+                Image(.ionosLogo)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 80, height: 80)
+                    .frame(width: 320, height: 40)
                     .foregroundColor(.white)
 
                 Text(progressText)
@@ -50,6 +51,7 @@ struct MigrationMultiDomains: View {
                 await startMigration()
             }
         }
+        .preferredColorScheme(.dark)
     }
 
     /// Executes the migration pipeline: scan directories, move them, and finalize.

@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2018 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -6,6 +7,7 @@ import Foundation
 import UIKit
 import NextcloudKit
 import RealmSwift
+import Combine
 
 protocol NCGridCellDelegate: AnyObject {
     func onMenuIntent(with metadata: tableMetadata?)
@@ -27,6 +29,11 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
 
     @IBOutlet weak var imageVisualEffect: UIVisualEffectView!
     @IBOutlet weak var iconsStackView: UIStackView!
+    @IBOutlet weak var progressView: UIProgressView!
+
+    #if !EXTENSION
+    private var playbackProgressView = PlaybackProgressView()
+    #endif
 
     weak var delegate: NCGridCellDelegate?
 
@@ -79,8 +86,9 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
         imageItem.image = nil
         imageItem.layer.cornerRadius = 6
         imageItem.layer.masksToBounds = true
+
         imageSelect.isHidden = true
-        imageSelect.image = NCImageCache.shared.getImageCheckedYes()
+        imageSelect.image = UIImage(resource: .FileSelection.gridItemSelected)
         imageStatus.image = nil
         imageFavorite.image = nil
         imageLocal.image = nil
@@ -89,18 +97,22 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
         labelInfo.text = ""
         labelSubinfo.text = ""
 
-        imageVisualEffect.layer.cornerRadius = 6
-        imageVisualEffect.clipsToBounds = true
-        imageVisualEffect.alpha = 0.5
-
-        iconsStackView.addBlurBackground(style: .systemMaterial)
-        iconsStackView.layer.cornerRadius = 8
-        iconsStackView.clipsToBounds = true
-
         buttonMore.menu = nil
         buttonMore.showsMenuAsPrimaryAction = true
-
         contentView.bringSubviewToFront(buttonMore)
+
+        #if !EXTENSION
+        if playbackProgressView.superview == nil {
+            addSubview(playbackProgressView)
+            playbackProgressView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                playbackProgressView.leadingAnchor.constraint(equalTo: progressView.leadingAnchor),
+                playbackProgressView.trailingAnchor.constraint(equalTo: progressView.trailingAnchor),
+                playbackProgressView.topAnchor.constraint(equalTo: progressView.topAnchor),
+                playbackProgressView.bottomAnchor.constraint(equalTo: progressView.bottomAnchor)
+            ])
+        }
+        #endif
     }
 
     override func snapshotView(afterScreenUpdates afterUpdates: Bool) -> UIView? {
@@ -123,21 +135,15 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
         buttonMore.isHidden = status
     }
 
-    func selected(_ status: Bool, isEditMode: Bool) {
+    func selected(_ isSelected: Bool, isEditMode: Bool) {
         if isEditMode {
             buttonMore.isHidden = true
             accessibilityCustomActions = nil
         } else {
             buttonMore.isHidden = false
         }
-        if status {
-            imageSelect.isHidden = false
-            imageSelect.image = NCImageCache.shared.getImageCheckedYes()
-            imageVisualEffect.isHidden = false
-        } else {
-            imageSelect.isHidden = true
-            imageVisualEffect.isHidden = true
-        }
+        setBorderForGridViewCell(isSelected: isSelected)
+        imageSelect.isHidden = !isSelected
     }
 
     func writeInfoDateSize(date: NSDate, size: Int64) {
@@ -155,6 +161,15 @@ class NCGridCell: UICollectionViewCell, UIGestureRecognizerDelegate, NCCellMainP
         accessibilityValue = value
     }
 }
+
+#if !EXTENSION
+extension NCGridCell: NCCellMedia {
+    func setupPlaybackProgress(visible: Bool) {
+        guard let ocId = metadata?.ocId else { return }
+        playbackProgressView.setupPlaybackProgress(ocId: ocId, visible: visible)
+    }
+}
+#endif
 
 // MARK: - Grid Layout
 
@@ -289,6 +304,10 @@ extension NCCollectionViewCommon {
 
         // Obligatory here, at the end !!
         cell.metadata = metadata
+
+        #if !EXTENSION
+        cell.setupPlaybackProgress(visible: metadata.isAudioOrVideo && !isEditMode)
+        #endif
 
         return cell
     }

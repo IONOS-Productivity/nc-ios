@@ -12,21 +12,17 @@ extension UINavigationController {
         return self.visibleViewController!.topMostViewController()
     }
 
-    func setNavigationBarAppearance(textColor: UIColor = NCBrandColor.shared.iconImageColor, backgroundColor: UIColor? = .systemBackground) {
+    func setNavigationBarAppearance(textColor: UIColor = NCBrandColor.shared.textColor, backgroundColor: UIColor? = NCBrandColor.shared.appBackgroundColor) {
         let appearance = UINavigationBarAppearance()
 
-        if #available(iOS 26.0, *) {
-            appearance.configureWithDefaultBackground()
+        appearance.configureWithTransparentBackground()
+        if topViewController is NCMedia {
+            // transparent
         } else {
-            appearance.configureWithTransparentBackground()
-            if topViewController is NCMedia {
-                // transparent
-            } else {
-                appearance.backgroundColor = backgroundColor
-            }
-            appearance.shadowColor = .clear
-            appearance.shadowImage = UIImage()
+            appearance.backgroundColor = backgroundColor
         }
+        appearance.shadowColor = .clear
+        appearance.shadowImage = UIImage()
         appearance.titleTextAttributes = [.foregroundColor: textColor]
 
         navigationBar.standardAppearance = appearance
@@ -34,7 +30,7 @@ extension UINavigationController {
         navigationBar.compactAppearance = appearance
         navigationBar.compactScrollEdgeAppearance = appearance
 
-        navigationBar.tintColor = textColor
+        navigationBar.tintColor = NCBrandColor.shared.iconImageColor
         navigationBar.prefersLargeTitles = false
     }
 }

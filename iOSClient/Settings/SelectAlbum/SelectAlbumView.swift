@@ -15,13 +15,16 @@ struct SelectAlbumView: View {
             Section {
                 SelectionButton(model: model, album: model.allPhotosCollection, assetCount: model.allPhotosCollection?.assetCount ?? 0, selection: $selectedAlbums)
             }
+            .applyGlobalFormSectionStyle()
 
             if !model.smartAlbums.isEmpty {
                 AlbumView(model: model, selectedAlbums: $selectedAlbums, albums: model.smartAlbums, sectionTitle: "_smart_albums_")
+                    .applyGlobalFormSectionStyle()
             }
 
             if !model.userAlbums.isEmpty {
                 AlbumView(model: model, selectedAlbums: $selectedAlbums, albums: model.userAlbums, sectionTitle: "_albums_")
+                    .applyGlobalFormSectionStyle()
             }
         }
         .safeAreaInset(edge: .bottom, content: {
@@ -45,6 +48,7 @@ struct SelectAlbumView: View {
         }
         .navigationBarTitle(NSLocalizedString("_upload_from_", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
+        .applyGlobalFormStyle()
     }
 }
 

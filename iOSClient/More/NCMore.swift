@@ -63,10 +63,6 @@ class NCMore: UIViewController, UITableViewDelegate, UITableViewDataSource {
         self.tabBarController as? NCMainTabBarController
     }
 
-    var mainNavigationController: NCMainNavigationController? {
-        self.navigationController as? NCMainNavigationController
-    }
-
     // MARK: - View Life Cycle
 
     override func viewDidLoad() {

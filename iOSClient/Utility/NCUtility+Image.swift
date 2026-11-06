@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
 // SPDX-FileCopyrightText: 2023 Marino Faggiana
+// SPDX-FileCopyrightText: 2024 STRATO GmbH
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
@@ -28,7 +29,7 @@ extension NCUtility {
             case NKTypeIconFile.txt.rawValue: image = UIImage(systemName: "doc.text", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
             case NKTypeIconFile.url.rawValue: image = UIImage(systemName: "network", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
             case NKTypeIconFile.xls.rawValue: image = UIImage(systemName: "tablecells", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.spreadsheetIconColor]))
-            default: image = UIImage(systemName: "doc", withConfiguration: UIImage.SymbolConfiguration(weight: .thin))?.applyingSymbolConfiguration(UIImage.SymbolConfiguration(paletteColors: [NCBrandColor.shared.iconImageColor2]))
+            default: image = UIImage(resource: .fileUnsupported)
             }
         }
 
@@ -63,25 +64,12 @@ extension NCUtility {
         }
     }
 
-    func loadUserImage(for user: String, displayName: String?, urlBase: String) -> UIImage {
-        let fileName = NCSession.shared.getFileName(urlBase: urlBase, user: user)
-        let localFilePath = utilityFileSystem.createServerUrl(serverUrl: utilityFileSystem.directoryUserData, fileName: fileName)
+    var userImage: UIImage {
+        UIImage(resource: .userAvatar)
+    }
 
-        if var localImage = UIImage(contentsOfFile: localFilePath) {
-            let rect = CGRect(x: 0, y: 0, width: 30, height: 30)
-            UIGraphicsBeginImageContextWithOptions(rect.size, false, 3.0)
-            UIBezierPath(roundedRect: rect, cornerRadius: rect.size.height).addClip()
-            localImage.draw(in: rect)
-            localImage = UIGraphicsGetImageFromCurrentImageContext() ?? localImage
-            UIGraphicsEndImageContext()
-            return localImage
-        } else if let image = NCManageDatabase.shared.getImageAvatarLoaded(fileName: fileName).image {
-            return image
-        } else if let displayName, !displayName.isEmpty, let avatarImg = createAvatar(displayName: displayName, size: 30) {
-            return avatarImg
-        } else {
-            return loadImage(named: "person.crop.circle", colors: [NCBrandColor.shared.iconImageColor])
-        }
+    func loadUserImage(for user: String, displayName: String?, urlBase: String) -> UIImage {
+        userImage
     }
 
     func imageFromVideo(url: URL, at time: TimeInterval) -> UIImage? {

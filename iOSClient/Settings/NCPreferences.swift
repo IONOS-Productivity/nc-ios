@@ -12,7 +12,10 @@ final class NCPreferences: NSObject {
 
     var showDescription: Bool {
         get {
-            return getBoolPreference(key: "showDescription", defaultValue: true)
+            if let value = try? keychain.get("showDescription"), let result = Bool(value) {
+                return result
+            }
+            return false
         }
         set {
             setUserDefaults(newValue, forKey: "showDescription")

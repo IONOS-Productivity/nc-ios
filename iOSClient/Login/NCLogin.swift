@@ -11,15 +11,13 @@ import SwiftUI
 import SafariServices
 
 class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
-    @IBOutlet weak var imageBrand: UIImageView!
-    @IBOutlet weak var imageBrandConstraintY: NSLayoutConstraint!
-    @IBOutlet weak var baseUrlTextField: UITextField!
-    @IBOutlet weak var loginAddressDetail: UILabel!
-    @IBOutlet weak var loginButton: UIButton!
-    @IBOutlet weak var qrCode: UIButton!
-    @IBOutlet weak var certificate: UIButton!
-    @IBOutlet weak var enforceServersButton: UIButton!
-    @IBOutlet weak var enforceServersDropdownImage: UIImageView!
+
+    @IBOutlet weak var loginButton: PrimaryButton!
+    @IBOutlet weak var qrCode: SecondaryButton!
+    @IBOutlet weak var lblWelcome: UILabel!
+    @IBOutlet weak var lblDescription: UILabel!
+    @IBOutlet weak var loginContentView: UIView!
+    @IBOutlet weak var spinner: UIActivityIndicatorView!
 
     private let appDelegate = (UIApplication.shared.delegate as? AppDelegate)!
     private var textColor: UIColor = .white
@@ -51,55 +49,31 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Text color
-        if NCBrandColor.shared.customer.isTooLight() {
-            textColor = .black
-            textColorOpponent = .white
-        } else if NCBrandColor.shared.customer.isTooDark() {
-            textColor = .white
-            textColorOpponent = .black
-        } else {
-            textColor = .white
-            textColorOpponent = .black
+        self.overrideUserInterfaceStyle = .dark
+
+        // Login Button
+        loginButton.setTitle(NSLocalizedString("_log_in_", comment: ""), for: .normal)
+
+        // qrcode
+        qrCode.setTitle(NSLocalizedString("_login_with_qrcode_", tableName: nil, bundle: Bundle.main, value: "Scan QR code", comment: ""), for: .normal)
+
+        // Labels
+        lblWelcome.text = NSLocalizedString("_login_welcome_", tableName: nil, bundle: Bundle.main, value: "Welcome to the cloud storage", comment: "")
+        lblDescription.text = NSLocalizedString("_login_description_", tableName: nil, bundle: Bundle.main, value: "You need to login over browser", comment: "")
+
+        // Navigation Controller
+        navigationController?.isNavigationBarHidden = true
+
+        if !NCManageDatabase.shared.getAllTableAccount().isEmpty {
+            let navigationItemCancel = UIBarButtonItem(barButtonSystemItem: .stop, target: self, action: #selector(self.actionCancel))
+            navigationItemCancel.tintColor = textColor
+            navigationItem.leftBarButtonItem = navigationItemCancel
         }
-
-        // Image Brand
-        imageBrand.image = UIImage(named: "logo")
-
-        // Url
-        baseUrlTextField.textColor = textColor
-        baseUrlTextField.tintColor = textColor
-        baseUrlTextField.layer.cornerRadius = 10
-        baseUrlTextField.layer.borderWidth = 1
-        baseUrlTextField.layer.borderColor = textColor.cgColor
-        baseUrlTextField.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 15, height: baseUrlTextField.frame.height))
-        baseUrlTextField.leftViewMode = .always
-        baseUrlTextField.rightView = UIView(frame: CGRect(x: 0, y: 0, width: 35, height: baseUrlTextField.frame.height))
-        baseUrlTextField.rightViewMode = .always
-        baseUrlTextField.attributedPlaceholder = NSAttributedString(string: NSLocalizedString("_login_url_", comment: ""), attributes: [NSAttributedString.Key.foregroundColor: textColor.withAlphaComponent(0.5)])
-        baseUrlTextField.delegate = self
-
-        baseUrlTextField.isEnabled = !NCBrandOptions.shared.disable_request_login_url
-
-        // Login button
-        loginAddressDetail.textColor = textColor
-        loginAddressDetail.text = String.localizedStringWithFormat(NSLocalizedString("_login_address_detail_", comment: ""), NCBrandOptions.shared.brand)
-
-        // QR code button
-        qrCode.tintColor = NCBrandColor.shared.customer.isTooLight() ? .black : .white
 
         // brand
         if NCBrandOptions.shared.disable_request_login_url {
-            baseUrlTextField.isEnabled = false
-            baseUrlTextField.isUserInteractionEnabled = false
-            baseUrlTextField.alpha = 0.5
             urlBase = NCBrandOptions.shared.loginBaseUrl
         }
-
-        // certificate
-        certificate.setImage(UIImage(named: "certificate")?.image(color: textColor, size: 100), for: .normal)
-        certificate.isHidden = true
-        certificate.isEnabled = false
 
         // navigation
         let navBarAppearance = UINavigationBarAppearance()
@@ -138,38 +112,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
         self.navigationController?.navigationBar.setValue(true, forKey: "hidesShadow")
         view.backgroundColor = NCBrandColor.shared.customer
 
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
-
         handleLoginWithAppConfig()
-        baseUrlTextField.text = urlBase
-
-        enforceServersButton.setTitle(NSLocalizedString("_select_server_", comment: ""), for: .normal)
-
-        let enforceServers = NCBrandOptions.shared.enforce_servers
-
-        if !enforceServers.isEmpty {
-            baseUrlTextField.isHidden = true
-            enforceServersDropdownImage.isHidden = false
-            enforceServersButton.isHidden = false
-
-            let actions = enforceServers.map { server in
-                UIAction(title: server.name, handler: { [self] _ in
-                    enforceServersButton.setTitle(server.name, for: .normal)
-                    baseUrlTextField.text = server.url
-                })
-            }
-
-            enforceServersButton.layer.cornerRadius = 10
-            enforceServersButton.menu = .init(title: NSLocalizedString("_servers_", comment: ""), children: actions)
-            enforceServersButton.showsMenuAsPrimaryAction = true
-            enforceServersButton.configuration?.titleTextAttributesTransformer =
-            UIConfigurationTextAttributesTransformer { incoming in
-                var outgoing = incoming
-                outgoing.font = UIFont.systemFont(ofSize: 13)
-                return outgoing
-            }
-        }
 
         NCNetworking.shared.certificateDelegate = self
     }
@@ -249,27 +192,6 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
         self.activeTextField = textField
     }
 
-    // MARK: - Keyboard notification
-
-    @objc internal func keyboardWillShow(_ notification: Notification?) {
-        activeTextfieldDiff = 0
-        if let info = notification?.userInfo, let centerObject = self.activeTextField.superview?.convert(self.activeTextField.center, to: nil) {
-
-            let frameEndUserInfoKey = UIResponder.keyboardFrameEndUserInfoKey
-            if let keyboardFrame = info[frameEndUserInfoKey] as? CGRect {
-                let diff = keyboardFrame.origin.y - centerObject.y - self.activeTextField.frame.height
-                if diff < 0 {
-                    activeTextfieldDiff = diff
-                    imageBrandConstraintY.constant += diff
-                }
-            }
-        }
-    }
-
-    @objc func keyboardWillHide(_ notification: Notification) {
-        imageBrandConstraintY.constant -= activeTextfieldDiff
-    }
-
     // MARK: - Action
 
     @objc func actionCancel(_ sender: Any?) {
@@ -277,6 +199,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
     }
 
     @IBAction func actionButtonLogin(_ sender: Any) {
+        spinner.startAnimating()
         NCNetworking.shared.p12Data = nil
         NCNetworking.shared.p12Password = nil
         login()
@@ -285,10 +208,6 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
     @IBAction func actionQRCode(_ sender: Any) {
         let qrCode = NCLoginQRCode(delegate: self)
         qrCode.scan()
-    }
-
-    @IBAction func actionCertificate(_ sender: Any) {
-
     }
 
     // MARK: - Share accounts View Controller
@@ -312,7 +231,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
     // MARK: - Login
 
     private func login() {
-        guard var url = baseUrlTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+        var url = urlBase
         if url.hasSuffix("/") { url = String(url.dropLast()) }
         if url.isEmpty { return }
 
@@ -320,7 +239,6 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
         if url.hasPrefix("https") == false && url.hasPrefix("http") == false {
             url = "https://" + url
         }
-        self.baseUrlTextField.text = url
         isUrlValid(url: url)
     }
 
@@ -350,6 +268,7 @@ class NCLogin: UIViewController, UITextFieldDelegate, NCLoginQRCodeDelegate {
                     }
                 }
             case .failure(let error):
+                spinner.stopAnimating()
                 loginButton.hideSpinnerAndShowButton()
                 loginButton.isEnabled = true
 
@@ -482,7 +401,6 @@ extension NCLogin: ClientCertificateDelegate, UIDocumentPickerDelegate {
         alertEnterPassword.addAction(UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default, handler: { _ in
             NCNetworking.shared.p12Data = try? Data(contentsOf: urls[0])
             NCNetworking.shared.p12Password = alertEnterPassword.textFields?[0].text
-            self.login()
         }))
         alertEnterPassword.addTextField { textField in
             textField.isSecureTextEntry = true
@@ -507,6 +425,7 @@ extension NCLogin: ClientCertificateDelegate, UIDocumentPickerDelegate {
 
 extension NCLogin: NCLoginProviderDelegate {
     func onBack() {
+        spinner.stopAnimating()
         loginButton.isEnabled = true
         loginButton.hideSpinnerAndShowButton()
         activeLoginProvider?.cancel()

@@ -1,5 +1,7 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
 // SPDX-FileCopyrightText: 2022 Marino Faggiana
+// SPDX-FileCopyrightText: 2024 STRATO GmbH
+// SPDX-FileCopyrightText: 2022 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import SwiftUI
@@ -10,19 +12,8 @@ struct DashboardWidgetView: View {
     var body: some View {
         GeometryReader { geo in
             if entry.isEmpty {
-                VStack(alignment: .center) {
-                    Image(systemName: "checkmark")
-                        .resizable()
-                        .scaledToFit()
-                        .font(Font.system(.body).weight(.light))
-                        .frame(width: 50, height: 50)
-                    Text(NSLocalizedString("_no_items_", comment: ""))
-                        .font(.system(size: 25))
-                        .padding()
-                    Text(NSLocalizedString("_check_back_later_", comment: ""))
-                        .font(.system(size: 15))
-                }
-                .frame(width: geo.size.width, height: geo.size.height)
+				EmptyWidgetContentView()
+					.frame(width: geo.size.width, height: geo.size.height)
             }
 
             ZStack(alignment: .topLeading) {
@@ -52,7 +43,8 @@ struct DashboardWidgetView: View {
                                         if entry.isPlaceholder {
                                             Circle()
                                                 .fill(Color(.systemGray4))
-                                                .frame(width: 35, height: 35)
+                                                .frame(width: WidgetConstants.elementIconWidthHeight,
+													   height: WidgetConstants.elementIconWidthHeight)
                                         } else if let color = element.imageColor {
                                             Image(uiImage: element.icon)
                                                 .renderingMode(.template)
@@ -71,27 +63,28 @@ struct DashboardWidgetView: View {
                                                 Image(uiImage: element.icon)
                                                     .resizable()
                                                     .scaledToFill()
-                                                    .frame(width: 35, height: 35)
+                                                    .frame(width: WidgetConstants.elementIconWidthHeight,
+														   height: WidgetConstants.elementIconWidthHeight)
                                                     .clipShape(Circle())
                                             } else {
                                                 Image(uiImage: element.icon)
                                                     .resizable()
                                                     .scaledToFill()
-                                                    .frame(width: 35, height: 35)
+                                                    .frame(width: WidgetConstants.elementIconWidthHeight,
+														   height: WidgetConstants.elementIconWidthHeight)
                                                     .clipped()
-                                                    .cornerRadius(5)
                                             }
                                         }
 
-                                        VStack(alignment: .leading, spacing: 2) {
-
-                                            Text(element.title)
-                                                .font(.system(size: 12))
-                                                .fontWeight(.regular)
-
-                                            Text(element.subTitle)
-                                                .font(.system(size: CGFloat(10)))
-                                                .foregroundColor(subTitleColor)
+										VStack(alignment: .leading, spacing: 2) {
+											Text(element.title)
+												.font(WidgetConstants.elementTileFont)
+                                                .foregroundStyle(Color(.title))
+                                            if !element.subTitle.isEmpty {
+                                                Text(element.subTitle)
+                                                    .font(WidgetConstants.elementSubtitleFont)
+                                                    .foregroundStyle(Color(.subtitle))
+                                            }
                                         }
                                         Spacer()
                                     }
@@ -100,19 +93,20 @@ struct DashboardWidgetView: View {
                                 }
                                 if element != entry.datas.last {
                                     Divider()
-                                        .padding(.leading, 54)
+                                        .overlay(Color(.divider))
                                 }
                             }
                         }
                     }
-                    .padding(.top, 35)
+                    .padding(.top, 40)
                     .redacted(reason: entry.isPlaceholder ? .placeholder : [])
                 }
 
                 if let buttons = entry.buttons, !buttons.isEmpty, !entry.isPlaceholder {
                     HStack(spacing: 10) {
-                        let brandColor = Color(NCBrandColor.shared.getElement(account: entry.account))
-                        let brandTextColor = Color(NCBrandColor.shared.getText(account: entry.account))
+
+                        let brandColor = Color(NCBrandColor.shared.brandElement)
+                        let brandTextColor = Color(.text)
 
                         ForEach(buttons, id: \.index) { element in
                             Link(destination: URL(string: element.link)!, label: {
@@ -124,6 +118,7 @@ struct DashboardWidgetView: View {
                                     .foregroundColor(brandTextColor)
                                     .border(brandColor, width: 1)
                                     .cornerRadius(.infinity)
+                                    .padding(.bottom, 12)
                             })
                         }
                     }
@@ -147,7 +142,7 @@ struct DashboardWidgetView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
-        .containerBackground(.background, for: .widget)
+        .containerBackground(Color(.AppBackground.main), for: .widget)
     }
 }
 

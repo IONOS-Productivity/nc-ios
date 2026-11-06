@@ -33,6 +33,8 @@
 "_rename_folder_"           = "Rename folder";
 "_move_"                    = "Move";
 "_add_"                     = "Add";
+"_login_"                   = "Log in";
+"_login_with_qrcode_"       = "Scan QR code";
 "_save_"                    = "Save";
 "_warning_"                 = "Warning";
 "_error_"                   = "Error";
@@ -66,8 +68,8 @@
 "_unknown_"                 = "Unknown";
 "_success_"                 = "Success";
 "_mode_filename_"           = "Filename mode";
-"_warning_owncloud_"        = "You are connected to an ownCloud server. This is untested and unsupported, use at your own risk. To upgrade to Nextcloud, see https://nextcloud.com/migration.";
-"_warning_unsupported_"     = "You are using an unsupported version of Nextcloud. For the safety of your data we strongly recommend updating to the latest stable Nextcloud.";
+"_warning_owncloud_"        = "This is untested and unsupported, use at your own risk.";
+"_warning_unsupported_"     = "You are using an unsupported version. For the safety of your data we strongly recommend updating to the latest stable version.";
 "_restore_"                 = "Restore";
 "_tap_here_to_change_"      = "Tap here to change";
 "_no_albums_"               = "No albums";
@@ -305,7 +307,7 @@
 "_today_"                                   = "Today";
 "_yesterday_"                               = "Yesterday";
 "_access_photo_not_enabled_"                = "Access to Photos is not enabled";
-"_access_photo_not_enabled_msg_"            = "Please go to Settings → Apps → Nextcloud → Photos and enable Photo Library Access";
+"_access_photo_not_enabled_msg_"            = "Please go to Settings → Apps → HiDrive Next → Photos and enable Photo Library Access";
 "_access_background_app_refresh_denied_"    = "\"Background App Refresh\" is denied. Please enable it in \"Settings\" otherwise, new photos or videos will not be detected when the application is in the background";
 "_new_photos_starting_"                     = "Only photos or videos starting %@ will be uploaded.";
 "_tutorial_photo_view_"                     = "No photos or videos uploaded yet";
@@ -379,6 +381,14 @@
 "_media_viewimage_show_"        = "Show only images";
 "_media_viewvideo_show_"        = "Show only video";
 "_media_show_all_"              = "Show both";
+"_media_view_options_"          = "View options";
+"_media_options_"               = "Media options";
+"_media_by_created_date_"       = "Sort by created date";
+"_media_by_upload_date_"        = "Sort by upload date";
+"_media_by_modified_date_"      = "Sort by modified date";
+"_insert_password_pfd_"         = "Secured PDF. Enter password";
+"_password_pdf_error_"          = "Wrong password";
+"_error_download_photobrowser_" = "Error: Unable to download photo";
 "_good_morning_"                = "Good morning";
 "_good_day_"                    = "Good day";
 "_good_afternoon_"              = "Good afternoon";
@@ -386,6 +396,13 @@
 "_good_night_"                  = "Good night";
 "_servers_"                     = "Servers";
 "_select_server_"               = "Please select a server...";
+
+// MARK: Files Header
+
+"_select_selectionLabel_selectAll_" = "select all";
+"_select_selectionLabel_oneItemSelected_" = "one item selected";
+"_select_selectionLabel_manyItemsSelected_" = "%@ items selected";
+"_select_selectionLabel_deselectAll_" = "deselect all";
 
 // MARK: Share
 
@@ -658,7 +675,7 @@
 "_recommended_files_"       = "Recommended Files";
 "_propagate_layout_"        = "Apply the following change to all subfolders";
 "_version_mismatch_error_"  = "Version change: please open the main app to update the data.";
-"_check_auto_upload_"       = "Automatic photo upload is currently disabled.\nWith Nextcloud iOS you can automatically back up your photos and keep them safe on your server.\nJust open Settings → Auto Upload, choose the options you prefer, and turn it on with the \"%@\" button.";
+"_check_auto_upload_"       = "Automatic photo upload is currently disabled.\nWith HiDrive Next iOS you can automatically back up your photos and keep them safe on your server.\nJust open Settings → Auto Upload, choose the options you prefer, and turn it on with the \"%@\" button.";
 "_cancel_all_request_"      = "Are you sure you want to cancel all transfers?";
 "_cancel_all_"              = "Cancel All";
 "_dismiss_"                 = "Dismiss";
@@ -754,6 +771,32 @@ You can stop it at any time, adjust the settings, and enable it again.";
 "_multiple_albums_" = "Multiple albums";
 "_smart_albums_" = "Smart albums";
 "_albums_" = "Albums";
+
+//MARK: Login
+"_login_welcome_" = "Welcome to the cloud storage";
+"_login_description_" = "You need to login over browser";
+"_login_wrong_QR_format_" = "QR code format is incorrect";
+
+//MARK: Burger menu
+"_storage_used_" = "Storage used";
+"_used_of_space_" = "%@ of %@ used";
+
+//MARK: Data Protection Screens
+"_agree_" = "Agree";
+"_privacy_settings_" = "Privacy Settings";
+"_privacy_settings_description_" = "This application uses cookies and similar technologies. By clicking on Agree, you consent to the processing of your data and also to its transfer to third parties. \nVisit our [Privacy Policy](link://privacypolicy) for more information, also on data processing by third party providers.\nClick on [Reject](link://reject) to prevent use of the tool, or change your selection at any time in Settings.";
+"_data_protection_settings_" = "Settings";
+"_data_usage_for_app_optimization_description_" = "We collect anonymized data to optimize our app.\nWe use software solutions by various partners for this purpose. Our intention is to offer full transparency and allow you to decide how your anonymized data is collected and used. You can also change your settings at any time later on under the Privacy menu item. Please note, however, that data collection contributes significantly to optimizing this app and that you would prevent these improvements by rejecting the transfer of data.";
+"_required_data_collection_" = "Necessary data collection";
+"_required_data_collection_description_" = "Data collection is necessary in order to use key functions of the app.";
+"_analysis_of_data_collection_" = "Data analysis for needs-based design";
+"_analysis_of_data_collection_description_" = "This data helps us to optimize your user experience and to identify system crashes and bugs.";
+"_data_protection_" = "Data Privacy";
+"_save_settings_" = "Save Settings";
+"_alert_tracking_access" = "Please change the tracking in the settings.";
+
+
+
 "_new_photos_only_" = "New photos only";
 "_all_photos_" = "All photos";
 //"_back_up_" = "Back up...";
@@ -768,3 +811,5 @@ You can stop it at any time, adjust the settings, and enable it again.";
 "_scanning_files_" = "Scanning files …";
 "_moving_items_to_domain_" = "Moving items to correct domain …";
 "_finishing_up_" = "Finishing up …";
+
+"_download_"                    = "Download";

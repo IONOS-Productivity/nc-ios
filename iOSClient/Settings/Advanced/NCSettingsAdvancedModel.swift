@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2024 Aditya Tyagi
 // SPDX-FileCopyrightText: 2024 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -48,9 +49,7 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
     func onViewAppear() {
         let groups = NCManageDatabase.shared.getAccountGroups(account: session.account)
         isAdminGroup = groups.contains(NCGlobal.shared.groupAdmin)
-#if DEBUG
-        isAdminGroup = true
-#endif
+
         mostCompatible = keychain.formatCompatibility
         livePhoto = keychain.livePhoto
         removeFromCameraRoll = keychain.removePhotoCameraRoll
@@ -165,7 +164,7 @@ class NCSettingsAdvancedModel: ObservableObject, ViewOnAppearHandling {
             metadata: nil
         )
 
-        controller?.present(viewerQuickLook, animated: true, completion: nil)
+        controller?.currentViewController()?.present(viewerQuickLook, animated: true, completion: nil)
     }
 }
 

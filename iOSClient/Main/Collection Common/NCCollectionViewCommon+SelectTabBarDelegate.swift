@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2024 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -6,7 +7,7 @@ import UIKit
 import Foundation
 import NextcloudKit
 
-extension NCCollectionViewCommon: NCCollectionViewCommonSelectTabBarDelegate {
+extension NCCollectionViewCommon: HiDriveCollectionViewCommonSelectToolbarDelegate {
     func selectAll() {
         if !fileSelect.isEmpty, self.dataSource.getMetadatas().count == fileSelect.count {
             fileSelect = []
@@ -118,25 +119,31 @@ extension NCCollectionViewCommon: NCCollectionViewCommonSelectTabBarDelegate {
         return selectedMetadatas
     }
 
-    @MainActor
-    func setEditMode(_ editMode: Bool) async {
-        isEditMode = editMode
-        fileSelect.removeAll()
+    func setEditMode(_ editMode: Bool) {
+        Task {
+            isEditMode = editMode
+            fileSelect.removeAll()
 
-        navigationItem.hidesBackButton = editMode
-        navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
-        searchController(enabled: !editMode)
+            navigationItem.hidesBackButton = editMode
+            navigationController?.interactivePopGestureRecognizer?.isEnabled = !editMode
+            searchController(enabled: !editMode)
 
-        // (+)
-        mainNavigationController?.menuPlus?.hiddenPlusButton(editMode)
+            if editMode {
+                navigationItem.leftBarButtonItems = nil
+            } else {
+                (self.navigationController as? HiDriveMainNavigationController)?.setNavigationLeftItems()
+            }
+            (self.navigationController as? HiDriveMainNavigationController)?.setNavigationRightItems()
 
-        if editMode {
-            navigationItem.leftBarButtonItems = nil
-        } else {
-            await (self.navigationController as? NCMainNavigationController)?.setNavigationLeftItems()
+            self.collectionView.reloadData()
         }
-        await (self.navigationController as? NCMainNavigationController)?.setNavigationRightItems()
+    }
 
-        self.collectionView.reloadData()
+    func toolbarWillAppear() {
+        self.tabBarController?.tabBar.isHidden = true
+    }
+
+    func toolbarWillDisappear() {
+        self.tabBarController?.tabBar.isHidden = false
     }
 }

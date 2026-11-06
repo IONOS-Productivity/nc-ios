@@ -30,7 +30,7 @@ class NCContextMenuShare: NSObject {
         if share.shareType == NKShare.ShareType.publicLink.rawValue, canReshare {
             let addLinkAction = UIAction(
                 title: NSLocalizedString("_share_add_sharelink_", comment: ""),
-                image: utility.loadImage(named: "plus", colors: [NCBrandColor.shared.iconImageColor])
+                image: UIImage(resource: .menuAdd)
             ) { [self] _ in
                 shareController.makeNewLinkShare()
             }
@@ -40,7 +40,7 @@ class NCContextMenuShare: NSObject {
         // Details action
         let detailsAction = UIAction(
             title: NSLocalizedString("_details_", comment: ""),
-            image: utility.loadImage(named: "pencil", colors: [NCBrandColor.shared.iconImageColor])
+            image: UIImage(resource: .details)
         ) { [self] _ in
             openAdvancePermission(shareController: shareController)
         }
@@ -49,7 +49,7 @@ class NCContextMenuShare: NSObject {
         // Unshare action (destructive)
         let unshareAction = UIAction(
             title: NSLocalizedString("_share_unshare_", comment: ""),
-            image: utility.loadImage(named: "person.2.slash"),
+            image: UIImage(resource: .unshare),
             attributes: .destructive
         ) { [self] _ in
             Task {
@@ -59,70 +59,6 @@ class NCContextMenuShare: NSObject {
         actions.append(unshareAction)
 
         return UIMenu(title: "", children: actions)
-    }
-
-    func quickPermissionsMenu() -> UIMenu {
-        var actions: [UIMenuElement] = []
-
-        let isReadOnly = share.permissions == (NKShare.Permission.read.rawValue + NKShare.Permission.share.rawValue) || share.permissions == NKShare.Permission.read.rawValue
-        let isEditing = hasUploadPermission()
-        let isFileDrop = share.permissions == NKShare.Permission.create.rawValue
-
-        // Read Only
-        let readOnlyAction = UIAction(
-            title: NSLocalizedString("_share_read_only_", comment: ""),
-            image: utility.loadImage(named: "eye", colors: [NCBrandColor.shared.iconImageColor]),
-            state: isReadOnly ? .on : .off
-        ) { [self] _ in
-            let permissions = NCSharePermissions.getPermissionValue(canCreate: false, canEdit: false, canDelete: false, canShare: false, isDirectory: self.isDirectory)
-            shareController.updateSharePermissions(share: share, permissions: permissions)
-        }
-        actions.append(readOnlyAction)
-
-        // Editing
-        let editingAction = UIAction(
-            title: NSLocalizedString("_share_editing_", comment: ""),
-            image: utility.loadImage(named: "pencil", colors: [NCBrandColor.shared.iconImageColor]),
-            state: isEditing ? .on : .off
-        ) { [self] _ in
-            let permissions = NCSharePermissions.getPermissionValue(canCreate: true, canEdit: true, canDelete: true, canShare: true, isDirectory: self.isDirectory)
-            shareController.updateSharePermissions(share: share, permissions: permissions)
-        }
-        actions.append(editingAction)
-
-        // File Drop (only for directories with public link or email share)
-        if isDirectory && (share.shareType == NKShare.ShareType.publicLink.rawValue || share.shareType == NKShare.ShareType.email.rawValue) {
-            let fileDropAction = UIAction(
-                title: NSLocalizedString("_share_file_drop_", comment: ""),
-                image: utility.loadImage(named: "arrow.up.document", colors: [NCBrandColor.shared.iconImageColor]),
-                state: isFileDrop ? .on : .off
-            ) { [self] _ in
-                let permissions = NCSharePermissions.getPermissionValue(canRead: false, canCreate: true, canEdit: false, canDelete: false, canShare: false, isDirectory: self.isDirectory)
-                shareController.updateSharePermissions(share: share, permissions: permissions)
-            }
-            actions.append(fileDropAction)
-        }
-
-        // Custom Permissions
-        let customAction = UIAction(
-            title: NSLocalizedString("_custom_permissions_", comment: ""),
-            image: utility.loadImage(named: "ellipsis", colors: [NCBrandColor.shared.iconImageColor])
-        ) { [self] _ in
-            openAdvancePermission(shareController: shareController)
-        }
-        actions.append(customAction)
-
-        return UIMenu(title: "", children: actions)
-    }
-
-    private func hasUploadPermission() -> Bool {
-        let uploadPermissions = [
-            NCSharePermissions.permissionMaxFileShare,
-            NCSharePermissions.permissionMaxFolderShare,
-            NCSharePermissions.permissionDefaultFileRemoteShareNoSupportShareOption,
-            NCSharePermissions.permissionDefaultFolderRemoteShareNoSupportShareOption
-        ]
-        return uploadPermissions.contains(share.permissions)
     }
 
     private func openAdvancePermission(shareController: NCShare) {

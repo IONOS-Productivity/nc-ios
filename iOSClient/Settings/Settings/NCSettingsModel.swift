@@ -28,15 +28,6 @@ class NCSettingsModel: ObservableObject, ViewOnAppearHandling {
     @Published var controller: NCMainTabBarController?
     // Footer
     var footerApp = ""
-    var footerServer = ""
-    var footerSlogan = ""
-    // Get session
-    @MainActor
-    var session: NCSession.Session {
-        NCSession.shared.getSession(controller: controller)
-    }
-
-    var changePasscode = false
 
     /// Initializes the view model with default values.
     init(controller: NCMainTabBarController?) {
@@ -54,8 +45,6 @@ class NCSettingsModel: ObservableObject, ViewOnAppearHandling {
         resetWrongAttempts = keychain.resetAppCounterFail
         accountRequest = keychain.accountRequest
         footerApp = String(format: NCBrandOptions.shared.textCopyrightNextcloudiOS, NCUtility().getVersionBuild()) + "\n\n"
-        footerServer = String(format: NCBrandOptions.shared.textCopyrightNextcloudServer, capabilities.serverVersion) + "\n"
-        footerSlogan = capabilities.themingName + " - " + capabilities.themingSlogan + "\n\n"
     }
 
     // MARK: - All functions
@@ -94,5 +83,9 @@ class NCSettingsModel: ObservableObject, ViewOnAppearHandling {
     /// Function to update Account request on start
     func updateAccountRequest() {
         keychain.accountRequest = accountRequest
+    }
+    
+    func dismiss() {
+        controller?.dismiss(animated: true)
     }
 }

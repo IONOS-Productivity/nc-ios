@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2024 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -77,24 +78,24 @@ class NCAccountSettingsModel: ObservableObject, ViewOnAppearHandling {
 
     /// Triggered when the view appears.
     func onViewAppear() {
-        var indexActiveAccount = 0
-        let tableAccounts = database.getAllTableAccount()
-        var alias = ""
+		var indexActiveAccount = 0
+		let tableAccounts = database.getAllTableAccount()
+		var alias = ""
 
-        for (index, account) in tableAccounts.enumerated() {
-            if account.active {
-                tblAccount = account
-                indexActiveAccount = index
-                alias = account.alias
-            }
-        }
+		for (index, account) in tableAccounts.enumerated() {
+			if account.active {
+				tblAccount = account
+				indexActiveAccount = index
+				alias = account.alias
+			}
+		}
 
-        self.indexActiveAccount = indexActiveAccount
-        self.tblAccounts = tableAccounts
-        self.tblAccount = tblAccount
-        self.alias = alias
+		self.indexActiveAccount = indexActiveAccount
+		self.tblAccounts = tableAccounts
+		self.tblAccount = tblAccount
+		self.alias = alias
     }
-
+    
     /// Func to get the user display name + alias
     func getUserName() -> String {
         guard let tblAccount else { return "" }
@@ -129,12 +130,8 @@ class NCAccountSettingsModel: ObservableObject, ViewOnAppearHandling {
     /// Is the user an Admin
     func isAdminGroup() -> Bool {
         guard let tblAccount else { return false }
-#if DEBUG
-        return true
-#else
         let groups = database.getAccountGroups(account: tblAccount.account)
         return groups.contains(NCGlobal.shared.groupAdmin)
-#endif
     }
 
     /// Function to know the height of "account" data
@@ -165,7 +162,14 @@ class NCAccountSettingsModel: ObservableObject, ViewOnAppearHandling {
         if let tableAccount = database.getTableAccount(predicate: NSPredicate(format: "account == %@", account)) {
             self.tblAccount = tableAccount
             self.alias = tableAccount.alias
+            Task {
+                await NCAccount().changeAccount(tableAccount.account, userProfile: nil, controller: self.controller)
+            }
         }
+    }
+    
+    func openLogin() {
+        self.appDelegate.openLogin(selector: NCGlobal.shared.introLogin)
     }
 
     /// Function to delete the current account

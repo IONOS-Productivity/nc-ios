@@ -49,6 +49,12 @@ final class NCManageDatabaseCore {
             // Fix from version 6.2.5
         } else if oldSchemaVersion < 403 {
             migration.enumerateObjects(ofType: tableAccount.className()) { oldObject, newObject in
+                // this guard clause is needed for migration from 6.5.0 to 33.0.2
+                // remove it when there will be no user's on 6.5.0
+                guard let schema = oldObject?.objectSchema,
+                      schema["autoUploadOnlyNew"] != nil else {
+                    return
+                }
                 let onlyNew = oldObject?["autoUploadOnlyNew"] as? Bool ?? false
                 if onlyNew {
                     let oldDate = oldObject?["autoUploadOnlyNewSinceDate"] as? Date
