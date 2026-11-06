@@ -32,10 +32,8 @@ class NCAskAuthorization: NSObject {
 
             case .undetermined:
                 AVAudioApplication.requestRecordPermission { granted in
-                    if granted {
-                        completion(true)
-                    } else {
-                        completion(false)
+                    DispatchQueue.main.async {
+                        completion(granted)
                     }
                 }
             default:

@@ -30,4 +30,28 @@ extension UIView {
         self.layer.cornerRadius = self.frame.size.width / 2
         self.layer.masksToBounds = true
     }
+
+    var bottomCenter: CGRect {
+        return CGRect(origin: CGPoint(x: center.x, y: bounds.height), size: CGSizeZero)
+    }
+
+    func isInFront(of other: UIView) -> Bool {
+        if let w1 = window, let w2 = other.window, w1 !== w2 {
+            return w1.windowLevel > w2.windowLevel
+        }
+        if other.isDescendant(of: self) { return false }
+        if isDescendant(of: other) { return true }
+
+        var childA: UIView = self
+        while let parent = childA.superview {
+            if other.isDescendant(of: parent) {
+                var childB: UIView = other
+                while childB.superview !== parent { childB = childB.superview! }
+                let order = parent.subviews
+                return (order.firstIndex(of: childA) ?? 0) > (order.firstIndex(of: childB) ?? 0)
+            }
+            childA = parent
+        }
+        return false
+    }
 }

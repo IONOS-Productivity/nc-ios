@@ -41,7 +41,7 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
     private var tipView: EasyTipView?
 
     var sceneIdentifier: String {
-        (self.tabBarController as? NCMainTabBarController)?.sceneIdentifier ?? ""
+        self.mainTabBarController?.sceneIdentifier ?? ""
     }
 
     // MARK: - View Life Cycle
@@ -68,13 +68,16 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
                     UIDeferredMenuElement.uncached { [self] completion in
                         guard let metadata = self.metadata else { return }
 
-                        if let menu = NCViewerContextMenu(metadata: metadata, controller: self.tabBarController as? NCMainTabBarController, webView: false, sender: self).viewMenu() {
+                        if let menu = NCViewerContextMenu(metadata: metadata,
+                                                          controller: self.mainTabBarController,
+                                                          webView: false,
+                                                          sender: self).viewMenu() {
                             completion(menu.children)
                         }
                     }
                 ]))
         }
-        defaultBackgroundColor = pdfView.backgroundColor
+        defaultBackgroundColor = NCBrandColor.shared.appBackgroundColor
         view.backgroundColor = defaultBackgroundColor
 
         // PDF CONTAINER
@@ -108,7 +111,7 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
         ])
 
         // MODAL
-        if self.navigationController?.presentingViewController != nil {
+        if (self.navigationController?.presentingViewController != nil) && ((self.navigationController?.viewControllers.count ?? 0) <= 1) {
             self.navigationItem.leftBarButtonItem = UIBarButtonItem(title: NSLocalizedString("_close_", comment: ""), style: .plain, target: self, action: #selector(viewDismiss))
         }
 
@@ -155,6 +158,7 @@ class NCViewerPDF: UIViewController, NCViewerPDFSearchDelegate {
 
         pdfThumbnailView.translatesAutoresizingMaskIntoConstraints = false
         pdfThumbnailView.pdfView = pdfView
+        pdfThumbnailView.pdfView?.backgroundColor = NCBrandColor.shared.appBackgroundColor
         pdfThumbnailView.layoutMode = .vertical
         pdfThumbnailView.thumbnailSize = CGSize(width: thumbnailViewHeight, height: thumbnailViewHeight)
         pdfThumbnailView.backgroundColor = .clear

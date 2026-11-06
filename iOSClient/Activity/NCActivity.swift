@@ -49,14 +49,14 @@ class NCActivity: UIViewController, NCSharePagingContent {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        navigationController?.setNavigationBarAppearance()
-        view.backgroundColor = .systemBackground
+        self.navigationController?.navigationBar.prefersLargeTitles = true
+        view.backgroundColor = NCBrandColor.shared.appBackgroundColor
         self.title = NSLocalizedString("_activity_", comment: "")
 
         tableView.allowsSelection = false
         tableView.separatorColor = UIColor.clear
         tableView.contentInset = insets
-        tableView.backgroundColor = .systemBackground
+        tableView.backgroundColor = NCBrandColor.shared.appBackgroundColor
 
         if showComments {
             setupComments()
@@ -93,6 +93,7 @@ class NCActivity: UIViewController, NCSharePagingContent {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        navigationController?.setNavigationBarAppearance()
         fetchAll(isInitial: true)
     }
 
@@ -228,8 +229,8 @@ extension NCActivity: UITableViewDataSource {
             cell.avatarImage?.image = results.image
         }
 
-        if let tblAvatar = results.tblAvatar,
-           !tblAvatar.loaded,
+		if let tableAvatar = results.tblAvatar,
+           !tableAvatar.loaded,
            NCNetworking.shared.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
             NCNetworking.shared.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: comment.actorId, fileName: fileName, account: account, view: tableView))
         }
@@ -301,7 +302,7 @@ extension NCActivity: UITableViewDataSource {
                 cell.avatar?.image = results.image
             }
 
-            if !(results.tblAvatar?.loaded ?? false),
+			if !(results.tblAvatar?.loaded ?? false),
                NCNetworking.shared.downloadAvatarQueue.operations.filter({ ($0 as? NCOperationDownloadAvatar)?.fileName == fileName }).isEmpty {
                 NCNetworking.shared.downloadAvatarQueue.addOperation(NCOperationDownloadAvatar(user: activity.user, fileName: fileName, account: session.account, view: tableView))
             }
@@ -364,8 +365,12 @@ extension NCActivity {
     func fetchAll(isInitial: Bool) {
         guard !isFetchingActivity else { return }
         self.isFetchingActivity = true
+        var bottom: CGFloat = 0
 
-        NCActivityIndicator.shared.start(backgroundView: self.view, style: .medium)
+        if let mainTabBar = self.tabBarController?.tabBar as? NCMainTabBar {
+           bottom = -mainTabBar.getHeight()
+        }
+        NCActivityIndicator.shared.start(backgroundView: self.view, bottom: bottom - 35, style: .medium)
 
         let dispatchGroup = DispatchGroup()
         loadComments(disptachGroup: dispatchGroup)

@@ -4,8 +4,5 @@
 
 import UIKit
 
-class NCActivityNavigationController: NCMainNavigationController {
-    override func createOptionMenu() async -> UIMenu? {
-        return nil
-    }
+class NCActivityNavigationController: HiDriveMainNavigationController {
 }

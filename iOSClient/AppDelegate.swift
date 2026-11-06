@@ -16,6 +16,8 @@ import RealmSwift
 
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     var backgroundSessionCompletionHandler: (() -> Void)?
+    var activeLogin: NCLogin?
+    var activeLoginWeb: NCLoginProvider?
     var isUiTestingEnabled: Bool {
         return ProcessInfo.processInfo.arguments.contains("UI_TESTING")
     }
@@ -50,12 +52,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         NCSettingsBundleHelper.checkAndExecuteSettings(delay: 0)
 
         UserDefaults.standard.register(defaults: ["UserAgent": userAgent])
-
-        #if !DEBUG
-        if !NCPreferences().disableCrashservice, !NCBrandOptions.shared.disable_crash_service {
-            FirebaseApp.configure()
-        }
-        #endif
+		FirebaseApp.configure()
+        DataProtectionAgreementManager.shared.setupAnalyticsCollection()
 
         NCBrandColor.shared.createUserColors()
 
@@ -114,6 +112,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             self.handleProcessingTask(processingTask)
         }
         scheduleAppProcessing()
+        
+        UISwitch.appearance().onTintColor = NCBrandColor.shared.switchColor
+        UISlider.appearance().thumbTintColor = UIColor(Color(.QualitySlider.thumb))
+        UISlider.appearance().maximumTrackTintColor = UIColor(Color(.QualitySlider.maximumTrack))
 
         if NCBrandOptions.shared.enforce_passcode_lock {
             NCPreferences().requestPasscodeAtStart = true
@@ -449,6 +451,47 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             let alertController = UIAlertController(title: NSLocalizedString("_info_", comment: ""), message: message, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: NSLocalizedString("_ok_", comment: ""), style: .default, handler: { _ in }))
             UIApplication.shared.mainAppWindow?.rootViewController?.present(alertController, animated: true, completion: { })
+        }
+    }
+
+    // MARK: - Login
+
+    func openLogin(selector: Int, window: UIWindow? = nil) {
+        UIApplication.shared.allSceneSessionDestructionExceptFirst()
+
+        func showLoginViewController(_ viewController: UIViewController?) {
+            guard let viewController else { return }
+            let navigationController = NCLoginNavigationController(rootViewController: viewController)
+
+            navigationController.modalPresentationStyle = .fullScreen
+            navigationController.navigationBar.barStyle = .black
+            navigationController.navigationBar.tintColor = NCBrandColor.shared.customerText
+            navigationController.navigationBar.barTintColor = NCBrandColor.shared.customer
+            navigationController.navigationBar.isTranslucent = false
+
+            if let controller = UIApplication.shared.mainAppWindow?.rootViewController {
+                if let presentedVC = controller.presentedViewController, !(presentedVC is NCLoginNavigationController) {
+                    presentedVC.dismiss(animated: false) {
+                        controller.present(navigationController, animated: true)
+                    }
+                } else {
+                    controller.present(navigationController, animated: true)
+                }
+            } else {
+                window?.rootViewController = navigationController
+                window?.makeKeyAndVisible()
+            }
+        }
+
+        if activeLogin?.view.window == nil {
+            if selector == NCGlobal.shared.introSignUpWithProvider {
+                // MERGE: HiDrive Next doesn't support choosing providers
+            } else {
+                // Regular login
+                activeLogin = UIStoryboard(name: "NCLogin", bundle: nil).instantiateViewController(withIdentifier: "NCLogin") as? NCLogin
+                activeLogin?.urlBase = NCBrandOptions.shared.disable_request_login_url ? NCBrandOptions.shared.loginBaseUrl : ""
+                showLoginViewController(activeLogin)
+            }
         }
     }
 

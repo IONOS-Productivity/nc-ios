@@ -4,6 +4,7 @@
 //
 //  Created by Marino Faggiana on 28/12/22.
 //  Copyright © 2022 Marino Faggiana. All rights reserved.
+//  Copyright © 2024 STRATO GmbH
 //
 //  Author Marino Faggiana <marino.faggiana@nextcloud.com>
 //
@@ -355,7 +356,8 @@ struct UploadScanDocumentView: View {
                                     .renderingMode(.template)
                                     .resizable()
                                     .scaledToFit()
-                                    .foregroundColor(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                                    .foregroundColor(Color(.Share.commonIconTint))
+                                
                             }
                         }
                         .contentShape(Rectangle())
@@ -400,12 +402,15 @@ struct UploadScanDocumentView: View {
                         }
                         HStack {
                             Toggle(NSLocalizedString("_text_recognition_", comment: ""), isOn: $isTextRecognition)
-                                .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.getElement(account: model.session.account))))
+                                .toggleStyle(SwitchToggleStyle(tint: Color(NCBrandColor.shared.switchColor)))
                                 .onChange(of: isTextRecognition) { _, newValue in
                                     NCPreferences().textRecognitionStatus = newValue
                                 }
                         }
                     }
+                    .applyGlobalFormSectionStyle()
+                    .listRowSeparator(.hidden)
+
                     .complexModifier { view in
                         view.listRowSeparator(.hidden)
                     }
@@ -433,10 +438,11 @@ struct UploadScanDocumentView: View {
                                     }
                                 }
                             }
-                            .buttonStyle(ButtonRounded(disabled: fileName.isEmpty || !footer.isEmpty, account: model.session.account))
+                            .buttonStyle(.primary)
                             .disabled(fileName.isEmpty || !footer.isEmpty)
                         }
                     }
+                    .applyGlobalFormSectionStyle()
 
                     Section(header: Text(NSLocalizedString("_quality_image_title_", comment: ""))) {
                         VStack {
@@ -450,16 +456,15 @@ struct UploadScanDocumentView: View {
                         PDFKitRepresentedView(quality: $quality, isTextRecognition: $isTextRecognition, uploadScanDocument: model)
                             .frame(maxWidth: .infinity, minHeight: geo.size.height / 2)
                     }
-                    .complexModifier { view in
-                        view.listRowSeparator(.hidden)
-                    }
+                    .applyGlobalFormSectionStyle()
+                    .listRowSeparator(.hidden)
                 }
                 NCHUDView(showHUD: $model.showHUD, textLabel: NSLocalizedString("_wait_", comment: ""), image: "doc.badge.arrow.up", color: NCBrandColor.shared.getElement(account: model.session.account))
                     .offset(y: model.showHUD ? 5 : -200)
                     .animation(.easeOut, value: model.showHUD)
             }
         }
-        .background(Color(UIColor.systemGroupedBackground))
+        .applyGlobalFormStyle()
         .sheet(isPresented: $isPresentedSelect) {
             NCSelectViewControllerRepresentable(delegate: model, session: model.session)
         }

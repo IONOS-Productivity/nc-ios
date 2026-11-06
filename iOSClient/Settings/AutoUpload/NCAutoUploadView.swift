@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: Nextcloud GmbH
+// SPDX-FileCopyrightText: STRATO GmbH
 // SPDX-FileCopyrightText: 2024 Aditya Tyagi
 // SPDX-FileCopyrightText: 2024 Marino Faggiana
 // SPDX-License-Identifier: GPL-3.0-or-later
@@ -41,6 +42,7 @@ struct NCAutoUploadView: View {
                 .onDisappear {
                     model.setAutoUploadDirectory(serverUrl: model.serverUrl)
                 }
+                .ignoresSafeArea()
         }
         .sheet(isPresented: $showSelectAlbums) {
             SelectAlbumView(model: albumModel)
@@ -60,10 +62,10 @@ struct NCAutoUploadView: View {
                         showUploadFolder.toggle()
                     }, label: {
                         HStack {
-                            Image(systemName: "folder")
+							Image(.Settings.AutoUpload.folder)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 25, height: 25)
+                                .frame(width: 20, height: 20)
                                 .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                                 .opacity(model.autoUploadStart ? 0.15 : 1)
                             Text(NSLocalizedString("_destination_", comment: ""))
@@ -76,6 +78,7 @@ struct NCAutoUploadView: View {
                         }
                     })
                 })
+				.applyGlobalFormSectionStyle()
 
                 Section(content: {
                     NavigationLink(destination: SelectAlbumView(model: albumModel)) {
@@ -83,10 +86,10 @@ struct NCAutoUploadView: View {
                             showSelectAlbums.toggle()
                         }, label: {
                             HStack {
-                                Image(systemName: "person.2.crop.square.stack")
+								Image(.Settings.AutoUpload.folderOpened)
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(width: 25, height: 25)
+                                    .frame(width: 20, height: 20)
                                     .foregroundColor(Color(NCBrandColor.shared.iconImageColor))
                                     .opacity(model.autoUploadStart ? 0.3 : 1)
                                 Text(NSLocalizedString("_upload_from_", comment: ""))
@@ -106,7 +109,7 @@ struct NCAutoUploadView: View {
                             model.handleAutoUploadOnlyNew(newValue: newValue)
                         }
                     ))
-                    .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                    .tint(Color(NCBrandColor.shared.switchColor))
                     .opacity(model.autoUploadStart ? 0.15 : 1)
                     .accessibilityIdentifier("NewPhotosToggle")
                 }, footer: {
@@ -114,11 +117,12 @@ struct NCAutoUploadView: View {
                         Text(String(format: NSLocalizedString("_new_photos_starting_", comment: ""), NCUtility().longDate(date)))
                     }
                 })
+				.applyGlobalFormSectionStyle()
 
                 // Auto Upload Photo
                 Section(content: {
                     Toggle(NSLocalizedString("_autoupload_photos_", comment: ""), isOn: $model.autoUploadImage)
-                        .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                        .tint(Color(NCBrandColor.shared.switchColor))
                         .opacity(model.autoUploadStart ? 0.15 : 1)
                         .onChange(of: model.autoUploadImage) { _, newValue in
                             if !newValue { model.autoUploadVideo = true }
@@ -127,18 +131,19 @@ struct NCAutoUploadView: View {
 
                     if model.autoUploadImage {
                         Toggle(NSLocalizedString("_wifi_only_", comment: ""), isOn: $model.autoUploadWWAnPhoto)
-                            .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                            .tint(Color(NCBrandColor.shared.switchColor))
                             .opacity(model.autoUploadStart ? 0.15 : 1)
                             .onChange(of: model.autoUploadWWAnPhoto) { _, newValue in
                                 model.handleAutoUploadWWAnPhotoChange(newValue: newValue)
                             }
                     }
                 })
+				.applyGlobalFormSectionStyle()
 
                 // Auto Upload Video
                 Section(content: {
                     Toggle(NSLocalizedString("_autoupload_videos_", comment: ""), isOn: $model.autoUploadVideo)
-                        .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                        .tint(Color(NCBrandColor.shared.switchColor))
                         .opacity(model.autoUploadStart ? 0.15 : 1)
                         .onChange(of: model.autoUploadVideo) { _, newValue in
                             if !newValue { model.autoUploadImage = true }
@@ -147,18 +152,19 @@ struct NCAutoUploadView: View {
 
                     if model.autoUploadVideo {
                         Toggle(NSLocalizedString("_wifi_only_", comment: ""), isOn: $model.autoUploadWWAnVideo)
-                            .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                            .tint(Color(NCBrandColor.shared.switchColor))
                             .opacity(model.autoUploadStart ? 0.15 : 1)
                             .onChange(of: model.autoUploadWWAnVideo) { _, newValue in
                                 model.handleAutoUploadWWAnVideoChange(newValue: newValue)
                             }
                     }
                 })
+				.applyGlobalFormSectionStyle()
 
                 // Auto Upload create subfolder
                 Section(content: {
                     Toggle(NSLocalizedString("_autoupload_create_subfolder_", comment: ""), isOn: $model.autoUploadCreateSubfolder)
-                        .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                        .tint(Color(NCBrandColor.shared.switchColor))
                         .opacity(model.autoUploadStart ? 0.15 : 1)
                         .onChange(of: model.autoUploadCreateSubfolder) { _, newValue in
                             model.handleAutoUploadCreateSubfolderChange(newValue: newValue)
@@ -178,11 +184,12 @@ struct NCAutoUploadView: View {
                 }, footer: {
                     Text(NSLocalizedString("_autoupload_create_subfolder_footer_", comment: ""))
                 })
-
+				.applyGlobalFormSectionStyle()
+                
                 // Location
                 Section(content: {
                     Toggle(NSLocalizedString("_enable_background_location_title_", comment: ""), isOn: $model.permissionGranted)
-                        .tint(Color(NCBrandColor.shared.getElement(account: model.session.account)))
+                        .tint(Color(NCBrandColor.shared.switchColor))
                         .opacity(model.autoUploadStart ? 0.15 : 1)
                         .onChange(of: model.permissionGranted) { _, newValue in
                             model.handleLocationChange(newValue: newValue)
@@ -190,6 +197,8 @@ struct NCAutoUploadView: View {
                 }, footer: {
                     Text(NSLocalizedString("_enable_background_location_footer_", comment: ""))
                 })
+                .applyGlobalFormSectionStyle()
+
             }
             .disabled(model.autoUploadStart)
         }
@@ -198,6 +207,7 @@ struct NCAutoUploadView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 10)
         }
+        .applyGlobalFormStyle()
     }
 
     @ViewBuilder
@@ -215,16 +225,24 @@ struct NCAutoUploadView: View {
             }
             .font(.headline)
 
-            if #available(iOS 26.0, *) {
-                toggle
-                    .toggleStyle(.button)
-                    .buttonStyle(.glass)
-            } else {
-                toggle
-                    .toggleStyle(AutoUploadProminentButtonStyle(model: model))
-            }
+            toggle
+                .toggleStyle(AutoUploadProminentButtonStyle(model: model))
         })
     }
+	
+	private var auToggleTextColor: Color {
+		if #available(iOS 16.0, *) {
+			return Color(NCBrandColor.shared.customerText)
+		}
+		return Color(red: 0.078, green: 0.455, blue: 0.769)
+	}
+	
+	private var auToggleBackground: Color {
+		if #available(iOS 16.0, *) {
+			return Color(.Button.Primary.Background.selected)
+		}
+		return Color(.systemBackground)
+	}
 }
 
 @ViewBuilder
@@ -236,16 +254,16 @@ var noPermissionsView: some View {
     }
     .padding(16)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color(UIColor.systemGroupedBackground))
+    .background(Color(NCBrandColor.shared.appBackgroundColor))
 }
 
 // Custom prominent brand button style used for Toggle-as-Button
 private struct AutoUploadProminentButtonStyle: ToggleStyle {
     let model: NCAutoUploadModel
-    private var onBackground: Color { Color(NCBrandColor.shared.getElement(account: model.session.account)) }
-    private let offBackground = Color(UIColor.systemGray5)
-    private let onForeground = Color.white
-    private let offForeground = Color.primary
+    private var onBackground: Color { Color(.Button.Primary.Background.selected) }
+    private let offBackground = Color(.Button.Primary.Background.selected)
+    private let onForeground = Color(.Button.Primary.Text.selected)
+    private let offForeground = Color(.Button.Primary.Text.selected)
     private let cornerRadius: CGFloat = 40
 
     func makeBody(configuration: Configuration) -> some View {
