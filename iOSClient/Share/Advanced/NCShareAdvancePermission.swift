@@ -135,16 +135,21 @@ class NCShareAdvancePermission: UITableViewController, NCShareAdvanceFotterDeleg
     
     override func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int) {
         guard let headerView = view as? UITableViewHeaderFooterView else { return }
-        
+
+        let traits = tableView.traitCollection
+        let titleColor = UIColor(resource: .Share.Advanced.sectionTitle).resolvedColor(with: traits)
+        let pinnedColor = UIColor(resource: .Share.Advanced.sectionTitleBackground).resolvedColor(with: traits)
+
         var contentConfiguration = UIListContentConfiguration.plainHeader()
         contentConfiguration.text = self.tableView(tableView, titleForHeaderInSection: section)
-        contentConfiguration.textProperties.color = UIColor(resource: .Share.Advanced.sectionTitle)
+        contentConfiguration.textProperties.color = titleColor
         headerView.contentConfiguration = contentConfiguration
-        
-        headerView.configurationUpdateHandler = { (headerFooterView: UITableViewHeaderFooterView, state: UIViewConfigurationState) -> Void in
+
+        headerView.configurationUpdateHandler = { headerFooterView, state in
             var backgroundConfiguration = UIBackgroundConfiguration.clear()
-            backgroundConfiguration.backgroundColor = state.isPinned ? UIColor(resource: .Share.Advanced.sectionTitleBackground) : .clear
-            headerView.backgroundConfiguration = backgroundConfiguration
+            // same color with alpha 0 when not pinned, so nothing animates through black
+            backgroundConfiguration.backgroundColor = state.isPinned ? pinnedColor : pinnedColor.withAlphaComponent(0)
+            headerFooterView.backgroundConfiguration = backgroundConfiguration
         }
     }
 

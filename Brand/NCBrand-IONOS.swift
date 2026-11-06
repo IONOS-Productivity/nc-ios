@@ -82,8 +82,38 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 		disable_crash_service = true
 
         let marketsConfiguration = MarketsConfigurationLoader.loadConfiguration()
-        loginConfiguration = marketsConfiguration.login.filter{  $0.language.lowercased() == deviceLanguage().lowercased() }.first ?? marketsConfiguration.login.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
-        NCBrandOptionsIONOS.staticLinksConfiguration = marketsConfiguration.staticLinks.filter{  $0.language.lowercased() == language().lowercased() }.first ?? marketsConfiguration.staticLinks.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
+
+        loginConfiguration = marketsConfiguration.login.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
+
+        let loginConfigsByLanguageCode = marketsConfiguration.login.filter {
+            $0.language.lowercased() == deviceLanguageCode().lowercased() }
+        if loginConfigsByLanguageCode.count > 0 {
+            let loginConfigsByLanguageRegion = loginConfigsByLanguageCode.filter {
+                $0.region?.lowercased() == deviceLanguageRegion()?.lowercased() }
+            if loginConfigsByLanguageRegion.count > 0 {
+                loginConfiguration = loginConfigsByLanguageRegion.first
+            } else {
+                loginConfiguration = loginConfigsByLanguageCode.first {
+                    $0.region == nil
+                }
+            }
+        }
+
+        NCBrandOptionsIONOS.staticLinksConfiguration = marketsConfiguration.staticLinks.filter{  $0.language.lowercased() == MarketsConfiguration.fallback }.first
+
+        let staticLinksConfigsByLanguageCode = marketsConfiguration.staticLinks.filter {
+            $0.language.lowercased() == deviceLanguageCode().lowercased() }
+        if staticLinksConfigsByLanguageCode.count > 0 {
+            let staticLinksConfigsByLanguageRegion = staticLinksConfigsByLanguageCode.filter {
+                $0.region?.lowercased() == deviceLanguageRegion()?.lowercased() }
+            if staticLinksConfigsByLanguageRegion.count > 0 {
+                NCBrandOptionsIONOS.staticLinksConfiguration = staticLinksConfigsByLanguageRegion.first
+            } else {
+                NCBrandOptionsIONOS.staticLinksConfiguration = staticLinksConfigsByLanguageCode.first {
+                    $0.region == nil
+                }
+            }
+        }
 
 #if ALPHA
 		capabilitiesGroup = "group.com.viseven.ionos.easystorage"
@@ -96,12 +126,12 @@ class NCBrandOptionsIONOS: NCBrandOptions, @unchecked Sendable {
 #endif
 	}
 
-    private func deviceLanguage() -> String {
-        DeviceRegionDeterminer().getDeviceLanguage() ?? MarketsConfiguration.fallback
+    private func deviceLanguageCode() -> String {
+        DeviceRegionDeterminer().getDeviceLanguageCode() ?? MarketsConfiguration.fallback
     }
 
-    private func language() -> String {
-        Bundle.main.preferredLocalizations.first ?? MarketsConfiguration.fallback
+    private func deviceLanguageRegion() -> String? {
+        DeviceRegionDeterminer().getDeviceLanguageRegion()
     }
 }
 

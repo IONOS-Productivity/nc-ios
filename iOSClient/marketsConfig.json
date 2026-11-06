@@ -21,6 +21,31 @@
             "loginUrl": "https://storage.ionos.co.uk"
         },
         {
+            "language": "EN",
+            "region": "US",
+            "loginUrl": "https://storage.ionos.com"
+        },
+        {
+            "language": "ES",
+            "region": "US",
+            "loginUrl": "https://storage.ionos.com"
+        },
+        {
+            "language": "EN",
+            "region": "CA",
+            "loginUrl": "https://storage.ionos.ca"
+        },
+        {
+            "language": "FR",
+            "region": "CA",
+            "loginUrl": "https://storage.ionos.ca"
+        },
+        {
+            "language": "ES",
+            "region": "MX",
+            "loginUrl": "https://storage.ionos.mx"
+        },
+        {
             "language": "fallback",
             "loginUrl": "https://storage.ionos.co.uk"
         }
@@ -49,6 +74,36 @@
         {
             "language": "ES",
             "privacyPolicyUrl": "https://wl.hidrive.com/easy/0051",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "EN",
+            "region": "US",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/dateus",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "ES",
+            "region": "US",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/dateus",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "EN",
+            "region": "CA",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/dateca",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "FR",
+            "region": "CA",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/dateca",
+            "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
+        },
+        {
+            "language": "ES",
+            "region": "MX",
+            "privacyPolicyUrl": "https://wl.hidrive.com/easy/datemx",
             "acknowledgementsUrl": "https://wl.hidrive.com/easy/0171"
         },
         {

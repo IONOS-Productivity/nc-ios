@@ -46,11 +46,13 @@ struct MarketsConfiguration: Decodable {
 
 struct LoginConfiguration: Decodable {
     let language: String
+    let region: String?
     let loginUrl: String
 }
 
 struct StaticLinksConfiguration: Decodable {
     let language: String
+    let region: String?
     let privacyPolicyUrl: String
     let acknowledgementsUrl: String
 }

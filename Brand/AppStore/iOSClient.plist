@@ -120,8 +120,6 @@
 		<string>remote-notification</string>
 		<string>location</string>
 	</array>
-	<key>UIDesignRequiresCompatibility</key>
-	<true/>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
